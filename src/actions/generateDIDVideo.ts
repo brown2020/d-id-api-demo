@@ -139,7 +139,7 @@ export async function generateDIDVideo(
     return {
       id: "",
       error:
-        "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again.",
+        "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
     };
   }
 }
