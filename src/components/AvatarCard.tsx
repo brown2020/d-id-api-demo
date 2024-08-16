@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { ref, deleteObject } from "firebase/storage";
@@ -20,12 +21,15 @@ export default function AvatarCard({ id }: AvatarCardProps) {
   const [voiceId, setVoiceId] = useState("");
   const [previewImageUrl, setPreviewImageUrl] = useState("");
   const [isDirty, setIsDirty] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null); // Ref for the file input
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { selectedTalkingPhoto } = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
-
   const isSelected = selectedTalkingPhoto === id;
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const isOnGeneratePage = pathname === "/generate";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,7 +76,11 @@ export default function AvatarCard({ id }: AvatarCardProps) {
   };
 
   const selectTalkingPhoto = async () => {
-    updateProfile({ selectedTalkingPhoto: id });
+    if (!isSelected) {
+      updateProfile({ selectedTalkingPhoto: id });
+    } else {
+      router.push("/generate"); // Navigate to /generate if already selected
+    }
   };
 
   const handleImageClick = () => {
@@ -227,20 +235,19 @@ export default function AvatarCard({ id }: AvatarCardProps) {
             >
               Save
             </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                selectTalkingPhoto();
-              }}
-              className={`bg-green-500 text-white px-3 py-2 rounded-md ${
-                isSelected
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:opacity-50"
-              }`}
-              disabled={isSelected}
-            >
-              {isSelected ? "Selected" : "Select"}
-            </button>
+            {!isOnGeneratePage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectTalkingPhoto();
+                }}
+                className={`bg-green-500 text-white px-3 py-2 rounded-md ${
+                  isSelected ? "hover:opacity-50" : ""
+                }`}
+              >
+                {isSelected ? "Go to Generate" : "Select"}
+              </button>
+            )}
           </div>
           <Trash
             className="w-6 h-6 text-gray-500 opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer"
