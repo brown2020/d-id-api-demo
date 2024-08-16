@@ -1,0 +1,236 @@
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { ref, deleteObject } from "firebase/storage";
+import { db, storage } from "@/firebase/firebaseClient";
+import { HeartIcon, Trash } from "lucide-react";
+import useProfileStore from "@/zustand/useProfileStore";
+import { DIDTalkingPhoto } from "@/types/did";
+import { uploadBytes, getDownloadURL } from "firebase/storage";
+import { resizeImage } from "@/utils/resizeImage";
+
+interface AvatarCardProps {
+  id: string;
+}
+
+export default function AvatarCard({ id }: AvatarCardProps) {
+  const [favorite, setFavorite] = useState(false);
+  const [talkingPhotoName, setTalkingPhotoName] = useState("");
+  const [project, setProject] = useState("");
+  const [voiceId, setVoiceId] = useState("");
+  const [previewImageUrl, setPreviewImageUrl] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null); // Ref for the file input
+
+  const { selectedTalkingPhoto } = useProfileStore((state) => state.profile);
+  const updateProfile = useProfileStore((state) => state.updateProfile);
+
+  const isSelected = selectedTalkingPhoto === id;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const docRef = doc(db, "didTalkingPhotos", id);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data() as DIDTalkingPhoto;
+        setFavorite(data.favorite || false);
+        setTalkingPhotoName(data.talking_photo_name || "");
+        setProject(data.project || "");
+        setVoiceId(data.voiceId || "");
+        setPreviewImageUrl(data.preview_image_url || "");
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  const toggleFavorite = async () => {
+    const newFavoriteStatus = !favorite;
+    setFavorite(newFavoriteStatus);
+    setIsDirty(true);
+
+    const docRef = doc(db, "didTalkingPhotos", id);
+    await setDoc(docRef, { favorite: newFavoriteStatus }, { merge: true });
+  };
+
+  const handleInputChange =
+    (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value);
+      setIsDirty(true);
+    };
+
+  const saveDetails = async () => {
+    const docRef = doc(db, "didTalkingPhotos", id);
+    await setDoc(
+      docRef,
+      { talking_photo_name: talkingPhotoName, project, voiceId },
+      { merge: true }
+    );
+    setIsDirty(false);
+    alert("Details saved successfully!");
+  };
+
+  const selectTalkingPhoto = async () => {
+    updateProfile({ selectedTalkingPhoto: id });
+  };
+
+  const handleImageClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click(); // Trigger file input click when image is clicked
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      // Resize the image before uploading
+      const resizedImage = await resizeImage(file);
+      const storageRef = ref(storage, `images/${id}/${file.name}`);
+
+      await uploadBytes(storageRef, resizedImage);
+      const downloadUrl = await getDownloadURL(storageRef);
+
+      setPreviewImageUrl(downloadUrl);
+      setIsDirty(true);
+
+      const docRef = doc(db, "didTalkingPhotos", id);
+      await setDoc(docRef, { preview_image_url: downloadUrl }, { merge: true });
+    }
+  };
+
+  const deleteTalkingPhoto = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this talking photo?"
+    );
+
+    if (confirmed) {
+      const docRef = doc(db, "didTalkingPhotos", id);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data() as DIDTalkingPhoto;
+
+        if (data.preview_image_url) {
+          const imageRef = ref(storage, data.preview_image_url);
+          await deleteObject(imageRef).catch((error) => {
+            console.error("Error deleting image from storage:", error);
+          });
+        }
+
+        await deleteDoc(docRef);
+      }
+    }
+  };
+
+  return (
+    <div
+      className={`relative border p-4 rounded-md shadow cursor-pointer ${
+        isSelected ? "border-blue-500" : "border-gray-300"
+      }`}
+    >
+      <div className="flex justify-between items-center">
+        <h3 className="font-bold mb-2">
+          {talkingPhotoName || "Untitled Talking Photo"}
+        </h3>
+        <HeartIcon
+          className="cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite();
+          }}
+          strokeWidth={favorite ? 0 : 1}
+          fill={favorite ? "red" : "none"}
+          color={favorite ? "red" : "currentColor"}
+          size={24}
+        />
+      </div>
+      <div onClick={handleImageClick} className="cursor-pointer">
+        {previewImageUrl ? (
+          <Image
+            src={previewImageUrl}
+            alt={talkingPhotoName}
+            width={512}
+            height={512}
+            className="w-48 h-auto rounded transition-transform transform hover:scale-105"
+          />
+        ) : (
+          <div className="w-48 h-48 bg-gray-200 flex items-center justify-center rounded">
+            <span>No Image</span>
+          </div>
+        )}
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        ref={fileInputRef}
+        className="hidden" // Hide the file input
+      />
+      <div className="mt-2">
+        <input
+          type="text"
+          value={talkingPhotoName}
+          onChange={handleInputChange(setTalkingPhotoName)}
+          placeholder="Talking Photo Name"
+          className="border rounded p-1 w-full"
+        />
+        <input
+          type="text"
+          value={project}
+          onChange={handleInputChange(setProject)}
+          placeholder="Project"
+          className="border rounded p-1 w-full mt-2"
+        />
+        <input
+          type="text"
+          value={voiceId}
+          onChange={handleInputChange(setVoiceId)}
+          placeholder="Voice ID"
+          className="border rounded p-1 w-full mt-2"
+        />
+        <div className="flex justify-between items-center mt-2">
+          <div className="flex space-x-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                saveDetails();
+              }}
+              className={`bg-blue-500 text-white px-3 py-2 rounded-md ${
+                isDirty ? "hover:opacity-50" : "opacity-50 cursor-not-allowed"
+              }`}
+              disabled={!isDirty}
+            >
+              Save
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                selectTalkingPhoto();
+              }}
+              className={`bg-green-500 text-white px-3 py-2 rounded-md ${
+                isSelected
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:opacity-50"
+              }`}
+              disabled={isSelected}
+            >
+              {isSelected ? "Selected" : "Select"}
+            </button>
+          </div>
+          <Trash
+            className="w-6 h-6 text-gray-500 opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteTalkingPhoto(e);
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
