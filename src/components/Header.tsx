@@ -85,7 +85,7 @@ export default function Header({}: Props) {
           )}
 
           <Link href="/avatars">Avatars</Link>
-          <Link href="/account">Profile</Link>
+          <Link href="/profile">Profile</Link>
           <UserButton />
         </div>
       </SignedIn>

@@ -138,7 +138,8 @@ export async function generateDIDVideo(
 
     return {
       id: "",
-      error: "An error occurred while generating the video. Please try again.",
+      error:
+        "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again.",
     };
   }
 }
