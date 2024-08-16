@@ -69,7 +69,6 @@ export default function AvatarCard({ id }: AvatarCardProps) {
       { merge: true }
     );
     setIsDirty(false);
-    alert("Details saved successfully!");
   };
 
   const selectTalkingPhoto = async () => {
@@ -172,26 +171,47 @@ export default function AvatarCard({ id }: AvatarCardProps) {
         className="hidden" // Hide the file input
       />
       <div className="mt-2">
+        <label
+          className="text-xs px-1 text-gray-600"
+          htmlFor="talkingPhotoName"
+        >
+          Avatar Name
+        </label>
         <input
+          id="talkingPhotoName"
           type="text"
           value={talkingPhotoName}
           onChange={handleInputChange(setTalkingPhotoName)}
-          placeholder="Talking Photo Name"
+          placeholder="Avatar Name"
           className="border rounded p-1 w-full"
         />
+        <label
+          className="text-xs px-1 text-gray-600 mt-2 block"
+          htmlFor="project"
+        >
+          Project
+        </label>
         <input
+          id="project"
           type="text"
           value={project}
           onChange={handleInputChange(setProject)}
           placeholder="Project"
-          className="border rounded p-1 w-full mt-2"
+          className="border rounded p-1 w-full"
         />
+        <label
+          className="text-xs px-1 text-gray-600 mt-2 block"
+          htmlFor="voiceId"
+        >
+          Voice ID
+        </label>
         <input
+          id="voiceId"
           type="text"
           value={voiceId}
           onChange={handleInputChange(setVoiceId)}
           placeholder="Voice ID"
-          className="border rounded p-1 w-full mt-2"
+          className="border rounded p-1 w-full"
         />
         <div className="flex justify-between items-center mt-2">
           <div className="flex space-x-2">
