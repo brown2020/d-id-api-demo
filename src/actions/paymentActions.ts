@@ -1,11 +1,13 @@
 // paymentActions.ts
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 export async function createPaymentIntent(amount: number) {
+  auth().protect();
   const product = process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME;
 
   try {
@@ -26,6 +28,7 @@ export async function createPaymentIntent(amount: number) {
 }
 
 export async function validatePaymentIntent(paymentIntentId: string) {
+  auth().protect();
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 

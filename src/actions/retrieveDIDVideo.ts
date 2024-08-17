@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
+import { auth } from "@clerk/nextjs/server";
 
 interface RetrieveVideoResponse {
   status: "processing" | "completed" | "failed";
@@ -12,6 +13,7 @@ interface RetrieveVideoResponse {
 
 // Helper function to fetch the result of the talk
 async function fetchResult(talkId: string, apiKey: string) {
+  auth().protect();
   const response = await axios.get(`https://api.d-id.com/talks/${talkId}`, {
     headers: {
       Authorization: `Basic ${apiKey}`,

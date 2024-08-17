@@ -1,5 +1,6 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
 
 interface GenerateVideoResponse {
@@ -15,6 +16,8 @@ export async function generateDIDVideo(
   audioUrl?: string,
   elevenlabsApiKey?: string
 ): Promise<GenerateVideoResponse | null> {
+  auth().protect();
+
   console.log("Starting generateDIDVideo function with parameters:", {
     apiKey: apiKey ? "provided" : "not provided",
     imageUrl,
