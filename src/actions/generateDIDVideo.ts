@@ -120,23 +120,34 @@ export async function generateDIDVideo(
 
     console.log("Video generation successful. Video ID:", id);
     return { id };
-  } catch (error: any) {
-    console.error("Error during video generation:", error);
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error("Error during video generation:", error.message);
 
-    if (error.response) {
-      console.error("Error response from API:", {
-        status: error.response.status,
-        data: error.response.data,
-      });
+      if (error.response) {
+        console.error("Error response from API:", {
+          status: error.response.status,
+          data: error.response.data,
+        });
+
+        if (error.response.status === 429) {
+          return {
+            id: "",
+            error: "Rate limit exceeded. Please try again later.",
+          };
+        }
+      } else if (error.request) {
+        console.error(
+          "No response received from API. Error request data:",
+          error.request
+        );
+      } else {
+        console.error("Unexpected error during API call:", error.message);
+      }
+    } else if (error instanceof Error) {
+      console.error("Unexpected error occurred:", error.message);
     } else {
-      console.error("No response received from API. Error:", error.message);
-    }
-
-    if (error.response?.status === 429) {
-      return {
-        id: "",
-        error: "Rate limit exceeded. Please try again later.",
-      };
+      console.error("An unknown error occurred.");
     }
 
     return {
