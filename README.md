@@ -32,7 +32,7 @@ Ensure you have the following tools installed:
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/your-username/d-id-api-demo.git
+   git clone https://github.com/brown2020/d-id-api-demo.git
    cd d-id-api-demo
    ```
 
