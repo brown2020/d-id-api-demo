@@ -26,6 +26,7 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         const secret = await createPaymentIntent(convertToSubcurrency(amount));
         if (secret) setClientSecret(secret);
       } catch (error) {
+        console.error("Payment initialization error:", error); // Log the error
         setErrorMessage("Failed to initialize payment. Please try again.");
       }
     }
@@ -51,7 +52,7 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         return;
       }
 
-      const { error } = await stripe.confirmPayment({
+      const { error: confirmError } = await stripe.confirmPayment({
         elements,
         clientSecret,
         confirmParams: {
@@ -59,12 +60,12 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         },
       });
 
-      if (error) {
+      if (confirmError) {
         // This point is only reached if there's an immediate error when
         // confirming the payment. Show the error to the user
         // For example, the card was declined
-        setErrorMessage(error.message || "Payment failed");
-        console.log("Payment failed:", error.message);
+        setErrorMessage(confirmError.message || "Payment failed");
+        console.log("Payment failed:", confirmError.message);
       } else {
         console.log("Payment successful!!!!!!!!!");
         // The payment UI automatically closes with a success animation
