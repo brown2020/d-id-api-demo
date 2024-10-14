@@ -36,6 +36,11 @@ export async function retrieveDIDVideo(
   try {
     let resultData;
     while (true) {
+
+      if(!apiKey && process.env.D_ID_API_KEY !== undefined) {
+        apiKey = process.env.D_ID_API_KEY
+      }
+
       resultData = await fetchResult(talkId, apiKey);
 
       if (resultData.status === "done") {

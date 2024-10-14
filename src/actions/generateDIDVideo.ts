@@ -18,6 +18,8 @@ export async function generateDIDVideo(
 ): Promise<GenerateVideoResponse | null> {
   auth().protect();
 
+ 
+
   console.log("Starting generateDIDVideo function with parameters:", {
     apiKey: apiKey ? "provided" : "not provided",
     imageUrl,
@@ -26,6 +28,13 @@ export async function generateDIDVideo(
     audioUrl,
     elevenlabsApiKey: elevenlabsApiKey ? "provided" : "not provided",
   });
+
+  if(!apiKey && process.env.D_ID_API_KEY !== undefined) {
+    apiKey = process.env.D_ID_API_KEY
+  }
+  if(!elevenlabsApiKey && process.env.ELEVENLABS_API_KEY !== undefined) {
+    elevenlabsApiKey = process.env.ELEVENLABS_API_KEY
+  }
 
   try {
     let scriptSettings;

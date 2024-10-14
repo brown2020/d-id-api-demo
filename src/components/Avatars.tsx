@@ -9,31 +9,63 @@ import {
   setDoc,
   doc,
   getDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { DIDTalkingPhoto } from "@/types/did";
+import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
+import { useAuthStore } from "@/zustand/useAuthStore";
 
 export default function Avatars() {
-  const [talkingPhotos, setTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
+  const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
+  const [templateTalkingPhotos, setTemplateTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
+  const [showModel, setShowModel] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const uid = useAuthStore((state) => state.uid);
 
   useEffect(() => {
-    const talkingPhotosCollection = collection(db, "didTalkingPhotos");
+    const personalTalkingPhotosCollection = query(
+      collection(db, "didTalkingPhotos"),
+      where('type', '==', AVATAR_TYPE_PERSONAL),
+      where('owner', '==', uid)
+    );
     const unsubscribeTalkingPhotos = onSnapshot(
-      talkingPhotosCollection,
+      personalTalkingPhotosCollection,
       (snapshot) => {
+        console.log("snapshot.docs", snapshot.docs);
+
         const talkingPhotosList = snapshot.docs.map(
           (doc) => doc.data() as DIDTalkingPhoto
         );
-        setTalkingPhotos(talkingPhotosList);
+        setPersonalTalkingPhotos(talkingPhotosList);
+      }
+    );
+
+    const templateTalkingPhotosCollection = query(
+      collection(db, "didTalkingPhotos"),
+      where('type', '==', AVATAR_TYPE_TEMPLATE)
+    );
+    const unsubscribeTemplateTalkingPhotos = onSnapshot(
+      templateTalkingPhotosCollection,
+      (snapshot) => {
+        console.log("snapshot.docs", snapshot.docs);
+
+        const talkingPhotosList = snapshot.docs.map(
+          (doc) => doc.data() as DIDTalkingPhoto
+        );
+        setTemplateTalkingPhotos(talkingPhotosList);
       }
     );
 
     return () => {
       unsubscribeTalkingPhotos();
+      unsubscribeTemplateTalkingPhotos()
     };
-  }, []);
+  }, [uid]);
 
   const createNewTalkingPhoto = async () => {
+    setShowModel(true);
+    return;
     // Generate a unique ID for the new talking photo
     const newPhotoId = `new-${Date.now()}`;
 
@@ -59,13 +91,13 @@ export default function Avatars() {
   };
 
   const filteredTalkingPhotos = showFavorites
-    ? talkingPhotos.filter((p) => p.favorite)
-    : talkingPhotos;
+    ? personalTalkingPhotos.filter((p) => p.favorite)
+    : personalTalkingPhotos;
 
   return (
-    <div>
-      <div className="sticky top-0 bg-white z-10 shadow-md">
-        <div className="flex justify-between items-center p-4">
+    <div className="relative">
+      <div className="sticky h-0 top-0 bg-transparent z-10 right-0 float-end">
+        <div className="flex justify-between items-center">
           <div className="flex gap-2">
             <button
               onClick={() => setShowFavorites(!showFavorites)}
@@ -82,12 +114,64 @@ export default function Avatars() {
           </div>
         </div>
       </div>
+      <div className="p-4 flex flex-col gap-4 w-full">
+        <div>
+          <h3 className="mb-3 text-lg font-semibold text-gray-600">My Avatars</h3>
+          <ul className="grid min-[450px]:grid-cols-2 grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {filteredTalkingPhotos.map((photo, index) => (
+              <AvatarCard key={index} id={photo.talking_photo_id} />
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="mb-3 text-lg font-semibold text-gray-600">Demo Avatars</h3>
+          <ul className="grid min-[450px]:grid-cols-2 grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {templateTalkingPhotos.map((photo, index) => (
+              <AvatarCard key={index} id={photo.talking_photo_id} />
+            ))}
+          </ul>
+        </div>
+      </div>
+      {/* https://quickss.in/s/NNBRuP96 */}
+      {/* https://prnt.sc/wKn-9mIOxyg8 */}
+      {/* https://prnt.sc/x6qWNQW3wlUr */}
+      <div className={`relative z-10 ${showModel ? "" : 'hidden'}`} >
 
-      <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        {filteredTalkingPhotos.map((photo, index) => (
-          <AvatarCard key={index} id={photo.talking_photo_id} />
-        ))}
-      </ul>
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" ></div>
+
+        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+
+            <div className="relative transform px-4 pb-4 pt-5 sm:p-6 sm:pb-4 overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
+              <div className="grid grid-cols-3">
+                <div className="">
+                  <div className="h-full w-full bg-gray-300 rounded-md">
+
+                  </div>
+                </div>
+                <div className="col-span-2">
+
+                  <div className="bg-white">
+                    <div className="sm:flex sm:items-start">
+
+                      <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                        <h3 className="text-xl font-semibold leading-6 text-gray-900" id="modal-title">Create Avatar</h3>
+                        {/* <div className="mt-2">
+                          <p className="text-sm text-gray-500">Are you sure you want to deactivate your account? All of your data will be permanently removed. This action cannot be undone.</p>
+                        </div> */}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button type="button" className="inline-flex w-full justify-center rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 sm:ml-3 sm:w-auto">Add</button>
+                    <button onClick={() => { setShowModel(false) }} type="button" className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

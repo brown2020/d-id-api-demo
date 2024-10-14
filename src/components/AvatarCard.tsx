@@ -135,10 +135,39 @@ export default function AvatarCard({ id }: AvatarCardProps) {
   };
 
   return (
+    <article className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
+      {/* <img src={previewImageUrl} alt={talkingPhotoName} className="absolute inset-0 h-full w-full object-contain" /> */}
+      {/* <img src={previewImageUrl} alt={talkingPhotoName} className="absolute inset-0 h-full w-full object-cover" /> */}
+      {/* <div className="p-4 bg-black">
+        <HeartIcon
+          className="cursor-pointer absolute top-4 right-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite();
+          }}
+          strokeWidth={favorite ? 0 : 1}
+          fill={favorite ? "red" : "none"}
+          color={favorite ? "red" : "currentColor"}
+          size={24}
+        />
+      </div> */}
+      <Image
+        src={previewImageUrl}
+        alt={talkingPhotoName}
+        width={512}
+        height={512}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>
+      <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{talkingPhotoName}</h3>
+      {/* <div className="z-10 gap-y-1 overflow-hidden text-sm leading-6 text-gray-300">City of love</div> */}
+    </article>
+  )
+
+  return (
     <div
-      className={`relative border p-4 rounded-md shadow cursor-pointer ${
-        isSelected ? "border-blue-500" : "border-gray-300"
-      }`}
+      className={`relative border p-4 rounded-md shadow cursor-pointer ${isSelected ? "border-blue-500" : "border-gray-300"
+        }`}
     >
       <div className="flex justify-between items-center">
         <h3 className="font-bold mb-2">
@@ -228,9 +257,8 @@ export default function AvatarCard({ id }: AvatarCardProps) {
                 e.stopPropagation();
                 saveDetails();
               }}
-              className={`bg-blue-500 text-white px-3 py-2 rounded-md ${
-                isDirty ? "hover:opacity-50" : "opacity-50 cursor-not-allowed"
-              }`}
+              className={`bg-blue-500 text-white px-3 py-2 rounded-md ${isDirty ? "hover:opacity-50" : "opacity-50 cursor-not-allowed"
+                }`}
               disabled={!isDirty}
             >
               Save
@@ -241,9 +269,8 @@ export default function AvatarCard({ id }: AvatarCardProps) {
                   e.stopPropagation();
                   selectTalkingPhoto();
                 }}
-                className={`bg-green-500 text-white px-3 py-2 rounded-md ${
-                  isSelected ? "hover:opacity-50" : ""
-                }`}
+                className={`bg-green-500 text-white px-3 py-2 rounded-md ${isSelected ? "hover:opacity-50" : ""
+                  }`}
               >
                 {isSelected ? "Go to Generate" : "Select"}
               </button>

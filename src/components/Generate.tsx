@@ -14,6 +14,7 @@ import TextareaAutosize from "react-textarea-autosize";
 
 interface ItemDetails {
   voiceId?: string;
+  preview_image_url?: string;
   // Add other properties if there are more fields in the document
 }
 
@@ -71,7 +72,8 @@ export default function Generate() {
       return;
     }
 
-    const imageUrl = `${window.location.origin}/api/imageproxy/${profile.selectedTalkingPhoto}.png`;
+    const imageUrl = itemDetails?.preview_image_url || "";
+    // const imageUrl = `${window.location.origin}/api/imageproxy/${profile.selectedTalkingPhoto}.png`;
 
     console.log("Starting video generation...");
     setIsGenerating(true);
