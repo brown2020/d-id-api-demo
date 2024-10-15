@@ -91,6 +91,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                 preview_image_url: '',
                 talking_photo_id: _avatarId
             })
+            setAvatarId(_avatarId)
         } else if (avatarDetail !== null) {
             reset({
                 voiceId: avatarDetail.voiceId,
@@ -200,6 +201,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         >
+                        {/* {previewImageUrl} */}
                             <Image
                                 src={previewImageUrl}
                                 alt="Avatar Image"
