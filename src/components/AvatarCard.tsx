@@ -1,24 +1,28 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { ref, deleteObject } from "firebase/storage";
 import { db, storage } from "@/firebase/firebaseClient";
-import { HeartIcon, Trash } from "lucide-react";
+import { HeartIcon, Pencil, Trash } from "lucide-react";
 import useProfileStore from "@/zustand/useProfileStore";
 import { DIDTalkingPhoto } from "@/types/did";
 import { uploadBytes, getDownloadURL } from "firebase/storage";
 import { resizeImage } from "@/utils/resizeImage";
+import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
 
 interface AvatarCardProps {
   id: string;
+  avatar: DIDTalkingPhoto;
+  edit?: () => void;
 }
 
-export default function AvatarCard({ id }: AvatarCardProps) {
+export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   const [favorite, setFavorite] = useState(false);
   const [talkingPhotoName, setTalkingPhotoName] = useState("");
   const [project, setProject] = useState("");
   const [voiceId, setVoiceId] = useState("");
+  const [type, setType] = useState("");
   const [previewImageUrl, setPreviewImageUrl] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -31,24 +35,6 @@ export default function AvatarCard({ id }: AvatarCardProps) {
   const pathname = usePathname();
   const isOnGeneratePage = pathname === "/generate";
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const docRef = doc(db, "didTalkingPhotos", id);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data() as DIDTalkingPhoto;
-        setFavorite(data.favorite || false);
-        setTalkingPhotoName(data.talking_photo_name || "");
-        setProject(data.project || "");
-        setVoiceId(data.voiceId || "");
-        setPreviewImageUrl(data.preview_image_url || "");
-      }
-    };
-
-    fetchData();
-  }, [id]);
-
   const toggleFavorite = async () => {
     const newFavoriteStatus = !favorite;
     setFavorite(newFavoriteStatus);
@@ -60,10 +46,10 @@ export default function AvatarCard({ id }: AvatarCardProps) {
 
   const handleInputChange =
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setter(e.target.value);
-      setIsDirty(true);
-    };
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setter(e.target.value);
+        setIsDirty(true);
+      };
 
   const saveDetails = async () => {
     const docRef = doc(db, "didTalkingPhotos", id);
@@ -152,14 +138,20 @@ export default function AvatarCard({ id }: AvatarCardProps) {
         />
       </div> */}
       <Image
-        src={previewImageUrl}
-        alt={talkingPhotoName}
+        src={avatar.preview_image_url}
+        alt={avatar.talking_photo_name}
         width={512}
         height={512}
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>
-      <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{talkingPhotoName}</h3>
+      <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{avatar.talking_photo_name}</h3>
+      {
+        avatar.type == AVATAR_TYPE_PERSONAL ?
+          <button onClick={() => { if(edit) edit() }} className="opacity-0 group-hover/avatar:opacity-100 transition duration-300 absolute top-3 right-3 bg-gray-300 text-gray-600 p-2 rounded-full border border-gray-400 shadow">
+            <Pencil size={20} />
+          </button> : <Fragment></Fragment>
+      }
       {/* <div className="z-10 gap-y-1 overflow-hidden text-sm leading-6 text-gray-300">City of love</div> */}
     </article>
   )
