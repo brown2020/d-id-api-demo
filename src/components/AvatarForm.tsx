@@ -13,6 +13,7 @@ import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import Select, { OptionProps } from 'react-select';
+import bt from '../assets/flag/bt.svg'
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
     create: boolean,
@@ -20,6 +21,8 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     avatarDetail: DIDTalkingPhoto | null
 }) {
     const { handleSubmit, control, formState, reset, watch, setValue, getValues } = useForm<AvatarValues>({ mode: 'all' });
+    const [dragging, setDragging] = useState(false);
+    const [loading, setLoading] = useState(false);
     const onSubmit = handleSubmit((data) => {
         setProcessing(true);
         try {
@@ -47,6 +50,37 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             accent: audio.accent
         }
     })
+
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragging(true);
+    };
+
+    const handleDragLeave = () => {
+        setDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragging(false);
+
+        const file = e.dataTransfer.files[0];
+        setLoading(true);
+        setProcessing(true);
+        const id = avatarId;
+        
+        // Resize the image before uploading
+        const resizedImage = await resizeImage(file);
+        const filePath = `images/${uid}/${id}/${file.name}`;
+        const storageRef = ref(storage, filePath);
+        
+        await uploadBytes(storageRef, resizedImage);
+        const url = await getFileUrl(filePath)
+        setValue('preview_image_url', url);
+        setLoading(false);
+        setProcessing(false);
+    };
 
     useEffect(() => {
         if (create) {
@@ -128,17 +162,44 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
 
     const CustomOption = ({ innerProps, isDisabled, label, data }: OptionProps) =>
         !isDisabled ? (
-            <div {...innerProps} className="p-2">
-                {label}
+            <div className="p-2">
+                <div {...innerProps} className=" p-2 border rounded-md">
+                   <span className="flex items-center"> 
+                   {data.gender === 'male' ? (
+                        <div className="opacity-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M12 2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m-1.5 5h3a2 2 0 0 1 2 2v5.5H14V22h-4v-7.5H8.5V9a2 2 0 0 1 2-2"/>
+                            </svg>
+                        </div>
+                    ) : data.gender === 'female' ? (
+                        <div className="opacity-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M12 2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m-1.5 20v-6h-3l2.59-7.59C10.34 7.59 11.1 7 12 7s1.66.59 1.91 1.41L16.5 16h-3v6z"/>
+                            </svg>
+                        </div>
+                    ) : null}
+                        {label} + {data.gender}
+                   </span>
+                   <div className="flex items-center gap-1">
+                    <div>
+                        <img src={bt.src} width={20} height={20} alt="Flag" />
+                    </div>
+                    <span className="">English ( india )</span>
+                   </div>
+                </div>
             </div>
         ) : null;
 
     return <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div className="relative transform px-4 pb-4 pt-5 sm:p-4 sm:pb-4 rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
             <div className="grid grid-cols-3">
-                <div className="">
+                <div className="relative">
                     <div className="relative h-full w-full bg-white rounded-md border border-dashed border-gray-400">
-                        <div className={`${!previewImageUrl && 'hidden'}`}>
+                        <div className={`${!previewImageUrl && 'hidden'}`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        >
                             <Image
                                 src={previewImageUrl}
                                 alt="Avatar Image"
@@ -150,7 +211,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                 <ImageIcon size={20} />
                             </button>
                         </div>
-                        <label className={`flex text-center p-2 h-full ${previewImageUrl && 'hidden'}`} for="avatar_image">
+                        <label onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`flex text-center p-2 h-full ${previewImageUrl && 'hidden'}`} for="avatar_image">
                             <input ref={fileInputRef} onChange={handleImageUpload} type="file" id="avatar_image" name="avatar_image" className="hidden" />
                             <div className="self-center">
                                 <ImageIcon size={45} className="text-gray-500 m-auto" />
@@ -158,6 +219,16 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                             </div>
                         </label>
                     </div>
+                    { loading &&
+                        <div className="backdrop-blur-sm absolute border top-0 h-full w-full rounded-md border-dashed border-gray-400 z-20 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full animate-spin
+                    border-2 border-white border-dashed border-t-transparent"></div>
+                    </div>
+                    }
+                    { dragging &&
+                        <div className="bg-black opacity-40 absolute border top-0 h-full w-full rounded-md border-dashed border-gray-400 z-20 flex items-center justify-center">
+                    </div>
+                    }
                 </div>
                 <div className="col-span-2">
                     <form onSubmit={onSubmit}>
@@ -194,7 +265,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                             name="voiceId"
                                             render={({ field }) => (
                                                 <Select value={voiceValue} onChange={e => { setValue('voiceId', e?.value); field.onBlur(); }} options={options}
-                                                // components={{ Option: CustomOption }}
+                                                components={{ Option: CustomOption }}
                                                 />
                                             )}
                                         />
