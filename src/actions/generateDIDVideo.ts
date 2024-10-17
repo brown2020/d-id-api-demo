@@ -1,5 +1,6 @@
 "use server";
 
+import { Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
 
@@ -14,11 +15,13 @@ export async function generateDIDVideo(
   inputText?: string,
   voiceId?: string,
   audioUrl?: string,
-  elevenlabsApiKey?: string
+  elevenlabsApiKey?: string,
+  emotion: Emotion = "natural",
+  movement: Movement = "natural"
 ): Promise<GenerateVideoResponse | null> {
   auth().protect();
 
- 
+
 
   console.log("Starting generateDIDVideo function with parameters:", {
     apiKey: apiKey ? "provided" : "not provided",
@@ -29,10 +32,10 @@ export async function generateDIDVideo(
     elevenlabsApiKey: elevenlabsApiKey ? "provided" : "not provided",
   });
 
-  if(!apiKey && process.env.D_ID_API_KEY !== undefined) {
+  if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
     apiKey = process.env.D_ID_API_KEY
   }
-  if(!elevenlabsApiKey && process.env.ELEVENLABS_API_KEY !== undefined) {
+  if (!elevenlabsApiKey && process.env.ELEVENLABS_API_KEY !== undefined) {
     elevenlabsApiKey = process.env.ELEVENLABS_API_KEY
   }
 
@@ -84,6 +87,15 @@ export async function generateDIDVideo(
         source_url: imageUrl,
         config: {
           stitch: true,
+          "driver_expressions": {
+            "expressions": [
+              {
+                "expression": emotion,
+                "start_frame": 0,
+                "intensity": movement == 'lively' ? 1 : 0.5
+              },
+            ]
+          }
         },
       },
     };

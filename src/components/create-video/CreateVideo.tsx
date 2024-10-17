@@ -13,12 +13,14 @@ import { getAudioDetails } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import CustomOption from "../CustomOption";
+import { generateVideo } from "@/actions/generateVideo";
 
 export default function CreateVideo() {
     const uid = useAuthStore((state) => state.uid);
 
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
+    const [processing, setProcessing] = useState(false);
 
     const selectAvatarForm = useForm<{
         talking_photo_id: string;
@@ -123,8 +125,22 @@ export default function CreateVideo() {
         return selectedAvatar && selectedAvatar.voiceId ? getAudioDetails(selectedAvatar.voiceId) : null
     }, [selectedAvatar])
 
-    console.log("audioDetails", audioDetails);
-
+    
+    const onSubmit = writeScriptForm.handleSubmit( async (data) => {
+        if(selectedAvatar){
+            setProcessing(true);
+            try {
+                // const response = await generateVideo(
+                //     null, selectedAvatar.
+                // )
+            } catch (error) {
+                /**
+                 * TODO: Handle error
+                 */
+                setProcessing(false);
+            }
+        }
+    });
 
     return <div className="px-4 max-h-full h-full flex flex-col">
         <ol className="flex items-center w-full gap-4">
@@ -174,7 +190,7 @@ export default function CreateVideo() {
                             </div>
                             <div className="grow px-4 flex flex-col">
                                 <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
-                                {/* <p className="text-2xl font-bold">{selectedAvatar.voiceId}</p> */}
+                                <p className="text-2xl font-bold">{selectedAvatar.voiceId}</p>
                                 <div className="flex flex-col gap-4 mt-5 px-4 grow">
                                     <div>
                                         <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Audio</label>
