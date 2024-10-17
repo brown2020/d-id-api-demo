@@ -181,7 +181,7 @@ export default function CreateVideo() {
                                         {
                                             audioDetails ?
                                                 <div className="flex w-full gap-4 items-center"> 
-                                                    <CustomOption label={audioDetails.name} data={audioDetails} />
+                                                    <CustomOption data={audioDetails} />
                                                     <div>
                                                         <audio controls key={audioDetails.voice_id}>
                                                             <source src={audioDetails.preview_url} type="audio/mpeg" />
