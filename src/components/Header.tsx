@@ -83,7 +83,7 @@ export default function Header() {
             <Link href="/generate">Generate</Link>
           )}
 
-          <Link href="/videos">Videos</Link>
+          <Link href="/videos/create">Create Videos</Link>
           <Link href="/avatars">Avatars</Link>
           <Link href="/profile">Profile</Link>
           <UserButton />

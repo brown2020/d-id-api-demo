@@ -10,13 +10,14 @@ export interface DIDTalkingPhoto {
 }
 
 export type Emotion = 'natural' | 'happy' | 'surprised' | 'serious';
+export type Movement = 'natural' | 'lively';
 
 export interface CreateVideoForm {
   talking_photo_id: string;
   script: string;
   voice_id: string;
   emotion: Emotion;
-  lively: boolean;
+  movement: Movement;
 }
 
 export type AvatarValues = {
