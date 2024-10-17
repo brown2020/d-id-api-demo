@@ -13,7 +13,7 @@ import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import Select, { OptionProps } from 'react-select';
-import AudioOption from "./AudioOption";
+import CustomOption from "./CustomOption";
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
     create: boolean,
@@ -64,22 +64,27 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setDragging(false);
-
+    
         const file = e.dataTransfer.files[0];
         setLoading(true);
         setProcessing(true);
         const id = avatarId;
-        
-        // Resize the image before uploading
-        const resizedImage = await resizeImage(file);
-        const filePath = `images/${uid}/${id}/${file.name}`;
-        const storageRef = ref(storage, filePath);
-        
-        await uploadBytes(storageRef, resizedImage);
-        const url = await getFileUrl(filePath)
-        setValue('preview_image_url', url);
-        setLoading(false);
-        setProcessing(false);
+    
+        try {
+            // Resize the image before uploading
+            const resizedImage = await resizeImage(file);
+            const filePath = `images/${uid}/${id}/${file.name}`;
+            const storageRef = ref(storage, filePath);
+    
+            await uploadBytes(storageRef, resizedImage);
+            const url = await getFileUrl(filePath);
+            setValue('preview_image_url', url);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+        } finally {
+            setLoading(false);
+            setProcessing(false);
+        }
     };
 
     useEffect(() => {
@@ -161,10 +166,10 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     }
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     
-    const CustomOption = ({ innerProps, isDisabled, label, data }: OptionProps<AudioDetails>) =>
-        !isDisabled ? (
-            <AudioOption data={data} label={label} innerProps={innerProps} />
-        ) : null;
+    // const CustomOption = ({ innerProps, isDisabled, label, data }: OptionProps<AudioDetails>) =>
+    //     !isDisabled ? (
+    //         <AudioOption data={data} label={label} innerProps={innerProps} />
+    //     ) : null;
 
     return <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div className="relative transform px-4 pb-4 pt-5 sm:p-4 sm:pb-4 rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl">

@@ -1,31 +1,19 @@
+import { AudioDetails } from '@/types/did';
+import { FlagIcon } from '@/utils/FlagIcon';
+import { Languages } from '@/utils/Languages';
 import React from 'react';
-import { FlagIcon } from '../utils/FlagIcon';
-import { Languages } from '../utils/Languages';
+import { OptionProps } from 'react-select';
 
-// Define the props interface
-interface AudioOptionProps {
-    data: {
-        gender: 'male' | 'female' | string;
-        accent: string;
-        language: string;
-    };
-    label: string;
-    innerProps?: React.HTMLProps<HTMLDivElement>;
-}
+const flagIcon = (accent: string) => {
+    return FlagIcon.find(f => f.accent === accent);
+};
 
-const AudioOption: React.FC<AudioOptionProps> = ({ data, label, innerProps }) => {
-    
-    const flagIcon = (accent : string) => {
-        return FlagIcon.find(f => f.accent === accent);
-    }
+const language = (code: string) => {
+    return Languages.find(lang => lang.code === code) || { name: 'Unknown Language' };
+};
 
-    const language = (code: string) => {
-        return Languages.find(lang => lang.code === code) || { name: 'Unknown Language' };
-    };
-
-    console.log("data", data)
-
-    return (
+const CustomOption = ({ innerProps, isDisabled, label, data }: OptionProps<AudioDetails>) => 
+    !isDisabled ? (  
         <div className="p-2">
             <div {...innerProps} className="p-2 border rounded-md">
                 <span className="flex items-center">
@@ -45,16 +33,17 @@ const AudioOption: React.FC<AudioOptionProps> = ({ data, label, innerProps }) =>
                     {label}
                 </span>
                 <div className="flex items-center gap-1">
-                    <div>
-                        <img src={flagIcon(data.accent)?.icon.src} width={20} height={20} alt="Flag" />
-                    </div>
+                    { flagIcon(data.accent)?.icon.src &&
+                        <div>
+                            <img src={flagIcon(data.accent)?.icon.src} width={20} height={20} alt="Flag" />
+                        </div>
+                    }
                     <span className="">
                         {language(data.language).name} ( {data.accent} )
                     </span>
                 </div>
             </div>
         </div>
-    );
-};
+    ) : null;
 
-export default AudioOption;
+export default CustomOption;
