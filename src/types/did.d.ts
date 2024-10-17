@@ -9,6 +9,16 @@ export interface DIDTalkingPhoto {
   owner?: string;
 }
 
+export type Emotion = 'natural' | 'happy' | 'surprised' | 'serious';
+
+export interface CreateVideoForm {
+  talking_photo_id: string;
+  script: string;
+  voice_id: string;
+  emotion: Emotion;
+  lively: boolean;
+}
+
 export type AvatarValues = {
   voiceId: string;
   name: string;

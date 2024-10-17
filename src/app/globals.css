@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.create-video-step{
+    @apply border border-transparent transition-all duration-300 hover:border-gray-300 rounded-lg cursor-pointer;
+}
+.create-video-step.active{
+    @apply bg-gray-50;
+}

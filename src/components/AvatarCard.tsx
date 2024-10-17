@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useRef, Fragment } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
