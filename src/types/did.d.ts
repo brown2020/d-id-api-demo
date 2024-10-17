@@ -30,6 +30,7 @@ export type AvatarValues = {
 export type AudioDetails = {
   voice_id: string;
   label: string;
+  name: string;
   accent: string;
   gender: string;
   age: string;

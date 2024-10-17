@@ -45,6 +45,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
         return {
             value: audio.voice_id,
             label: audio.name,
+            name: audio.name,
             gender: audio.gender,
             language: audio.language,
             accent: audio.accent

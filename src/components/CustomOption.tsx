@@ -37,7 +37,7 @@ const CustomOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
                             </svg>
                         </div>
                     ) : null}
-                    {data.label}
+                    {data.name}
                 </span>
                 <div className="flex items-center gap-1">
                     { flagIcon(data.accent)?.icon.src && <div>
