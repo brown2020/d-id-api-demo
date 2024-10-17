@@ -12,6 +12,7 @@ import Image from "next/image";
 import { getAudioDetails } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
+import CustomOption from "../CustomOption";
 
 export default function CreateVideo() {
     const uid = useAuthStore((state) => state.uid);
@@ -122,6 +123,8 @@ export default function CreateVideo() {
         return selectedAvatar && selectedAvatar.voiceId ? getAudioDetails(selectedAvatar.voiceId) : null
     }, [selectedAvatar])
 
+    console.log("audioDetails", audioDetails);
+
 
     return <div className="px-4 max-h-full h-full flex flex-col">
         <ol className="flex items-center w-full gap-4">
@@ -177,10 +180,16 @@ export default function CreateVideo() {
                                         <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Audio</label>
                                         {
                                             audioDetails ?
-                                                <audio controls key={audioDetails.voice_id} className="mt-2">
-                                                    <source src={audioDetails.preview_url} type="audio/mpeg" />
-                                                    Your browser does not support the audio element.
-                                                </audio> : <Fragment />
+                                                <div className="flex w-full gap-4 items-center"> 
+                                                    <CustomOption label={audioDetails.name} data={audioDetails} />
+                                                    <div>
+                                                        <audio controls key={audioDetails.voice_id}>
+                                                            <source src={audioDetails.preview_url} type="audio/mpeg" />
+                                                            Your browser does not support the audio element.
+                                                        </audio>
+                                                    </div>
+                                                </div>
+                                                 : <Fragment />
                                         }
                                     </div>
                                     <Controller

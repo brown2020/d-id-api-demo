@@ -36,4 +36,23 @@ export type AudioDetails = {
   descriptive: string;
   language: string;
   preview_url: string;
+  public_owner_id?: string,
+  description?: string,
+  category?: string,
+  use_case?: string,
+  date_unix?: number,
+  usage_character_count_1y?: number,
+  usage_character_count_7d?: number,
+  play_api_usage_character_count_1y?: number,
+  cloned_by_count?: number,
+  rate?: number,
+  free_users_allowed?: boolean,
+  notice_period?: boolean,
+  live_moderation_enabled?: boolean,
+  featured?: boolean,
+  instagram_username?: string | null,
+  twitter_username?: string | null,
+  youtube_username?: string | null,
+  tiktok_username?: string | null,
+  image_url?: string
 }
