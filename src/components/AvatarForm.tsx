@@ -2,7 +2,7 @@
 import { getFileUrl } from "@/actions/getFileUrl";
 import { db, storage } from "@/firebase/firebaseClient";
 import { AUDIO_LIST, AVATAR_TYPE_PERSONAL, DEFAULT_AUDIO } from "@/libs/constants";
-import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
+import { AudioDetails, AvatarValues, DIDTalkingPhoto } from "@/types/did";
 import { resizeImage } from "@/utils/resizeImage";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { ErrorMessage } from "@hookform/error-message";
@@ -13,7 +13,7 @@ import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import Select, { OptionProps } from 'react-select';
-import bt from '../assets/flag/bt.svg'
+import AudioOption from "./AudioOption";
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
     create: boolean,
@@ -160,35 +160,10 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
         submit({ status: false, data: null });
     }
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-    const CustomOption = ({ innerProps, isDisabled, label, data }: OptionProps) =>
+    
+    const CustomOption = ({ innerProps, isDisabled, label, data }: OptionProps<AudioDetails>) =>
         !isDisabled ? (
-            <div className="p-2">
-                <div {...innerProps} className=" p-2 border rounded-md">
-                   <span className="flex items-center"> 
-                   {data.gender === 'male' ? (
-                        <div className="opacity-50">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
-                                <path fill="currentColor" d="M12 2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m-1.5 5h3a2 2 0 0 1 2 2v5.5H14V22h-4v-7.5H8.5V9a2 2 0 0 1 2-2"/>
-                            </svg>
-                        </div>
-                    ) : data.gender === 'female' ? (
-                        <div className="opacity-50">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
-                                <path fill="currentColor" d="M12 2a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2m-1.5 20v-6h-3l2.59-7.59C10.34 7.59 11.1 7 12 7s1.66.59 1.91 1.41L16.5 16h-3v6z"/>
-                            </svg>
-                        </div>
-                    ) : null}
-                        {label} + {data.gender}
-                   </span>
-                   <div className="flex items-center gap-1">
-                    <div>
-                        <img src={bt.src} width={20} height={20} alt="Flag" />
-                    </div>
-                    <span className="">English ( india )</span>
-                   </div>
-                </div>
-            </div>
+            <AudioOption data={data} label={label} innerProps={innerProps} />
         ) : null;
 
     return <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
@@ -213,7 +188,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                 <ImageIcon size={20} />
                             </button>
                         </div>
-                        <label onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`flex text-center p-2 h-full ${previewImageUrl && 'hidden'}`} for="avatar_image">
+                        <label onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`flex text-center p-2 h-full ${previewImageUrl && 'hidden'}`} htmlFor="avatar_image">
                             <input ref={fileInputRef} onChange={handleImageUpload} type="file" id="avatar_image" name="avatar_image" className="hidden" />
                             <div className="self-center">
                                 <ImageIcon size={45} className="text-gray-500 m-auto" />

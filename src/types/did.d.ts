@@ -15,3 +15,14 @@ export type AvatarValues = {
   preview_image_url: string;
   talking_photo_id: string;
 };
+
+export type AudioDetails = {
+  voice_id: string;
+  name: string;
+  accent: string;
+  gender: string;
+  age: string;
+  descriptive: string;
+  language: string;
+  preview_url: string;
+}
