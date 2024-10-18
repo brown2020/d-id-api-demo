@@ -6,14 +6,14 @@ import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { adminDb } from "@/firebase/firebaseAdmin";
 
-export async function generateVideo(apiKey: string,
+export async function generateVideo(apiKey: string | null,
     imageUrl: string,
     inputText?: string,
     voiceId?: string,
     audioUrl?: string,
     elevenlabsApiKey?: string,
-    emotion: Emotion = "natural",
-    movement: Movement = "natural"
+    emotion: Emotion = "neutral",
+    movement: Movement = "neutral"
 ) {
     auth().protect();
     const { userId } = auth();

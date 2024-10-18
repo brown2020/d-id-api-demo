@@ -10,14 +10,14 @@ interface GenerateVideoResponse {
 }
 
 export async function generateDIDVideo(
-  apiKey: string,
+  apiKey: string | null,
   imageUrl: string,
   inputText?: string,
   voiceId?: string,
   audioUrl?: string,
   elevenlabsApiKey?: string,
-  emotion: Emotion = "natural",
-  movement: Movement = "natural"
+  emotion: Emotion = "neutral",
+  movement: Movement = "neutral"
 ): Promise<GenerateVideoResponse | null> {
   auth().protect();
 

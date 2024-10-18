@@ -13,7 +13,7 @@ interface AudioOptionProps {
 const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
     
     const flagIcon = (accent : string) => {
-        return FlagIcon.find(f => f.accent === accent);
+        return FlagIcon.find(f => f.accent.toLowerCase() === accent.toLowerCase());
     }
 
     const language = (code: string) => {
@@ -24,7 +24,7 @@ const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
         <div className="p-2">
             <div {...innerProps} className="p-2 border rounded-md cursor-pointer">
                 <span className="flex items-center gap-2">
-                    {data.gender === 'male' ? (
+                    {data.labels.gender === 'male' ? (
                         <div className="opacity-50">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 14 14">
                                 <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -48,7 +48,7 @@ const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
                         <img src={flagIcon(data.accent)?.icon.src} width={20} height={20} alt="Flag" />
                     </div>}
                     <span className="text-neutral-600 text-sm">
-                        {language(data.language).name} ( {data.accent} )
+                        {language(data.voice_verification.language).name} ( {data.accent} )
                     </span>
                 </div>
             </div>

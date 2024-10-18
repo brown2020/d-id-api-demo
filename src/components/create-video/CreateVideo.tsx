@@ -14,6 +14,65 @@ import { Controller, useForm } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import CustomAudioOption from "../CustomAudioOption";
 import { generateVideo } from "@/actions/generateVideo";
+import * as Yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+
+const steps = [
+    {
+        icon: UserRound,
+        title: "Select Avatar",
+        code: 'select-avatar'
+    },
+    {
+        icon: Captions,
+        title: "Write Script",
+        code: 'write-script'
+    },
+]
+
+const movements: { code: Movement, label: string, icon: any }[] = [
+    {
+        code: 'neutral',
+        label: 'Neutral',
+        icon: Video
+    },
+    {
+        code: 'lively',
+        label: 'Lively',
+        icon: Video
+    }
+]
+const emotions: { code: Emotion, label: string, icon: any }[] = [
+    {
+        'code': "neutral",
+        'label': 'Neutral',
+        'icon': Meh
+    },
+    {
+        'code': 'happy',
+        'label': 'Happy',
+        'icon': Smile
+    },
+    {
+        'code': 'surprised',
+        'label': 'Surprised',
+        'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 17a2 2 0 1 1 0-4a2 2 0 0 1 0 4" /><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10" /><path fill="currentColor" d="M8.5 9a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
+    },
+    {
+        'code': 'serious',
+        'label': 'Serious',
+        'icon': SuprisedIcon,
+        // 'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 9H8m8 0h-2m4 6H6m-4-3c0 5.523 4.477 10 10 10s10-4.477 10-10S17.523 2 12 2S2 6.477 2 12" /></svg>
+    }
+]
+
+
+const schema = Yup.object().shape({
+    talking_photo_id: Yup.string().required("Required."),
+    voice_id: Yup.string().required("Required."),
+    emotion: Yup.string().required("Required.").oneOf(emotions.map((emotion) => emotion.code)),
+    movement: Yup.string().required("Required.").oneOf(movements.map((movement) => movement.code)),
+});
 
 export default function CreateVideo() {
     const uid = useAuthStore((state) => state.uid);
@@ -29,9 +88,10 @@ export default function CreateVideo() {
         movement: Movement;
     }>({
         mode: 'all',
+        resolver: yupResolver(schema),
         defaultValues: {
-            emotion: 'natural',
-            movement: 'natural'
+            emotion: 'neutral',
+            movement: 'neutral'
         },
     });
 
@@ -45,55 +105,6 @@ export default function CreateVideo() {
         selectAvatarForm.setValue('talking_photo_id', selectedAvatar ? selectedAvatar.talking_photo_id : '')
         selectAvatarForm.setValue('voice_id', selectedAvatar && selectedAvatar.voiceId ? selectedAvatar.voiceId : '')
     }, [selectedAvatar])
-
-    const steps = [
-        {
-            icon: UserRound,
-            title: "Select Avatar",
-            code: 'select-avatar'
-        },
-        {
-            icon: Captions,
-            title: "Write Script",
-            code: 'write-script'
-        },
-    ]
-
-    const movements: { code: Movement, label: string, icon: any }[] = [
-        {
-            code: 'natural',
-            label: 'Natural',
-            icon: Video
-        },
-        {
-            code: 'lively',
-            label: 'Lively',
-            icon: Video
-        }
-    ]
-    const emotions: { code: Emotion, label: string, icon: any }[] = [
-        {
-            'code': "natural",
-            'label': 'Natural',
-            'icon': Meh
-        },
-        {
-            'code': 'happy',
-            'label': 'Happy',
-            'icon': Smile
-        },
-        {
-            'code': 'surprised',
-            'label': 'Surprised',
-            'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 17a2 2 0 1 1 0-4a2 2 0 0 1 0 4" /><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10" /><path fill="currentColor" d="M8.5 9a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
-        },
-        {
-            'code': 'serious',
-            'label': 'Serious',
-            'icon': SuprisedIcon,
-            // 'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 9H8m8 0h-2m4 6H6m-4-3c0 5.523 4.477 10 10 10s10-4.477 10-10S17.523 2 12 2S2 6.477 2 12" /></svg>
-        }
-    ]
 
     const [activeStep, setActiveStep] = useState('select-avatar')
 
@@ -121,19 +132,30 @@ export default function CreateVideo() {
         };
     }, [uid]);
 
+    useEffect(() => {
+        selectAvatarForm.handleSubmit(() => { })
+    }, [])
+
+    const errors = useMemo(() => {
+        return JSON.stringify(selectAvatarForm.formState.errors)
+    }, [selectAvatarForm.formState])
+
     const audioDetails = useMemo(() => {
         return selectedAvatar && selectedAvatar.voiceId ? getAudioDetails(selectedAvatar.voiceId) : null
     }, [selectedAvatar])
 
-    
-    const onSubmit = writeScriptForm.handleSubmit( async (data) => {
-        if(selectedAvatar){
+
+    const onSubmit = writeScriptForm.handleSubmit(async (data) => {
+        if (selectedAvatar) {
+
             setProcessing(true);
             try {
-                // const response = await generateVideo(
-                //     null, selectedAvatar.
-                // )
+                const response = await generateVideo(null, "https://d-id-api-demo.vercel.app/api/imageproxy/new-1727976394243.png", writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, undefined, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'))
+                console.log("response", response);
+                
             } catch (error) {
+                console.log("Error", errors);
+                
                 /**
                  * TODO: Handle error
                  */
@@ -157,7 +179,6 @@ export default function CreateVideo() {
         </ol>
 
         <div className="py-4 px-1 grow overflow-hidden">
-
             {activeStep == 'select-avatar' ? <div className="flex w-full max-h-full h-full gap-4 overflow-auto">
                 <div className={`${selectedAvatar ? 'w-1/4' : 'w-full'} flex flex-col h-full  max-h-full overflow-auto relative`}>
                     <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
@@ -196,7 +217,7 @@ export default function CreateVideo() {
                                         <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Audio</label>
                                         {
                                             audioDetails ?
-                                                <div className="flex w-full gap-4 items-center"> 
+                                                <div className="flex w-full gap-4 items-center">
                                                     <CustomAudioOption data={audioDetails} />
                                                     <div>
                                                         <audio controls key={audioDetails.voice_id}>
@@ -205,15 +226,12 @@ export default function CreateVideo() {
                                                         </audio>
                                                     </div>
                                                 </div>
-                                                 : <Fragment />
+                                                : <Fragment />
                                         }
                                     </div>
                                     <Controller
                                         control={selectAvatarForm.control}
                                         name="emotion"
-                                        rules={{
-                                            required: { message: 'Required.', value: true },
-                                        }}
                                         render={({ field }) => (
                                             <div>
                                                 <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Emotions</label>
@@ -271,24 +289,27 @@ export default function CreateVideo() {
 
             {
                 activeStep == 'write-script' ? <div className="grow bg-gray-50 rounded-lg px-4 pt-6 pb-4 h-full flex flex-col">
-                    <div><h3 className="text-2xl font-bold mb-2">Write Script</h3></div>
-                    <div className="grow">
-                        <Controller
-                            control={writeScriptForm.control}
-                            name="script"
-                            rules={{
-                                required: { message: 'Required.', value: true },
-                            }}
-                            render={({ field }) => (
-                                <textarea {...field} id="message" rows="10" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Write Script..."></textarea>
-                            )}
-                        />
-                    </div>
-                    <div>
-                        <button onClick={() => { setActiveStep('select-avatar') }} className="float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
-                            Generate Video
-                        </button>
-                    </div>
+                    <form onSubmit={onSubmit}>
+                        <div><h3 className="text-2xl font-bold mb-2">Write Script</h3></div>
+                        <div className="grow">
+                            <Controller
+                                control={writeScriptForm.control}
+                                name="script"
+                                rules={{
+                                    required: { message: 'Required.', value: true },
+                                }}
+                                render={({ field }) => (
+                                    <textarea {...field} id="message" rows="10" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Write Script..."></textarea>
+                                )}
+                            />
+                        </div>
+                        <div>
+                            <button type="submit" className="float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
+                                Generate Video
+                            </button>
+                        </div>
+
+                    </form>
                 </div> : <Fragment />
             }
 

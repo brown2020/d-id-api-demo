@@ -9,8 +9,8 @@ export interface DIDTalkingPhoto {
   owner?: string;
 }
 
-export type Emotion = 'natural' | 'happy' | 'surprised' | 'serious';
-export type Movement = 'natural' | 'lively';
+export type Emotion = 'neutral' | 'happy' | 'surprised' | 'serious';
+export type Movement = 'neutral' | 'lively';
 
 export interface CreateVideoForm {
   talking_photo_id: string;
@@ -37,4 +37,10 @@ export type AudioDetails = {
   descriptive: string;
   language: string;
   preview_url: string;
+  labels: {
+    gender: string
+  },
+  voice_verification: {
+    language: string;
+  }
 }
