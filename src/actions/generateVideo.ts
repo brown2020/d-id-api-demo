@@ -8,12 +8,13 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 
 export async function generateVideo(apiKey: string | null,
     imageUrl: string,
+    avatar_id: string,
     inputText?: string,
     voiceId?: string,
     audioUrl?: string,
     elevenlabsApiKey?: string,
     emotion: Emotion = "neutral",
-    movement: Movement = "neutral"
+    movement: Movement = "neutral",
 ) {
     auth().protect();
     const { userId } = auth();
@@ -29,20 +30,28 @@ export async function generateVideo(apiKey: string | null,
         movement
     )
 
-    if (response && !response.error) {
-        const id = `new-video-${Date.now()}`;
+    if (response) {
 
-        const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
-        await videoRef.set({
-            did_id: response.id,
-            video_url: ''
-        }, { merge: true });
-        return {
-            status: true,
-            id: id
+        if(!response.error){
+            const id = `new-video-${Date.now()}`;
+    
+            const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+            await videoRef.set({
+                id,
+                did_id: response.id,
+                avatar_id: avatar_id,
+                owner: userId,
+                type: 'personal',
+                video_url: '',
+            }, { merge: true });
+            return {
+                status: true,
+                id: id
+            }
         }
+        return { status: false, message: response.error || 'Error generating video' };
     }
 
-    return { status: false }
+    return { status: false, message: 'Error generating video' };
 
 }

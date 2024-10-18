@@ -1,13 +1,12 @@
 "use client";
 
 import { db } from "@/firebase/firebaseClient";
-import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
-import { CreateVideoForm, DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
+import { AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
+import { DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { and, collection, onSnapshot, or, orderBy, query, where } from "firebase/firestore";
+import { collection, onSnapshot, or, orderBy, query, where } from "firebase/firestore";
 import { Captions, Meh, Smile, UserRound, Video } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import AvatarCard from "../AvatarCard";
 import Image from "next/image";
 import { getAudioDetails } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
@@ -16,6 +15,8 @@ import CustomAudioOption from "../CustomAudioOption";
 import { generateVideo } from "@/actions/generateVideo";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const steps = [
     {
@@ -54,8 +55,8 @@ const emotions: { code: Emotion, label: string, icon: any }[] = [
         'icon': Smile
     },
     {
-        'code': 'surprised',
-        'label': 'Surprised',
+        'code': 'surprise',
+        'label': 'surprise',
         'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 17a2 2 0 1 1 0-4a2 2 0 0 1 0 4" /><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10" /><path fill="currentColor" d="M8.5 9a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
     },
     {
@@ -76,7 +77,7 @@ const schema = Yup.object().shape({
 
 export default function CreateVideo() {
     const uid = useAuthStore((state) => state.uid);
-
+    const router = useRouter();
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
     const [processing, setProcessing] = useState(false);
@@ -147,20 +148,38 @@ export default function CreateVideo() {
 
     const onSubmit = writeScriptForm.handleSubmit(async (data) => {
         if (selectedAvatar) {
-
-            setProcessing(true);
-            try {
-                const response = await generateVideo(null, "https://d-id-api-demo.vercel.app/api/imageproxy/new-1727976394243.png", writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, undefined, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'))
-                console.log("response", response);
-                
-            } catch (error) {
-                console.log("Error", errors);
-                
-                /**
-                 * TODO: Handle error
-                 */
-                setProcessing(false);
-            }
+            toast.promise(
+                new Promise(async (resolve, reject) => {
+                    setProcessing(true);
+                    try {
+                        console.log("process.env.IS_LOCAL", process.env.NEXT_PUBLIC_IS_LOCAL);
+                        
+                        const imageUrl = process.env.NEXT_PUBLIC_IS_LOCAL == "1" ? "https://d-id-api-demo.vercel.app/api/imageproxy/new-1727976394243.png" : `${window.location.origin}/api/imageproxy/${selectedAvatar.talking_photo_id}.png`;
+                        const response = await generateVideo(null, imageUrl, selectedAvatar.talking_photo_id, writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, undefined, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'))
+                        if (response.status) {
+                            resolve(true);
+                            setTimeout(() => {
+                                router.push(`/videos/${response.id}/show`);
+                                setProcessing(false);
+                            }, 2000);
+                        } else {
+                            reject(response.message);
+                            setProcessing(false);
+                        }
+                    } catch (error) {
+                        console.log("Error", errors);
+                        /**
+                         * TODO: Handle error
+                         */
+                        setProcessing(false);
+                    }
+                }),
+                {
+                    loading: 'Requesting to generate your video...',
+                    success: `Successfully requested, Processing your video.`,
+                    error: err => `Error : ${err}`,
+                }
+            );
         }
     });
 
@@ -168,12 +187,12 @@ export default function CreateVideo() {
         <ol className="flex items-center w-full gap-4">
             {
                 steps.map((step, index) => <li className="  flex-1 ">
-                    <a key={index} onClick={() => { setActiveStep(step.code) }} className={`flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
+                    <button disabled={processing} key={index} onClick={() => { setActiveStep(step.code) }} className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
                         <span className="w-8 h-8 bg-gray-600  rounded-full flex justify-center items-center mr-3 text-sm text-white lg:w-10 lg:h-10">
                             <step.icon />
                         </span>
                         <h4 className="text-base  text-gray-600">{step.title}</h4>
-                    </a>
+                    </button>
                 </li>)
             }
         </ol>
@@ -211,7 +230,7 @@ export default function CreateVideo() {
                             </div>
                             <div className="grow px-4 flex flex-col">
                                 <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
-                                <p className="text-2xl font-bold">{selectedAvatar.voiceId}</p>
+                                {/* <p className="text-2xl font-bold">{selectedAvatar.voiceId}</p> */}
                                 <div className="flex flex-col gap-4 mt-5 px-4 grow">
                                     <div>
                                         <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Audio</label>
@@ -304,8 +323,8 @@ export default function CreateVideo() {
                             />
                         </div>
                         <div>
-                            <button type="submit" className="float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
-                                Generate Video
+                            <button disabled={processing} type="submit" className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
+                                {processing ? 'Processing...' : 'Generate Video'}
                             </button>
                         </div>
 

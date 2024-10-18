@@ -4,99 +4,30 @@ import { Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
 
-interface GenerateVideoResponse {
+interface GetVideoResponse {
   id: string;
   error?: string;
 }
 
-export async function generateDIDVideo(
+export async function getDIDVideo(
   apiKey: string | null,
-  imageUrl: string,
-  inputText?: string,
-  voiceId?: string,
-  audioUrl?: string,
-  elevenlabsApiKey?: string,
-  emotion: Emotion = "neutral",
-  movement: Movement = "neutral"
-): Promise<GenerateVideoResponse | null> {
+  video_id: string,
+): Promise<GetVideoResponse | null> {
   auth().protect();
 
 
 
-  console.log("Starting generateDIDVideo function with parameters:", {
-    apiKey: apiKey ? "provided" : "not provided",
-    imageUrl,
-    inputText,
-    voiceId,
-    audioUrl,
-    elevenlabsApiKey: elevenlabsApiKey ? "provided" : "not provided",
-  });
-
   if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
     apiKey = process.env.D_ID_API_KEY
   }
-  if (!elevenlabsApiKey && process.env.ELEVENLABS_API_KEY !== undefined) {
-    elevenlabsApiKey = process.env.ELEVENLABS_API_KEY
-  }
 
   try {
-    let scriptSettings;
-
-    // Determine script settings based on available inputs
-    if (audioUrl) {
-      console.log("Audio URL provided. Using pre-recorded audio:", audioUrl);
-      scriptSettings = {
-        type: "audio",
-        url: audioUrl,
-      };
-    } else if (voiceId && inputText) {
-      console.log("Voice ID and script provided. Using text-to-speech:", {
-        voiceId,
-        inputText,
-      });
-      scriptSettings = {
-        type: "text",
-        input: inputText,
-        provider: {
-          type: "elevenlabs",
-          voice_id: voiceId,
-        },
-      };
-    } else {
-      console.log("No audio or script provided. Defaulting to silent video");
-      scriptSettings = {
-        type: "text",
-        input: "Hello, this is a silent example",
-      };
-    }
-
-    console.log("Script settings configured:", scriptSettings);
 
     const config = {
-      method: "post",
-      url: "https://api.d-id.com/talks",
+      method: "get",
+      url: `https://api.d-id.com/talks/${video_id}`,
       headers: {
-        "x-api-key-external": JSON.stringify({
-          elevenlabs: elevenlabsApiKey, // Use the passed in ElevenLabs API key
-        }),
-        "Content-Type": "application/json",
         Authorization: `Basic ${apiKey}`,
-      },
-      data: {
-        script: scriptSettings,
-        source_url: imageUrl,
-        config: {
-          stitch: true,
-          "driver_expressions": {
-            "expressions": [
-              {
-                "expression": emotion,
-                "start_frame": 0,
-                "intensity": movement == 'lively' ? 1 : 0.5
-              },
-            ]
-          }
-        },
       },
     };
 
