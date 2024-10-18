@@ -17,7 +17,7 @@ import { AUDIO_LIST, AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/c
 import { useAuthStore } from "@/zustand/useAuthStore";
 import Model from "./Model";
 import AvatarForm from "./AvatarForm";
-import Notification from "@/models/Notification";
+import toast from 'react-hot-toast';
 
 export default function Avatars() {
   const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
@@ -26,26 +26,33 @@ export default function Avatars() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
-
   const uid = useAuthStore((state) => state.uid);
-
-  const showNotification = (message: string, type: 'success' | 'info' | 'error') => {
-    setNotification({ message, type });
-    // Automatically hide the notification after it's shown
-    setTimeout(() => {
-        setNotification(null);
-    }, 5000);
+  
+  const showNotification = (message: string) => {
+    toast.success(message, {
+      style: {
+        border: '1px solid #4CAF50',
+        padding: '16px',
+        color: '#4CAF50', 
+        backgroundColor: '#f0fff4', 
+        borderRadius: '8px', 
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
+      },
+      iconTheme: {
+        primary: '#4CAF50', 
+        secondary: '#f0fff4', 
+      },
+      duration: 5000, 
+    });
   };
 
 
   const handleClose = (val: { status: boolean, data: AvatarValues | null }) => {
     if (val.status) {
       if (selectedAvatar == null) {
-        showNotification('Avatar Created Successfully', 'success');
-        // TODO: Avatar Created Successfully
+        showNotification('Avatar Created Successfully');
       } else {
-        showNotification('Avatar Updated Successfully', 'success');
-        // TODO: Avatar Updated Successfully
+        showNotification('Avatar Updated Successfully');
       }
     }
     setSelectedAvatar(null)
@@ -175,11 +182,6 @@ export default function Avatars() {
       <Model show={showModel}>
         {showModel ? <AvatarForm submit={handleClose} create={selectedAvatar == null} avatarDetail={selectedAvatar} /> : <Fragment />}
       </Model>
-      {notification && (
-        <div>
-          <Notification message={notification.message} type={notification.type} />
-        </div>
-      )}
     </div>
   );
 }
