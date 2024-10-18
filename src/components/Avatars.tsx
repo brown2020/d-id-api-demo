@@ -17,6 +17,7 @@ import { AUDIO_LIST, AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/c
 import { useAuthStore } from "@/zustand/useAuthStore";
 import Model from "./Model";
 import AvatarForm from "./AvatarForm";
+import Notification from "@/models/Notification";
 
 export default function Avatars() {
   const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
@@ -24,14 +25,26 @@ export default function Avatars() {
   const [showModel, setShowModel] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
 
   const uid = useAuthStore((state) => state.uid);
+
+  const showNotification = (message: string, type: 'success' | 'info' | 'error') => {
+    setNotification({ message, type });
+    // Automatically hide the notification after it's shown
+    setTimeout(() => {
+        setNotification(null);
+    }, 5000);
+  };
+
 
   const handleClose = (val: { status: boolean, data: AvatarValues | null }) => {
     if (val.status) {
       if (selectedAvatar == null) {
+        showNotification('Avatar Created Successfully', 'success');
         // TODO: Avatar Created Successfully
       } else {
+        showNotification('Avatar Updated Successfully', 'success');
         // TODO: Avatar Updated Successfully
       }
     }
@@ -162,6 +175,11 @@ export default function Avatars() {
       <Model show={showModel}>
         {showModel ? <AvatarForm submit={handleClose} create={selectedAvatar == null} avatarDetail={selectedAvatar} /> : <Fragment />}
       </Model>
+      {notification && (
+        <div>
+          <Notification message={notification.message} type={notification.type} />
+        </div>
+      )}
     </div>
   );
 }
