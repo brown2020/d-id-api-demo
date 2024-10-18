@@ -12,7 +12,7 @@ import Image from "next/image";
 import { getAudioDetails } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
-import CustomOption from "../CustomOption";
+import CustomAudioOption from "../CustomAudioOption";
 import { generateVideo } from "@/actions/generateVideo";
 
 export default function CreateVideo() {
@@ -197,7 +197,7 @@ export default function CreateVideo() {
                                         {
                                             audioDetails ?
                                                 <div className="flex w-full gap-4 items-center"> 
-                                                    <CustomOption data={audioDetails} />
+                                                    <CustomAudioOption data={audioDetails} />
                                                     <div>
                                                         <audio controls key={audioDetails.voice_id}>
                                                             <source src={audioDetails.preview_url} type="audio/mpeg" />

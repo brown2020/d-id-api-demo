@@ -13,7 +13,7 @@ import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import Select, { OptionProps } from 'react-select';
-import CustomOption from "./CustomOption";
+import CustomAudioOption from "./CustomAudioOption";
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
     create: boolean,
@@ -243,7 +243,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                             name="voiceId"
                                             render={({ field }) => (
                                                 <Select value={voiceValue} onChange={e => { setValue('voiceId', e?.value); field.onBlur(); }} options={options}
-                                                components={{ Option: CustomOption }}   
+                                                components={{ Option: CustomAudioOption }}   
                                                 />
                                             )}
                                         />
