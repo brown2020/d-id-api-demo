@@ -45,10 +45,13 @@ export type AudioDetails = {
   }
 }
 
+export type DIDVideoStatus = 'created' | 'done' | 'error' | 'started' | 'rejected';
+
 export type VideoDetail = {
   did_id: string;
   avatar_id?: string;
   type: "personal" | "template";
   video_url?: string;
   owner: string;
+  d_id_status: DIDVideoStatus;
 }

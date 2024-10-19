@@ -56,7 +56,7 @@ const emotions: { code: Emotion, label: string, icon: any }[] = [
     },
     {
         'code': 'surprise',
-        'label': 'surprise',
+        'label': 'Surprise',
         'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 17a2 2 0 1 1 0-4a2 2 0 0 1 0 4" /><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10" /><path fill="currentColor" d="M8.5 9a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
     },
     {
@@ -152,10 +152,14 @@ export default function CreateVideo() {
                 new Promise(async (resolve, reject) => {
                     setProcessing(true);
                     try {
-                        console.log("process.env.IS_LOCAL", process.env.NEXT_PUBLIC_IS_LOCAL);
-                        
                         const imageUrl = process.env.NEXT_PUBLIC_IS_LOCAL == "1" ? "https://d-id-api-demo.vercel.app/api/imageproxy/new-1727976394243.png" : `${window.location.origin}/api/imageproxy/${selectedAvatar.talking_photo_id}.png`;
-                        const response = await generateVideo(null, imageUrl, selectedAvatar.talking_photo_id, writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, undefined, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'))
+                        const response = await generateVideo(
+                            null, imageUrl,
+                            {
+                                'thumbnail_url': selectedAvatar.preview_image_url,
+                            },
+                            selectedAvatar.talking_photo_id, writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, undefined, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
+                        )
                         if (response.status) {
                             resolve(true);
                             setTimeout(() => {

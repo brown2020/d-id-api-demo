@@ -8,6 +8,7 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 
 export async function generateVideo(apiKey: string | null,
     imageUrl: string,
+    extraDetail: { thumbnail_url: string },
     avatar_id: string,
     inputText?: string,
     voiceId?: string,
@@ -32,17 +33,20 @@ export async function generateVideo(apiKey: string | null,
 
     if (response) {
 
-        if(!response.error){
+        if("id" in response) {
             const id = `new-video-${Date.now()}`;
     
             const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+
             await videoRef.set({
                 id,
                 did_id: response.id,
+                d_id_status: response.status, 
                 avatar_id: avatar_id,
                 owner: userId,
                 type: 'personal',
                 video_url: '',
+                thumbnail_url: extraDetail.thumbnail_url,
             }, { merge: true });
             return {
                 status: true,

@@ -82,8 +82,13 @@ export default function Header() {
           {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
             <Link href="/generate">Generate</Link>
           )}
-
-          <Link href="/videos/create">Create Videos</Link>
+          <div className="relative group inline-block">
+            <button className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-300 ease-in-out transform ">Create</button>
+            <div
+              className="opacity-0 z-20 invisible group-hover:opacity-100 group-hover:visible absolute w-48 mt-0 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-lg py-2 z-10">
+              <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
+            </div>
+          </div>
           <Link href="/avatars">Avatars</Link>
           <Link href="/profile">Profile</Link>
           <UserButton />

@@ -1,12 +1,15 @@
 "use server";
 
-import { Emotion, Movement } from "@/types/did";
+import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
 
-interface GenerateVideoResponse {
+interface GenerateVideoSuccessResponse {
   id: string;
-  error?: string;
+  status: DIDVideoStatus;
+}
+interface GenerateVideoFailResponse {
+  error: string;
 }
 
 export async function generateDIDVideo(
@@ -18,7 +21,7 @@ export async function generateDIDVideo(
   elevenlabsApiKey?: string,
   emotion: Emotion = "neutral",
   movement: Movement = "neutral"
-): Promise<GenerateVideoResponse | null> {
+): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse | null> {
   auth().protect();
 
 
@@ -131,6 +134,7 @@ export async function generateDIDVideo(
     }
 
     const id = response.data?.id;
+    const status = response.data?.status;
     if (!id) {
       console.error("No ID found in API response data:", response.data);
       return {
@@ -140,7 +144,7 @@ export async function generateDIDVideo(
     }
 
     console.log("Video generation successful. Video ID:", id);
-    return { id };
+    return { id, status };
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       console.error("Error during video generation:", error.message);
