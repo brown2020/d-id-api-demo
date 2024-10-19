@@ -40,6 +40,7 @@ export async function generateVideo(apiKey: string | null,
 
             await videoRef.set({
                 id,
+                title: "Untitled Video",
                 did_id: response.id,
                 d_id_status: response.status, 
                 avatar_id: avatar_id,

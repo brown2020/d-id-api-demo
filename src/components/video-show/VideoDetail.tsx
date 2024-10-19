@@ -1,29 +1,39 @@
 "use client";
+import { getDIDVideo } from "@/actions/getDIDVideo";
+import { getVideo } from "@/actions/getVideo";
 import { db } from "@/firebase/firebaseClient";
 import { VIDEO_COLLECTION } from "@/libs/constants";
-import { VideoDetail as VideoDetailType } from "@/types/did";
-import { collection, doc, onSnapshot, query } from "firebase/firestore";
-import { useParams, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { DIDVideoStatus, VideoDetail as VideoDetailType } from "@/types/did";
+import { useAuthStore } from "@/zustand/useAuthStore";
+import useProfileStore from "@/zustand/useProfileStore";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
+import { notFound, useParams } from "next/navigation";
+import { Fragment, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function VideoDetail() {
     const params = useParams();
+    const uid = useAuthStore((state) => state.uid);
+    const profile = useProfileStore((state) => state.profile);
     const [videoID, setVideoID] = useState<string | null>(null);
     const [videoData, setVideoData] = useState<VideoDetailType | null>(null);
-    const [notFound, setNotFound] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [generating, setGenerating] = useState<boolean>(true);
+    const [videoStatus, setVideoStatus] = useState<DIDVideoStatus | null>(null);
 
     useEffect(() => {
         setVideoID(params.id.toString());
     }, [params])
 
     useEffect(() => {
-        if (videoID === null) return;
+        if (videoID === null || !uid) return;
 
-        const docRef = doc(db, VIDEO_COLLECTION, videoID);
-
+        const docRef = doc(collection(db, VIDEO_COLLECTION), videoID);
+        setLoading(true);
         const unsubscribe = onSnapshot(docRef, (snapshot) => {
+            setLoading(false);
             if (!snapshot.exists()) {
-                setNotFound(true)
+                notFound()
             } else {
                 loadVideo(snapshot.data() as VideoDetailType);
             }
@@ -32,19 +42,50 @@ export default function VideoDetail() {
         return () => {
             unsubscribe();
         };
-    }, [videoID])
+    }, [videoID, uid])
 
-    const loadVideo = (video: VideoDetailType) => {
+    const loadVideo = async (video: VideoDetailType) => {
+        console.log("set video data", video);
+
         // Load video with ID
         setVideoData(video);
+        if(video.d_id_status === "done" && videoStatus !== video.d_id_status) {
+            toast.success("Video generated successfully");
+        }
 
         // check video url exist
         if (!video.video_url) {
             // show video
+            setGenerating(true);
+            let response = await getVideo(profile.did_api_key, video.id)
+            console.log("response", response);
+            
+        }else{
+            setGenerating(false);
         }
         // if not exist, call fetch video api only if video type is "personal"
         // if exist, show video
     }
 
-    return <div>Video Detail page: {videoID}</div>
+    return <div className="p-4 bg-white h-full rounded shadow-md">
+        {videoData ?
+            <div className="h-full">
+                <h2 className="text-2xl font-bold">{videoData.title ?? "Untitled Video"}</h2>
+
+                {
+                    generating ? <div className="flex items-center justify-center h-full">
+                        <h2 className="text-2xl font-bold animate-pulse">Generating video...</h2>
+                    </div> : <div>
+
+                    </div>
+                }
+            </div>
+            : <div className="h-full">
+                <h2 className="text-2xl font-bold animate-pulse">{loading ? "Fetching video..." : ""}</h2>
+
+                <div>
+
+                </div>
+            </div>}
+    </div>
 }

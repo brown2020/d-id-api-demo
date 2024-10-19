@@ -17,6 +17,7 @@ import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import useProfileStore from "@/zustand/useProfileStore";
 
 const steps = [
     {
@@ -77,6 +78,7 @@ const schema = Yup.object().shape({
 
 export default function CreateVideo() {
     const uid = useAuthStore((state) => state.uid);
+    const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
@@ -154,11 +156,11 @@ export default function CreateVideo() {
                     try {
                         const imageUrl = process.env.NEXT_PUBLIC_IS_LOCAL == "1" ? "https://d-id-api-demo.vercel.app/api/imageproxy/new-1727976394243.png" : `${window.location.origin}/api/imageproxy/${selectedAvatar.talking_photo_id}.png`;
                         const response = await generateVideo(
-                            null, imageUrl,
+                            profile.did_api_key, imageUrl,
                             {
                                 'thumbnail_url': selectedAvatar.preview_image_url,
                             },
-                            selectedAvatar.talking_photo_id, writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, undefined, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
+                            selectedAvatar.talking_photo_id, writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
                         )
                         if (response.status) {
                             resolve(true);

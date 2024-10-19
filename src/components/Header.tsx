@@ -89,6 +89,7 @@ export default function Header() {
               <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
             </div>
           </div>
+          <Link href="/videos">Videos</Link>
           <Link href="/avatars">Avatars</Link>
           <Link href="/profile">Profile</Link>
           <UserButton />

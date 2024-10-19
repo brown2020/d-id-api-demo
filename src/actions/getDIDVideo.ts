@@ -24,7 +24,8 @@ export async function getDIDVideo(
   }
 
   try {
-
+    console.log("Preparing Axios request to D-ID API for video ID:", `https://api.d-id.com/talks/${video_id}`);
+    
     const config = {
       method: "get",
       url: `https://api.d-id.com/talks/${video_id}`,
