@@ -49,8 +49,8 @@ export default function VideoDetail() {
 
         // Load video with ID
         setVideoData(video);
-        if(video.d_id_status === "done" && videoStatus !== video.d_id_status) {
-            toast.success("Video generated successfully");
+        if (video.d_id_status === "done" && videoStatus !== null && videoStatus !== video.d_id_status) {
+            toast.success("Video generated successfully", { duration: 7000 });
         }
 
         // check video url exist
@@ -59,8 +59,8 @@ export default function VideoDetail() {
             setGenerating(true);
             let response = await getVideo(profile.did_api_key, video.id)
             console.log("response", response);
-            
-        }else{
+
+        } else {
             setGenerating(false);
         }
         // if not exist, call fetch video api only if video type is "personal"
@@ -75,8 +75,8 @@ export default function VideoDetail() {
                 {
                     generating ? <div className="flex items-center justify-center h-full">
                         <h2 className="text-2xl font-bold animate-pulse">Generating video...</h2>
-                    </div> : <div>
-
+                    </div> : <div className="h-full flex items-center justify-center">
+                        <video controls src={videoData.video_url} className="h-4/5"></video>
                     </div>
                 }
             </div>
