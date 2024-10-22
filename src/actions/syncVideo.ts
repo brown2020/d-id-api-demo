@@ -6,6 +6,7 @@ import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { admin, adminDb } from "@/firebase/firebaseAdmin";
 import axios from "axios";
+import { addVideoToStorage } from "./addVideoToStorage";
 
 
 export async function syncVideo(video_id: string, did_video_id: string, status: DIDVideoStatus, result_url: string) {
@@ -30,38 +31,7 @@ export async function syncVideo(video_id: string, did_video_id: string, status: 
 
     if(status !== 'done') { return { "error": "Video processing not completed" }; }
 
-    const response = await axios({
-        url: result_url,
-        method: 'GET',
-        responseType: 'stream'
-    });
-
-    const bucket = admin.storage().bucket();
-    const videoPath = `videos/${video_id}.mp4`;
-    const file = bucket.file(videoPath);
-    const stream = file.createWriteStream({
-        metadata: {
-            contentType: 'video/mp4'
-        }
-    });
-
-    response.data.pipe(stream);
-
-    await new Promise((resolve, reject) => {
-        stream.on('finish', resolve);
-        stream.on('error', reject);
-    });
-
-    // Update video data in Firestore
-    const [url] = await file.getSignedUrl({
-        action: "read",
-        expires: "03-17-2125",
-    });
-    await videoRef.update({
-        d_id_status: status,
-        d_id_result_url: result_url,
-        video_path: videoPath,
-        video_url: url
-    });
-    return { status: true, video_url: url };
+    const addVideoResponse = await addVideoToStorage(video_id, result_url, status);
+    if(addVideoResponse.status) return { status: true, video_url: addVideoResponse.video_url };
+    else return { "error": "Error adding video to storage" };
 }
