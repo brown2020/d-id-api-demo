@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { adminDb } from "@/firebase/firebaseAdmin";
-import { VIDEO_COLLECTION } from "@/libs/constants";
+import { NOTIFICATION_COLLECTION, NOTIFICATION_STATUS, NOTIFICATION_TYPE, VIDEO_COLLECTION } from "@/libs/constants";
 import { addVideoToStorage } from "@/actions/addVideoToStorage";
 import { addWebhookToHistory } from "@/actions/addWebhookToHistory";
+import moment from "moment";
 
 
 export const POST = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -38,7 +39,7 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     /* eslint-disable @typescript-eslint/no-explicit-any */
     let requestBody: Record<string, any> = {};
     if (headers.get('content-type')?.includes('application/json')) {
-            requestBody = JSON.parse(rawBody);
+        requestBody = JSON.parse(rawBody);
     }
 
     addWebhookToHistory(curlCommand)
@@ -90,8 +91,24 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
 
             // Download video from result_url and upload that video to firebase storage
             const addVideoResponse = await addVideoToStorage(id, result_url, status);
-            if (addVideoResponse.status) resolve({ status: true });
-            else resolve({ "error": "Error adding video to storage" });
+            if (addVideoResponse.status) {
+
+                // Add new notification to notification collection
+                
+                const notificationRef = adminDb.collection(NOTIFICATION_COLLECTION);
+                await notificationRef.add({
+                    type: NOTIFICATION_TYPE.VIDEO_GENERATED,
+                    status: NOTIFICATION_STATUS.UNREAD,
+                    video_id: id,
+                    user_id: videoData.owner,
+                    created_at: moment().format('X'),
+                })
+
+
+                resolve({ status: true });
+            } else {
+                resolve({ "error": "Error adding video to storage" })
+            }
 
             return;
         } catch (error) {

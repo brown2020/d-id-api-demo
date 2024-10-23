@@ -58,3 +58,15 @@ export type VideoDetail = {
   d_id_status: DIDVideoStatus;
   created_at: number;
 }
+
+export type NotificationType = 'video_generated'
+export type NotificationStatus = 'unread' | 'read';
+
+export type NotificationDetail = {
+  id?: string;
+  type: NotificationType;
+  created_at: number;
+  status: NotificationStatus,
+  video_id: string,
+  user_id: string,
+}

@@ -27,22 +27,22 @@ export default function Avatars() {
   const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const uid = useAuthStore((state) => state.uid);
-  
+
   const showNotification = (message: string) => {
     toast.success(message, {
       style: {
         border: '1px solid #4CAF50',
         padding: '16px',
-        color: '#4CAF50', 
-        backgroundColor: '#f0fff4', 
-        borderRadius: '8px', 
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
+        color: '#4CAF50',
+        backgroundColor: '#f0fff4',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       },
       iconTheme: {
-        primary: '#4CAF50', 
-        secondary: '#f0fff4', 
+        primary: '#4CAF50',
+        secondary: '#f0fff4',
       },
-      duration: 5000, 
+      duration: 5000,
     });
   };
 
@@ -102,29 +102,6 @@ export default function Avatars() {
 
   const createNewTalkingPhoto = async () => {
     openForm(null);
-    return;
-    // Generate a unique ID for the new talking photo
-    const newPhotoId = `new-${Date.now()}`;
-
-    // Define the new talking photo object
-    const newPhoto: DIDTalkingPhoto = {
-      talking_photo_id: newPhotoId,
-      talking_photo_name: "New Talking Photo",
-      preview_image_url: "", // Placeholder URL or default image
-      favorite: false,
-      project: "",
-    };
-
-    // Save the new talking photo to Firestore
-    const docRef = doc(db, "didTalkingPhotos", newPhotoId);
-
-    // Ensure the document is created only if it doesn't exist already
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      await setDoc(docRef, newPhoto);
-    } else {
-      alert("Failed to create a new talking photo: duplicate ID.");
-    }
   };
 
   const filteredTalkingPhotos = showFavorites

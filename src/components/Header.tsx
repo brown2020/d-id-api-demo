@@ -1,9 +1,12 @@
 "use client";
 
-import { auth } from "@/firebase/firebaseClient";
+import { auth, db } from "@/firebase/firebaseClient";
+import { NOTIFICATION_COLLECTION, NOTIFICATION_STATUS } from "@/libs/constants";
+import { NotificationDetail, NotificationType } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import useProfileStore from "@/zustand/useProfileStore";
+import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover';
 import {
   SignedIn,
   SignedOut,
@@ -17,17 +20,55 @@ import {
   signOut as firebaseSignOut,
   updateProfile,
 } from "firebase/auth";
-import { serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, Timestamp, where } from "firebase/firestore";
+import { Bell } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import moment from "moment";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const { getToken, isSignedIn } = useAuth();
+  const uid = useAuthStore((state) => state.uid);
   const { user } = useUser();
+  const [notifications, setNotifications] = useState<NotificationDetail[]>([]);
+  const [processing, setProcessing] = useState(true);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
   const profile = useProfileStore((state) => state.profile);
   useInitializeStores();
+
+  useEffect(() => {
+    setProcessing(true);
+    const notificationCollection = query(
+      collection(db, NOTIFICATION_COLLECTION),
+      where('user_id', '==', uid),
+      where('status', '==', NOTIFICATION_STATUS.UNREAD),
+    );
+    const unsubscribe = onSnapshot(
+      notificationCollection,
+      (snapshot) => {
+        setProcessing(false);
+        const notificationList = snapshot.docs.map(
+          (doc) => {
+            return {
+              id: doc.id,
+              ...doc.data() as NotificationDetail
+            }
+          }
+        );
+        setNotifications(notificationList);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [uid]);
+
+  useEffect(() => {
+    console.log("notifications", notifications);
+  }, [notifications])
 
   useEffect(() => {
     const syncAuthState = async () => {
@@ -68,6 +109,39 @@ export default function Header() {
     syncAuthState();
   }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
 
+  const notificationMessage: Record<NotificationType, () => string> = {
+    "video_generated": () => "Your video is created successfully"
+  }
+
+  const router = useRouter();
+
+  const openNotification = (notification: NotificationDetail) => {
+    if (!notification.id) return;
+
+    const notificationRef = doc(db, NOTIFICATION_COLLECTION, notification.id);
+    setDoc(notificationRef, { status: NOTIFICATION_STATUS.READ }, { merge: true })
+
+
+    router.push(`/videos/${notification.video_id}/show`)
+  }
+
+  const notificationList = useMemo(() => {
+    return notifications.map((value, index) => {
+      const message = value.type in notificationMessage ? notificationMessage[value.type]() : "Message"
+      return <div key={index} className="py-1 px-2 flex gap-2">
+        <div className="">
+          <p className="text-lg font-bold">{message}</p>
+          <p className="text-sm text-gray-500">{moment(value.created_at, 'X').fromNow()}</p>
+        </div>
+        <div>
+          <button onClick={(e) => { openNotification(value) }} className="p-2 bg-gray-300 rounded-md text-black">
+            Open
+          </button>
+        </div>
+      </div>;
+    })
+  }, [notifications])
+
   return (
     <div className="flex h-14 items-center justify-between px-4 py-2">
       <Link href="/" className="font-medium text-xl">
@@ -91,6 +165,27 @@ export default function Header() {
           </div>
           <Link href="/videos">Videos</Link>
           <Link href="/avatars">Avatars</Link>
+          <Popover placement="bottom-end" showArrow={true}>
+            <PopoverTrigger>
+              <button className="px-2 py-1 bg-white relative">
+                <Bell />
+                {
+                  notifications.length > 0 ?
+                    <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">{notifications.length}</span> :
+                    <></>
+                }
+              </button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <div className="px-1 py-2">
+                {
+                  processing ? "Processing..." : (
+                    notifications.length > 0 ? notificationList : "Not found any notification."
+                  )
+                }
+              </div>
+            </PopoverContent>
+          </Popover>
           <Link href="/profile">Profile</Link>
           <UserButton />
         </div>
