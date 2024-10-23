@@ -4,7 +4,7 @@ import { db } from "@/firebase/firebaseClient";
 import { AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
 import { DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { collection, onSnapshot, or, orderBy, query, where } from "firebase/firestore";
+import { collection, onSnapshot, or, query, where } from "firebase/firestore";
 import { Captions, Meh, Smile, UserRound, Video } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -107,7 +107,7 @@ export default function CreateVideo() {
     useEffect(() => {
         selectAvatarForm.setValue('talking_photo_id', selectedAvatar ? selectedAvatar.talking_photo_id : '')
         selectAvatarForm.setValue('voice_id', selectedAvatar && selectedAvatar.voiceId ? selectedAvatar.voiceId : '')
-    }, [selectedAvatar])
+    }, [selectedAvatar, selectAvatarForm])
 
     const [activeStep, setActiveStep] = useState('select-avatar')
 

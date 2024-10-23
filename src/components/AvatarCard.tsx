@@ -9,7 +9,7 @@ import useProfileStore from "@/zustand/useProfileStore";
 import { DIDTalkingPhoto } from "@/types/did";
 import { uploadBytes, getDownloadURL } from "firebase/storage";
 import { resizeImage } from "@/utils/resizeImage";
-import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
+import { AVATAR_TYPE_PERSONAL } from "@/libs/constants";
 
 interface AvatarCardProps {
   id: string;
@@ -22,7 +22,6 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   const [talkingPhotoName, setTalkingPhotoName] = useState("");
   const [project, setProject] = useState("");
   const [voiceId, setVoiceId] = useState("");
-  const [type, setType] = useState("");
   const [previewImageUrl, setPreviewImageUrl] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);

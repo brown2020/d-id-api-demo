@@ -2,7 +2,7 @@
 import { getFileUrl } from "@/actions/getFileUrl";
 import { db, storage } from "@/firebase/firebaseClient";
 import { AUDIO_LIST, AVATAR_TYPE_PERSONAL, DEFAULT_AUDIO } from "@/libs/constants";
-import { AudioDetails, AvatarValues, DIDTalkingPhoto } from "@/types/did";
+import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
 import { resizeImage } from "@/utils/resizeImage";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { ErrorMessage } from "@hookform/error-message";
@@ -12,7 +12,7 @@ import { Image as ImageIcon } from "lucide-react"
 import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import Select, { OptionProps } from 'react-select';
+import Select from 'react-select';
 import CustomAudioOption from "./CustomAudioOption";
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
@@ -30,7 +30,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                 setProcessing(false);
                 submit({ status: true, data: data });
             });
-        } catch (error) {
+        } catch (e) {
             /**
              * TODO: Handle error
              */
@@ -107,7 +107,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             })
             setAvatarId(avatarDetail.talking_photo_id)
         }
-    }, [create])
+    }, [create, avatarDetail,reset])
 
     const voiceId = watch('voiceId');
     const previewImageUrl = watch('preview_image_url');
@@ -116,7 +116,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     }, [voiceId]);
     const voiceValue = useMemo(() => {
         return options.find((option) => option.value === voiceId);
-    }, [voiceId]);
+    }, [voiceId, options]);
 
     const createNewTalkingPhoto = async () => {
         const formValues = getValues();

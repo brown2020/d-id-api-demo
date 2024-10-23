@@ -134,13 +134,13 @@ export default function Header() {
           <p className="text-sm text-gray-500">{moment(value.created_at, 'X').fromNow()}</p>
         </div>
         <div>
-          <button onClick={(e) => { openNotification(value) }} className="p-2 bg-gray-300 rounded-md text-black">
+          <button onClick={() => { openNotification(value) }} className="p-2 bg-gray-300 rounded-md text-black">
             Open
           </button>
         </div>
       </div>;
     })
-  }, [notifications])
+  }, [notifications, notificationMessage, openNotification]);
 
   return (
     <div className="flex h-14 items-center justify-between px-4 py-2">

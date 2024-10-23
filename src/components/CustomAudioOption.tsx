@@ -4,12 +4,6 @@ import { Languages } from '../utils/Languages';
 import { AudioDetails } from '@/types/did';
 import { OptionProps } from 'react-select';
 
-// Define the props interface
-interface AudioOptionProps {
-    data: AudioDetails;
-
-}
-
 const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
     
     const flagIcon = (accent : string) => {

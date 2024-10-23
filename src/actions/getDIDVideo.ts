@@ -1,6 +1,6 @@
 "use server";
 
-import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
+import { DIDVideoStatus } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
 

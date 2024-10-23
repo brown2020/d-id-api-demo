@@ -1,19 +1,16 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import AvatarCard from "./AvatarCard";
-import { db, storage } from "@/firebase/firebaseClient";
+import { db } from "@/firebase/firebaseClient";
 import {
   collection,
   onSnapshot,
-  setDoc,
-  doc,
-  getDoc,
   query,
   where,
 } from "firebase/firestore";
 import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
-import { AUDIO_LIST, AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
+import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import Model from "./Model";
 import AvatarForm from "./AvatarForm";
@@ -25,7 +22,6 @@ export default function Avatars() {
   const [showModel, setShowModel] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const uid = useAuthStore((state) => state.uid);
 
   const showNotification = (message: string) => {
@@ -108,12 +104,6 @@ export default function Avatars() {
     ? personalTalkingPhotos.filter((p) => p.favorite)
     : personalTalkingPhotos;
 
-  const options = AUDIO_LIST.map((audio) => {
-    return {
-      value: audio.voice_id,
-      label: audio.name,
-    }
-  })
 
   return (
     <div className="relative">

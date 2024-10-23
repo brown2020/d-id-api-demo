@@ -41,7 +41,7 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
 
     // Then sync video detail
     if ("id" in response) {
-        let syncResponse = await syncVideo(video_id, videoData.did_id, response.status, response.result_url);
+        const syncResponse = await syncVideo(video_id, videoData.did_id, response.status, response.result_url);
         console.log("syncResponse", syncResponse);
         
         // Then send response

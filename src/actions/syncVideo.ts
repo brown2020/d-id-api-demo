@@ -1,11 +1,8 @@
 "use server";
 
-import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
-import { auth } from "@clerk/nextjs/server";
-import { generateDIDVideo } from "./generateDIDVideo";
+import { DIDVideoStatus } from "@/types/did";
 import { VIDEO_COLLECTION } from "@/libs/constants";
-import { admin, adminDb } from "@/firebase/firebaseAdmin";
-import axios from "axios";
+import { adminDb } from "@/firebase/firebaseAdmin";
 import { addVideoToStorage } from "./addVideoToStorage";
 
 

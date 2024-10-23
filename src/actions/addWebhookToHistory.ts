@@ -1,5 +1,5 @@
 import { adminDb } from "@/firebase/firebaseAdmin";
-import { VIDEO_COLLECTION, WEBHOOK_HISTORY_COLLECTION } from "@/libs/constants";
+import { WEBHOOK_HISTORY_COLLECTION } from "@/libs/constants";
 import moment from "moment";
 
 export async function addWebhookToHistory(requestCurl: string){

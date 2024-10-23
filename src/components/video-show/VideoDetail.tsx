@@ -1,14 +1,13 @@
 "use client";
-import { getDIDVideo } from "@/actions/getDIDVideo";
 import { getVideo } from "@/actions/getVideo";
 import { db } from "@/firebase/firebaseClient";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { DIDVideoStatus, VideoDetail as VideoDetailType } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import useProfileStore from "@/zustand/useProfileStore";
-import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
+import { collection, doc, onSnapshot } from "firebase/firestore";
 import { notFound, useParams } from "next/navigation";
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 export default function VideoDetail() {
@@ -57,7 +56,7 @@ export default function VideoDetail() {
         if (!video.video_url) {
             // show video
             setGenerating(true);
-            let response = await getVideo(profile.did_api_key, video.id)
+            const response = await getVideo(profile.did_api_key, video.id)
             console.log("response", response);
 
         } else {
