@@ -8,7 +8,7 @@ import { collection, onSnapshot, or, orderBy, query, where } from "firebase/fire
 import { Captions, Meh, Smile, UserRound, Video } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { getAudioDetails } from "@/libs/utils";
+import { getApiBaseUrl, getAudioDetails } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import CustomAudioOption from "../CustomAudioOption";
@@ -58,7 +58,7 @@ const emotions: { code: Emotion, label: string, icon: any }[] = [
     {
         'code': 'surprise',
         'label': 'Surprise',
-        'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12 17a2 2 0 1 1 0-4a2 2 0 0 1 0 4" /><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10" /><path fill="currentColor" d="M8.5 9a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
+        'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" strokeLinejoin="round" stroke-width="1.5"><path d="M12 17a2 2 0 1 1 0-4a2 2 0 0 1 0 4" /><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2S2 6.477 2 12s4.477 10 10 10" /><path fill="currentColor" d="M8.5 9a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1m7 0a.5.5 0 1 1 0-1a.5.5 0 0 1 0 1" /></g></svg>
     },
     {
         'code': 'serious',
@@ -154,7 +154,7 @@ export default function CreateVideo() {
                 new Promise(async (resolve, reject) => {
                     setProcessing(true);
                     try {
-                        const imageUrl = process.env.NEXT_PUBLIC_IS_LOCAL == "1" ? "https://d-id-api-demo.vercel.app/api/imageproxy/new-1727976394243.png" : `${window.location.origin}/api/imageproxy/${selectedAvatar.talking_photo_id}.png`;
+                        const imageUrl = `${getApiBaseUrl()}/api/imageproxy/${selectedAvatar.talking_photo_id}.png`;
                         const response = await generateVideo(
                             profile.did_api_key, imageUrl,
                             {
@@ -192,8 +192,8 @@ export default function CreateVideo() {
     return <div className="px-4 max-h-full h-full flex flex-col">
         <ol className="flex items-center w-full gap-4">
             {
-                steps.map((step, index) => <li className="  flex-1 ">
-                    <button disabled={processing} key={index} onClick={() => { setActiveStep(step.code) }} className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
+                steps.map((step, index) => <li key={index} className="flex-1 ">
+                    <button disabled={processing}  onClick={() => { setActiveStep(step.code) }} className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
                         <span className="w-8 h-8 bg-gray-600  rounded-full flex justify-center items-center mr-3 text-sm text-white lg:w-10 lg:h-10">
                             <step.icon />
                         </span>
@@ -208,14 +208,17 @@ export default function CreateVideo() {
                 <div className={`${selectedAvatar ? 'w-1/4' : 'w-full'} flex flex-col h-full  max-h-full overflow-auto relative`}>
                     <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
                         {personalTalkingPhotos.map((avatar, index) => (
-                            <article onClick={() => { setSelectedAvatar(avatar) }} className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full">
-                                <Image
-                                    src={avatar.preview_image_url}
-                                    alt={avatar.talking_photo_name}
-                                    width={512}
-                                    height={512}
-                                    className="absolute inset-0 h-full w-full object-cover"
-                                />
+                            <article key={index} onClick={() => { setSelectedAvatar(avatar) }} className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full">
+                                {
+                                    avatar.preview_image_url ? 
+                                    <Image
+                                        src={avatar.preview_image_url}
+                                        alt={avatar.talking_photo_name}
+                                        width={512}
+                                        height={512}
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                    /> : <></>
+                                }
                                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>
                                 <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{avatar.talking_photo_name}</h3>
                             </article>
@@ -226,13 +229,16 @@ export default function CreateVideo() {
                     <div className="grow bg-gray-50 rounded-lg p-4">
                         <div className="flex h-full">
                             <div className="self-center">
-                                <Image
-                                    src={selectedAvatar.preview_image_url}
-                                    alt={selectedAvatar.talking_photo_name}
-                                    width={512}
-                                    height={512}
-                                    className="h-56 w-56 object-cover"
-                                />
+                                {
+                                    selectedAvatar.preview_image_url ? 
+                                    <Image
+                                        src={selectedAvatar.preview_image_url}
+                                        alt={selectedAvatar.talking_photo_name}
+                                        width={512}
+                                        height={512}
+                                        className="h-56 w-56 object-cover"
+                                    /> : <></>
+                                }
                             </div>
                             <div className="grow px-4 flex flex-col">
                                 <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
@@ -324,7 +330,7 @@ export default function CreateVideo() {
                                     required: { message: 'Required.', value: true },
                                 }}
                                 render={({ field }) => (
-                                    <textarea {...field} id="message" rows="10" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Write Script..."></textarea>
+                                    <textarea {...field} id="message" rows="10" className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Write Script..."></textarea>
                                 )}
                             />
                         </div>

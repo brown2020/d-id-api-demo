@@ -1,62 +1,62 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import fs from "fs";
-import path from "path";
-import { File } from "buffer";
+import { NextRequest } from "next/server";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { addVideoToStorage } from "@/actions/addVideoToStorage";
-import { NextApiRequest } from "next";
+import { addWebhookToHistory } from "@/actions/addWebhookToHistory";
 
 
-export const POST = async (req: NextApiRequest, { params }: { params: { id: string } }) => {
-    const { method, headers, body } = req;
-    const _method = method ? method.toUpperCase() : 'GET';
+export const POST = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const newParams = await params;
 
-    // Construct the cURL command
-    let curlCommand = `curl -X ${method} "${req.headers.host}${req.url}"`;
+    const { method, headers, url } = req;
+
+    // Parse the URL to get the query parameters
+    const { searchParams } = new URL(url);
+
+    // Construct the base cURL command
+    let curlCommand = `curl -X ${method} "${url}"`;
 
     // Add headers to the cURL command
-    for (const [key, value] of Object.entries(headers)) {
+    headers.forEach((value, key) => {
         curlCommand += ` -H "${key}: ${value}"`;
-    }
-    let bodyData = null;
-    if (['POST', 'PUT', 'PATCH'].includes(_method.toUpperCase())) {
-        // Assume the body is in JSON format and parse it
-        bodyData = await new Promise((resolve, reject) => {
-          let data = '';
-          req.on('data', (chunk) => {
-            data += chunk;
-          });
-          req.on('end', () => {
-            resolve(data);
-          });
-          req.on('error', (err) => {
-            reject(err);
-          });
-        });
-      }
+    });
 
-    // Respond with the cURL command
-    return NextResponse.json({ data: curlCommand }, { status: 200 });
-    const process = await new Promise<{ status: true } | { error: string }>(async (resolve, reject) => {
+    // Add query parameters to the URL (if any)
+    if (Array.from(searchParams).length > 0) {
+        curlCommand = `curl -X ${method} "${url}"`;
+    }
+
+    const rawBody = await req.text();
+
+    // Add the body to the cURL command if the request has one
+    if (['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
+        if (rawBody) {
+            curlCommand += ` -d '${rawBody}'`;
+        }
+    }
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    let requestBody: Record<string, any> = {};
+    if (headers.get('content-type')?.includes('application/json')) {
+            requestBody = JSON.parse(rawBody);
+    }
+
+    addWebhookToHistory(curlCommand)
+
+    const process = await new Promise<{ status: true } | { error: string }>(async (resolve) => {
         try {
             // Add request to history
 
-            const { id } = params;
+            const { id } = newParams;
 
             // Get token from from query params
-            const { searchParams } = new URL(req.url);
             const token = req.nextUrl.searchParams.get("token");
             if (!token) {
                 resolve({ "error": "Token is required" });
                 return;
             }
 
-            // console.log("Request:", req.url);
-            // console.log("Request:", req);
-            // console.log("Request req.body:", req);
-            const body = await req.json();
+            const body = requestBody;
 
             // Find video by ID
             const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
@@ -66,15 +66,15 @@ export const POST = async (req: NextApiRequest, { params }: { params: { id: stri
             if (videoData == undefined || !video.exists || video.data() == undefined) { resolve({ "error": "Video not found" }); return; }
 
             // Send response if video already exist
-            // if (videoData.video_url) {
-            //     resolve({ error: "Video already exist" });
-            //     return;
-            // }
+            if (videoData.video_url) {
+                resolve({ error: "Video already exist" });
+                return;
+            }
 
             // Authenticate request with secret key
             // Get secret key from videoData
-            const secret_key = videoData.secret_key;
-            if (secret_key !== token) { resolve({ "error": "Unauthorized" }); return; }
+            const secret_token = videoData.secret_token;
+            if (secret_token !== token) { resolve({ "error": "Unauthorized" }); return; }
 
             // D_ID video id should match with video data
             // Get d id video id from request

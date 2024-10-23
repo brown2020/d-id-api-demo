@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { adminDb } from "@/firebase/firebaseAdmin";
+import { randomString } from "@/libs/utils";
 
 export async function generateVideo(apiKey: string | null,
     imageUrl: string,
@@ -20,6 +21,8 @@ export async function generateVideo(apiKey: string | null,
     auth().protect();
     const { userId } = auth();
 
+    const id = `new-video-${Date.now()}`;
+    const secret_token = randomString(32);
     const response = await generateDIDVideo(
         apiKey,
         imageUrl,
@@ -28,13 +31,14 @@ export async function generateVideo(apiKey: string | null,
         audioUrl,
         elevenlabsApiKey,
         emotion,
-        movement
+        movement,
+        id,
+        secret_token
     )
 
     if (response) {
 
         if("id" in response) {
-            const id = `new-video-${Date.now()}`;
     
             const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
 
@@ -48,6 +52,7 @@ export async function generateVideo(apiKey: string | null,
                 type: 'personal',
                 video_url: '',
                 thumbnail_url: extraDetail.thumbnail_url,
+                secret_token
             }, { merge: true });
             return {
                 status: true,

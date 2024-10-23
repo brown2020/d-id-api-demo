@@ -35,10 +35,8 @@ export async function addVideoToStorage(video_id: string, result_url: string, st
     await videoRef.update({
         d_id_status: status,
         d_id_result_url: result_url,
-        // video_path: videoPath,
-        // video_url: url,
-        new_video_path: videoPath,
-        new_video_url: url,
+        video_path: videoPath,
+        video_url: url,
     });
 
     return {status: true, video_url: url};

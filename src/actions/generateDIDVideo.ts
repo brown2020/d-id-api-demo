@@ -1,5 +1,6 @@
 "use server";
 
+import { getApiBaseUrl } from "@/libs/utils";
 import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
@@ -12,6 +13,8 @@ interface GenerateVideoFailResponse {
   error: string;
 }
 
+const getWebhookUrl = (id: string, secret_token: string) => `${getApiBaseUrl()}/api/video-generated/${id}?token=${secret_token}`
+
 export async function generateDIDVideo(
   apiKey: string | null,
   imageUrl: string,
@@ -20,11 +23,11 @@ export async function generateDIDVideo(
   audioUrl?: string,
   elevenlabsApiKey?: string,
   emotion: Emotion = "neutral",
-  movement: Movement = "neutral"
+  movement: Movement = "neutral",
+  video_id: string = "",
+  secret_token: string = ""
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse | null> {
   auth().protect();
-
-
 
   console.log("Starting generateDIDVideo function with parameters:", {
     apiKey: apiKey ? "provided" : "not provided",
@@ -86,6 +89,7 @@ export async function generateDIDVideo(
         Authorization: `Basic ${apiKey}`,
       },
       data: {
+        webhook: getWebhookUrl(video_id, secret_token),
         script: scriptSettings,
         source_url: imageUrl,
         config: {
@@ -155,10 +159,22 @@ export async function generateDIDVideo(
           data: JSON.stringify(error.response.data, null, 2),
         });
 
+        
+
         if (error.response.status === 429) {
           return {
             id: "",
             error: "Rate limit exceeded. Please try again later.",
+          };
+        }else if(typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data == "ValidationError") {
+          /**
+           * TODO: Send Error Report
+           * Message: Issue with validation of the request
+           * Data: JSON.stringify(error.response.data, null, 2)
+           */
+          return {
+            id: "",
+            error: "Something went wrong, while requesting your generate video.",
           };
         }
       } else if (error.request) {

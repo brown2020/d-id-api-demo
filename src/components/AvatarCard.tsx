@@ -137,18 +137,21 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
           size={24}
         />
       </div> */}
-      <Image
-        src={avatar.preview_image_url}
-        alt={avatar.talking_photo_name}
-        width={512}
-        height={512}
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {avatar.preview_image_url ?
+        <Image
+          src={avatar.preview_image_url}
+          alt={avatar.talking_photo_name}
+          width={512}
+          height={512}
+          className="absolute inset-0 h-full w-full object-cover"
+        /> : <></>
+      }
+
       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>
       <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{avatar.talking_photo_name}</h3>
       {
         avatar.type == AVATAR_TYPE_PERSONAL ?
-          <button onClick={() => { if(edit) edit() }} className="opacity-0 group-hover/avatar:opacity-100 transition duration-300 absolute top-3 right-3 bg-gray-300 text-gray-600 p-2 rounded-full border border-gray-400 shadow">
+          <button onClick={() => { if (edit) edit() }} className="opacity-0 group-hover/avatar:opacity-100 transition duration-300 absolute top-3 right-3 bg-gray-300 text-gray-600 p-2 rounded-full border border-gray-400 shadow">
             <Pencil size={20} />
           </button> : <Fragment></Fragment>
       }
