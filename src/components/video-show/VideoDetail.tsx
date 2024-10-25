@@ -7,7 +7,7 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import useProfileStore from "@/zustand/useProfileStore";
 import { collection, doc, onSnapshot } from "firebase/firestore";
 import { notFound, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 export default function VideoDetail() {
@@ -18,11 +18,33 @@ export default function VideoDetail() {
     const [videoData, setVideoData] = useState<VideoDetailType | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [generating, setGenerating] = useState<boolean>(true);
-    const [videoStatus, setVideoStatus] = useState<DIDVideoStatus | null>(null);
+    const videoStatus: DIDVideoStatus | null = null;
 
     useEffect(() => {
         setVideoID(params.id.toString());
     }, [params])
+
+    const loadVideo = useCallback(async (video: VideoDetailType) => {
+        console.log("set video data", video);
+
+        // Load video with ID
+        setVideoData(video);
+        if (video.d_id_status === "done" && videoStatus !== null && videoStatus !== video.d_id_status) {
+            toast.success("Video generated successfully", { duration: 7000 });
+        }
+
+        // check video url exist
+        if (!video.video_url) {
+            // show video
+            setGenerating(true);
+            const response = await getVideo(profile.did_api_key, video.id);
+            console.log("response", response);
+        } else {
+            setGenerating(false);
+        }
+        // if not exist, call fetch video api only if video type is "personal"
+        // if exist, show video
+    }, [profile.did_api_key, videoStatus]);
 
     useEffect(() => {
         if (videoID === null || !uid) return;
@@ -41,30 +63,9 @@ export default function VideoDetail() {
         return () => {
             unsubscribe();
         };
-    }, [videoID, uid])
+    }, [videoID, uid, loadVideo])
 
-    const loadVideo = async (video: VideoDetailType) => {
-        console.log("set video data", video);
-
-        // Load video with ID
-        setVideoData(video);
-        if (video.d_id_status === "done" && videoStatus !== null && videoStatus !== video.d_id_status) {
-            toast.success("Video generated successfully", { duration: 7000 });
-        }
-
-        // check video url exist
-        if (!video.video_url) {
-            // show video
-            setGenerating(true);
-            const response = await getVideo(profile.did_api_key, video.id)
-            console.log("response", response);
-
-        } else {
-            setGenerating(false);
-        }
-        // if not exist, call fetch video api only if video type is "personal"
-        // if exist, show video
-    }
+    
 
     return <div className="p-4 bg-white h-full rounded shadow-md">
         {videoData ?

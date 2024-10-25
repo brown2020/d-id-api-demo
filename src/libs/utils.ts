@@ -5,9 +5,9 @@ export function getAudioDetails(audio_id: string) {
 }
 
 export function randomString(n: number) {
-    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    var token = '';
-    for (var i = 0; i < n; i++) {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let token = '';
+    for (let i = 0; i < n; i++) {
         token += chars[Math.floor(Math.random() * chars.length)];
     }
     return token;

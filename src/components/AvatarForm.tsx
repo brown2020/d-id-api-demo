@@ -2,7 +2,7 @@
 import { getFileUrl } from "@/actions/getFileUrl";
 import { db, storage } from "@/firebase/firebaseClient";
 import { AUDIO_LIST, AVATAR_TYPE_PERSONAL, DEFAULT_AUDIO } from "@/libs/constants";
-import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
+import { AudioDetails, AvatarValues, DIDTalkingPhoto } from "@/types/did";
 import { resizeImage } from "@/utils/resizeImage";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { ErrorMessage } from "@hookform/error-message";
@@ -34,6 +34,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             /**
              * TODO: Handle error
              */
+            console.log(e);
             setProcessing(false);
         }
     });
@@ -41,7 +42,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const [avatarId, setAvatarId] = useState<string>('');
     const uid = useAuthStore((state) => state.uid);
 
-    const options = AUDIO_LIST.map((audio) => {
+    const options: AudioDetails[] = AUDIO_LIST.map((audio) => {
         return {
             value: audio.voice_id,
             label: audio.name,
@@ -242,11 +243,11 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                             control={control}
                                             name="voiceId"
                                             render={({ field }) => (
-                                                <Select value={voiceValue} onChange={e => { setValue('voiceId', e?.value); field.onBlur(); }} options={options}
+                                                <Select value={voiceValue} onChange={(e) => { setValue('voiceId', (e as AudioDetails)?.value); field.onBlur(); }} options={options}
                                                 components={{ Option: CustomAudioOption }}   
                                                 />
                                             )}
-                                        />
+                                        />  
 
                                         {
                                             voiceDetail ?

@@ -2,11 +2,11 @@
 
 import { db } from "@/firebase/firebaseClient";
 import { AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
-import { DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
+import { AudioDataType, AudioDetails, DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { collection, onSnapshot, or, query, where } from "firebase/firestore";
-import { Captions, Meh, Smile, UserRound, Video } from "lucide-react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Captions, icons, Meh, Smile, UserRound, Video } from "lucide-react";
+import { ComponentType, Fragment, ReactElement, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { getApiBaseUrl, getAudioDetails } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
@@ -18,6 +18,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import useProfileStore from "@/zustand/useProfileStore";
+
+type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
 const steps = [
     {
@@ -32,7 +34,7 @@ const steps = [
     },
 ]
 
-const movements: { code: Movement, label: string, icon: any }[] = [
+const movements: { code: Movement, label: string, icon: IconType }[] = [
     {
         code: 'neutral',
         label: 'Neutral',
@@ -44,7 +46,7 @@ const movements: { code: Movement, label: string, icon: any }[] = [
         icon: Video
     }
 ]
-const emotions: { code: Emotion, label: string, icon: any }[] = [
+const emotions: { code: Emotion, label: string, icon: IconType }[] = [
     {
         'code': "neutral",
         'label': 'Neutral',
@@ -137,18 +139,14 @@ export default function CreateVideo() {
 
     useEffect(() => {
         selectAvatarForm.handleSubmit(() => { })
-    }, [])
-
-    const errors = useMemo(() => {
-        return JSON.stringify(selectAvatarForm.formState.errors)
-    }, [selectAvatarForm.formState])
+    }, [selectAvatarForm])  
 
     const audioDetails = useMemo(() => {
         return selectedAvatar && selectedAvatar.voiceId ? getAudioDetails(selectedAvatar.voiceId) : null
     }, [selectedAvatar])
 
 
-    const onSubmit = writeScriptForm.handleSubmit(async (data) => {
+    const onSubmit = writeScriptForm.handleSubmit(async () => {
         if (selectedAvatar) {
             toast.promise(
                 new Promise(async (resolve, reject) => {
@@ -173,7 +171,7 @@ export default function CreateVideo() {
                             setProcessing(false);
                         }
                     } catch (error) {
-                        console.log("Error", errors);
+                        console.log("Error", error);
                         /**
                          * TODO: Handle error
                          */
@@ -330,7 +328,7 @@ export default function CreateVideo() {
                                     required: { message: 'Required.', value: true },
                                 }}
                                 render={({ field }) => (
-                                    <textarea {...field} id="message" rows="10" className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Write Script..."></textarea>
+                                    <textarea {...field} id="message" rows={10} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Write Script..."></textarea>
                                 )}
                             />
                         </div>

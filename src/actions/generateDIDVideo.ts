@@ -5,11 +5,12 @@ import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
 
-interface GenerateVideoSuccessResponse {
+export type GenerateVideoSuccessResponse = {
   id: string;
   status: DIDVideoStatus;
 }
-interface GenerateVideoFailResponse {
+
+export type GenerateVideoFailResponse = {
   error: string;
 }
 
@@ -26,7 +27,7 @@ export async function generateDIDVideo(
   movement: Movement = "neutral",
   video_id: string = "",
   secret_token: string = ""
-): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse | null> {
+): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
   auth().protect();
 
   console.log("Starting generateDIDVideo function with parameters:", {

@@ -80,7 +80,7 @@ export default function Generate() {
     setError(null);
 
     try {
-      const result = await generateDIDVideo(
+      const result  = await generateDIDVideo(
         profile.did_api_key || "",
         imageUrl,
         script,
@@ -89,7 +89,7 @@ export default function Generate() {
         profile.elevenlabs_api_key // Pass the ElevenLabs API key
       );
 
-      if (result && result.id) {
+      if (result && "id" in result) {
         console.log("Video generation initiated. Video ID:", result.id);
         const statusResponse = await retrieveDIDVideo(
           profile.did_api_key || "",
@@ -107,9 +107,9 @@ export default function Generate() {
           console.error("Video generation failed:", statusResponse.error);
           setError(statusResponse.error || "Video generation failed.");
         }
-      } else {
-        console.error("Failed to generate video:", result?.error);
-        setError(result?.error || "Failed to generate video.");
+      } else if(result && "error" in result) {
+        console.error("Failed to generate video:", result.error);
+        setError(result.error || "Failed to generate video.");
       }
     } catch (error) {
       console.error("Error during video generation:", error);
@@ -130,7 +130,7 @@ export default function Generate() {
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="mr-auto mb-4">
-          <AvatarCard id={profile.selectedTalkingPhoto} />
+          <AvatarCard id={profile.selectedTalkingPhoto}/>
         </div>
 
         <div className="flex flex-col gap-4 w-full">

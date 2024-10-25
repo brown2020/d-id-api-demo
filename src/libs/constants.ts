@@ -1,4 +1,3 @@
-import { NotificationStatus } from '@/types/did';
 import AudioList from './audio-list.json';
 
 export const VIDEO_COLLECTION = 'generated-videos';

@@ -2,7 +2,7 @@
 
 import { auth, db } from "@/firebase/firebaseClient";
 import { NOTIFICATION_COLLECTION, NOTIFICATION_STATUS } from "@/libs/constants";
-import { NotificationDetail, NotificationType } from "@/types/did";
+import { NotificationDetail } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -23,7 +23,7 @@ import {
 import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, Timestamp, where } from "firebase/firestore";
 import { Bell } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import moment from "moment";
 import { useRouter } from "next/navigation";
 
@@ -109,13 +109,13 @@ export default function Header() {
     syncAuthState();
   }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
 
-  const notificationMessage: Record<NotificationType, () => string> = {
+  const notificationMessage = useMemo(() => ({
     "video_generated": () => "Your video is created successfully"
-  }
+}), []);  
 
   const router = useRouter();
 
-  const openNotification = (notification: NotificationDetail) => {
+  const openNotification = useCallback((notification: NotificationDetail) => {
     if (!notification.id) return;
 
     const notificationRef = doc(db, NOTIFICATION_COLLECTION, notification.id);
@@ -123,7 +123,7 @@ export default function Header() {
 
 
     router.push(`/videos/${notification.video_id}/show`)
-  }
+  }, [router]);
 
   const notificationList = useMemo(() => {
     return notifications.map((value, index) => {
