@@ -16,7 +16,7 @@ export default function VideoDetail() {
     const profile = useProfileStore((state) => state.profile);
     const [videoID, setVideoID] = useState<string | null>(null);
     const [videoData, setVideoData] = useState<VideoDetailType | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
     const [generating, setGenerating] = useState<boolean>(true);
     const videoStatus: DIDVideoStatus | null = null;
 
@@ -46,26 +46,55 @@ export default function VideoDetail() {
         // if exist, show video
     }, [profile.did_api_key, videoStatus]);
 
+    // useEffect(() => {
+    //     if (videoID === null || !uid) return;
+
+    //     const docRef = doc(collection(db, VIDEO_COLLECTION), videoID);
+    //     setLoading(true);
+    //     const unsubscribe = onSnapshot(docRef, (snapshot) => {
+    //         setLoading(false);
+
+    //         if (!snapshot.exists()) {
+    //             setLoading(false);
+    //             notFound()
+
+    //         } else {
+    //             loadVideo(snapshot.data() as VideoDetailType);
+    //         }
+    //     });
+    //     return () => {
+    //         unsubscribe();
+    //     };
+    // }, [videoID, uid, loadVideo])
+
+
     useEffect(() => {
         if (videoID === null || !uid) return;
 
         const docRef = doc(collection(db, VIDEO_COLLECTION), videoID);
         setLoading(true);
-        const unsubscribe = onSnapshot(docRef, (snapshot) => {
-            setLoading(false);
-            if (!snapshot.exists()) {
-                notFound()
-            } else {
-                loadVideo(snapshot.data() as VideoDetailType);
+
+        const unsubscribe = onSnapshot(docRef, {
+            next: (snapshot) => {
+                setLoading(false);
+
+                if (!snapshot.exists()) {
+                    notFound(); // Handle not found
+                } else {
+                    loadVideo(snapshot.data() as VideoDetailType); // Load video details
+                }
+            },
+            error: (error) => {
+                setLoading(false);
             }
         });
 
         return () => {
             unsubscribe();
         };
-    }, [videoID, uid, loadVideo])
+    }, [videoID, uid, loadVideo]);
 
-    
+
 
     return <div className="p-4 bg-white h-full rounded shadow-md">
         {videoData ?
@@ -81,7 +110,14 @@ export default function VideoDetail() {
                 }
             </div>
             : <div className="h-full">
-                <h2 className="text-2xl font-bold animate-pulse">{loading ? "Fetching video..." : ""}</h2>
+                {
+                    loading ?
+                        <h2 className="text-2xl font-bold animate-pulse">{"Fetching video..."}</h2> :
+                        <div className="flex justify-center items-center h-full">
+                            <p className="text-lg font-semibold text-gray-600">Video is not available</p>
+                        </div>
+
+                }
 
                 <div>
 
