@@ -2,9 +2,8 @@ import React from 'react';
 import { FlagIcon } from '../utils/FlagIcon';
 import { Languages } from '../utils/Languages';
 import { AudioDetails } from '@/types/did';
-import { OptionProps } from 'react-select';
 
-const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
+const CustomAudioOption2 = ({ data }: {data: AudioDetails}) => {
 
     const flagIcon = (accent : string) => {
         return FlagIcon.find(f => f.accent.toLowerCase() === accent.toLowerCase());
@@ -16,7 +15,7 @@ const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
 
     return (
         <div className="p-2">
-            <div {...innerProps} className="p-2 border rounded-md cursor-pointer">
+            <div className="p-2 border rounded-md cursor-pointer">
                 <span className="flex items-center gap-2">
                     {data.labels.gender === 'male' ? (
                         <div className="opacity-50">
@@ -50,4 +49,4 @@ const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
     );
 };
 
-export default CustomAudioOption;
+export default CustomAudioOption2;

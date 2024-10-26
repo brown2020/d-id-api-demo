@@ -39,15 +39,10 @@ export type AudioDetails = {
     gender: string;
     use_case: string;
   };
-  voice_verification: Record<string, null | boolean | never | number>;
-  fine_tuning: Record<string, null | boolean | never | number>;
   accent: string;
+  language: string;
+  preview_url: string;
   voice_id?: string;
-  gender?: string;
-  age?: string;
-  descriptive?: string;
-  use_case?: string;
-  language?: string;
 }
 
 interface FineTuningState {

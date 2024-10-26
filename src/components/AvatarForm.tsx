@@ -48,8 +48,10 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             label: audio.name,
             name: audio.name,
             labels: audio.labels,
-            voice_verification: audio.voice_verification,
-            accent: audio.accent
+            accent: audio.accent,
+            language: audio.language,
+            voice_id: audio.voice_id,
+            preview_url: audio.preview_url,
         }
     })
 

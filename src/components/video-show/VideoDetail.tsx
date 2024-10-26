@@ -85,6 +85,8 @@ export default function VideoDetail() {
                 }
             },
             error: (error) => {
+                console.log("Error", error);
+                
                 setLoading(false);
             }
         });

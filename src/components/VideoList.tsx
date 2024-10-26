@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { db } from "@/firebase/firebaseClient"
-import { collection, DocumentData, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, DocumentData, onSnapshot, query, where } from 'firebase/firestore';
 import { Loader } from "./Loader";
 import PlayVideoIcon from '@/assets/images/play-video-1.png'
 import Image from "next/image";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { AVATAR_TYPE_PERSONAL } from "@/libs/constants";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function VideosPage() {
 

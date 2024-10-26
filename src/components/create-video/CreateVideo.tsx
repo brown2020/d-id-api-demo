@@ -11,13 +11,13 @@ import Image from "next/image";
 import { getApiBaseUrl, getAudioDetails } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
-import CustomAudioOption from "../CustomAudioOption";
 import { generateVideo } from "@/actions/generateVideo";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import useProfileStore from "@/zustand/useProfileStore";
+import CustomAudioOption2 from "../CustomAudioOption2";
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -247,7 +247,7 @@ export default function CreateVideo() {
                                         {
                                             audioDetails ?
                                                 <div className="flex w-full gap-4 items-center">
-                                                    <CustomAudioOption data={audioDetails} />
+                                                    <CustomAudioOption2 data={audioDetails} />
                                                     <div>
                                                         <audio controls key={audioDetails.voice_id}>
                                                             <source src={audioDetails.preview_url} type="audio/mpeg" />
