@@ -27,11 +27,6 @@ export type AvatarValues = {
   talking_photo_id: string;
 };
 
-// Type error: Type '{ value: string; label: string; name: string; labels: { accent: string; description: string; age: string; gender: string; use_case: string; } | { accent: string; description: string; age: string; gender: string; use_case: string; } | { ...; } | { ...; } | { ...; }; voice_verification: { ...; } | ... 3 more ... | { ....' is not assignable to type 'AudioDetails[]'.
-// Type '{ value: string; label: string; name: string; labels: { accent: string; description: string; age: string; gender: string; use_case: string; } | { accent: string; description: string; age: string; gender: string; use_case: string; } | { ...; } | { ...; } | { ...; }; voice_verification: { ...; } | ... 3 more ... | { ....' is not assignable to type 'AudioDetails'.
-//   Types of property 'voice_verification' are incompatible.
-//     Type '{ requires_verification: boolean; is_verified: boolean; verification_failures: never[]; verification_attempts_count: number; language: null; verification_attempts: null; } | { requires_verification: boolean; ... 4 more ...; verification_attempts: null; } | { ...; } | { ...; } | { ...; }' is not assignable to type '{ verified?: boolean | undefined; verification_date?: string | undefined; }'.
-//       Type '{ requires_verification: boolean; is_verified: boolean; verification_failures: never[]; verification_attempts_count: number; language: null; verification_attempts: null; }' has no properties in common with type '{ verified?: boolean | undefined; verification_date?: string | undefined; }'
 
 export type AudioDetails = {
   value: string;
@@ -44,13 +39,8 @@ export type AudioDetails = {
     gender: string;
     use_case: string;
   };
-  voice_verification: {
-    verified?: boolean;
-    verification_failures: never[];
-    verification_attempts_count: number;
-    language?: null;
-    verification_attempts: null;
-  };
+  voice_verification: Record<string, null | boolean | never | number>;
+  fine_tuning: Record<string, null | boolean | never | number>;
   accent: string;
   voice_id?: string;
   gender?: string;
@@ -74,16 +64,12 @@ interface AudioFullDetails {
   fine_tuning: {
     is_allowed_to_fine_tune: boolean;
     state: Record<string, string>;
-    verification_failures: any[];
     verification_attempts_count: number;
     manual_verification_requested: boolean;
     language: string;
     progress: Record<string, unknown>;
     message: Record<string, string>;
     dataset_duration_seconds: number | null;
-    verification_attempts: any[] | null;
-    slice_ids: any[] | null;
-    manual_verification: any | null;
   };
   labels: {
     accent: string;
@@ -94,20 +80,13 @@ interface AudioFullDetails {
   };
   description: string | null;
   preview_url: string;
-  available_for_tiers: any[];
-  settings: any | null;
-  sharing: any | null;
   high_quality_base_model_ids: string[];
-  safety_control: any | null;
   voice_verification: {
     requires_verification: boolean;
     is_verified: boolean;
-    verification_failures: any[];
     verification_attempts_count: number;
     language: string | null;
-    verification_attempts: any[] | null;
   };
-  permission_on_resource: any | null;
   is_owner: boolean;
   is_legacy: boolean;
   is_mixed: boolean;

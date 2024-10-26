@@ -42,7 +42,7 @@ const CustomAudioOption = ({ data, innerProps }: OptionProps<AudioDetails>) => {
                         <img src={flagIcon(data.accent)?.icon.src} width={20} height={20} alt="Flag" />
                     </div>}
                     <span className="text-neutral-600 text-sm">
-                        {data.voice_verification.language && language(data.voice_verification.language).name} ( {data.accent} )
+                        {data.fine_tuning.language && language(data.fine_tuning.language.toString()).name} ( {data.accent} )
                     </span>
                 </div>
             </div>

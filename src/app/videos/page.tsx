@@ -1,3 +1,7 @@
+import VideoList from '@/components/VideoList';
+
 export default function VideosPage(){
-    return <div>Video Page</div>
+
+
+    return <VideoList/>
 }

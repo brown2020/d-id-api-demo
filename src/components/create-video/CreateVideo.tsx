@@ -2,7 +2,7 @@
 
 import { db } from "@/firebase/firebaseClient";
 import { AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
-import { AudioDataType, AudioDetails, DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
+import { DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { collection, onSnapshot, or, query, where } from "firebase/firestore";
 import { Captions, icons, Meh, Smile, UserRound, Video } from "lucide-react";
