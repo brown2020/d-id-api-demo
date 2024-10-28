@@ -6,7 +6,7 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 import { addVideoToStorage } from "./addVideoToStorage";
 
 
-export async function syncVideo(video_id: string, did_video_id: string, status: DIDVideoStatus, result_url: string) {
+export async function syncVideo(video_id: string, did_video_id: string, status: DIDVideoStatus, result_url: string, errorMessage?: string, error?: Record<string, unknown>) {
 
     // Get video data from Firestore
     // D_ID video id should match with video data
@@ -26,9 +26,14 @@ export async function syncVideo(video_id: string, did_video_id: string, status: 
     // Stream the video from the URL directly to Firebase Storage
     console.log("Downloading video from D-ID API result URL:", result_url);
 
-    if(status !== 'done') { return { "error": "Video processing not completed" }; }
+    if (status !== 'done') {
+        if (status === 'error') {
+            await videoRef.update({ d_id_status: status, error: error, errorMessage: errorMessage });
+        }
+        return { "error": "Video processing not completed" };
+    }
 
     const addVideoResponse = await addVideoToStorage(video_id, result_url, status);
-    if(addVideoResponse.status) return { status: true, video_url: addVideoResponse.video_url };
+    if (addVideoResponse.status) return { status: true, video_url: addVideoResponse.video_url };
     else return { "error": "Error adding video to storage" };
 }

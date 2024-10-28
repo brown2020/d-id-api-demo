@@ -11,6 +11,9 @@ import AvatarCard from "@/components/AvatarCard";
 import { PulseLoader } from "react-spinners";
 import PreviousVideos from "@/components/PreviousVideos";
 import TextareaAutosize from "react-textarea-autosize";
+import { getApiBaseUrl, getWebhookUrl, imageProxyUrl } from "@/libs/utils";
+import { generateVideo } from "@/actions/generateVideo";
+import { DIDTalkingPhoto } from "@/types/did";
 
 interface ItemDetails {
   voiceId?: string;
@@ -21,7 +24,7 @@ interface ItemDetails {
 export default function Generate() {
   const router = useRouter();
   const profile = useProfileStore((state) => state.profile);
-  const [itemDetails, setItemDetails] = useState<ItemDetails | null>(null);
+  const [itemDetails, setItemDetails] = useState<DIDTalkingPhoto | null>(null);
   const [loading, setLoading] = useState(true);
   const [script, setScript] = useState<string>("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -43,7 +46,7 @@ export default function Generate() {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          const data = docSnap.data() as ItemDetails; // Cast data to the correct type
+          const data = docSnap.data() as DIDTalkingPhoto; // Cast data to the correct type
           console.log("Document found:", data);
           setItemDetails(data);
         } else {
@@ -72,24 +75,28 @@ export default function Generate() {
       return;
     }
 
-    const imageUrl = itemDetails?.preview_image_url || "";
-    // const imageUrl = `${window.location.origin}/api/imageproxy/${profile.selectedTalkingPhoto}.png`;
+    // const imageUrl = itemDetails?.preview_image_url || "";
+    const baseUrl = getApiBaseUrl() ?? window.location.origin;
 
     console.log("Starting video generation...");
     setIsGenerating(true);
     setError(null);
 
     try {
-      const result  = await generateDIDVideo(
+      const result  = await generateVideo(
         profile.did_api_key || "",
-        imageUrl,
+        baseUrl,
+        {
+          'thumbnail_url': itemDetails.preview_image_url ?? '',
+        },
+        itemDetails.talking_photo_id,
         script,
         itemDetails.voiceId,
         "",
         profile.elevenlabs_api_key // Pass the ElevenLabs API key
       );
 
-      if (result && "id" in result) {
+      if (result.status && result && "id" in result && result.id) {
         console.log("Video generation initiated. Video ID:", result.id);
         const statusResponse = await retrieveDIDVideo(
           profile.did_api_key || "",
@@ -107,9 +114,9 @@ export default function Generate() {
           console.error("Video generation failed:", statusResponse.error);
           setError(statusResponse.error || "Video generation failed.");
         }
-      } else if(result && "error" in result) {
-        console.error("Failed to generate video:", result.error);
-        setError(result.error || "Failed to generate video.");
+      } else if(!result.status) {
+        console.error("Failed to generate video:", result.message);
+        setError(result.message || "Failed to generate video.");
       }
     } catch (error) {
       console.error("Error during video generation:", error);

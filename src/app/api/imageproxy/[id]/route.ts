@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/firebaseClient";
+import { DOCUMENT_COLLECTION } from "@/libs/constants";
+import { adminDb } from "@/firebase/firebaseAdmin";
 
 export async function GET(
   req: Request,
@@ -12,10 +12,10 @@ export async function GET(
   const docId = id.replace(".png", "");
 
   // Fetch the Firestore document
-  const docRef = doc(db, "didTalkingPhotos", docId);
-  const docSnap = await getDoc(docRef);
+  const docRef = adminDb.collection(DOCUMENT_COLLECTION).doc(docId);
+  const docSnap = await docRef.get();
 
-  if (!docSnap.exists()) {
+  if (!docSnap.exists) {
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
   }
 

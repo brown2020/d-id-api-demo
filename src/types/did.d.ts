@@ -100,6 +100,8 @@ export type VideoDetail = {
   owner: string;
   d_id_status: DIDVideoStatus;
   created_at: number;
+  errorMessage?: string;
+  error?: Record<string, unknown>;
 }
 
 export type NotificationType = 'video_generated'

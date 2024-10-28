@@ -89,25 +89,45 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
             // Get status from request
             const status = body.status;
 
-            // Download video from result_url and upload that video to firebase storage
-            const addVideoResponse = await addVideoToStorage(id, result_url, status);
-            if (addVideoResponse.status) {
+            if (status !== 'done') {
+                if (status == 'error') {
+                    const errorDetails = body.error;
+                    const errorMessage = body.error?.description;
 
-                // Add new notification to notification collection
-                
-                const notificationRef = adminDb.collection(NOTIFICATION_COLLECTION);
-                await notificationRef.add({
-                    type: NOTIFICATION_TYPE.VIDEO_GENERATED,
-                    status: NOTIFICATION_STATUS.UNREAD,
-                    video_id: id,
-                    user_id: videoData.owner,
-                    created_at: moment().format('X'),
-                })
+                    await videoRef.update({ d_id_status: status, error: errorDetails, errorMessage: errorMessage });
+
+                    const notificationRef = adminDb.collection(NOTIFICATION_COLLECTION);
+                    await notificationRef.add({
+                        type: NOTIFICATION_TYPE.VIDEO_GENERATION_FAILED,
+                        status: NOTIFICATION_STATUS.UNREAD,
+                        video_id: id,
+                        user_id: videoData.owner,
+                        created_at: moment().format('X'),
+                    })
+                }
+            }
+            else {
+
+                // Download video from result_url and upload that video to firebase storage
+                const addVideoResponse = await addVideoToStorage(id, result_url, status);
+                if (addVideoResponse.status) {
+
+                    // Add new notification to notification collection
+
+                    const notificationRef = adminDb.collection(NOTIFICATION_COLLECTION);
+                    await notificationRef.add({
+                        type: NOTIFICATION_TYPE.VIDEO_GENERATED,
+                        status: NOTIFICATION_STATUS.UNREAD,
+                        video_id: id,
+                        user_id: videoData.owner,
+                        created_at: moment().format('X'),
+                    })
 
 
-                resolve({ status: true });
-            } else {
-                resolve({ "error": "Error adding video to storage" })
+                    resolve({ status: true });
+                } else {
+                    resolve({ "error": "Error adding video to storage" })
+                }
             }
 
             return;

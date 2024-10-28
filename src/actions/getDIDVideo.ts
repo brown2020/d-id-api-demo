@@ -8,6 +8,8 @@ interface GetVideoSuccessResponse {
   id: string;
   status: DIDVideoStatus;
   result_url: string;
+  errorDetails?: Record<string, unknown>;
+  errorMessage?: string;
 }
 interface GetVideoFailResponse {
   error: string;
@@ -25,7 +27,7 @@ export async function getDIDVideo(
 
   try {
     console.log("Preparing Axios request to D-ID API for video ID:", `https://api.d-id.com/talks/${video_id}`);
-    
+
     const config = {
       method: "get",
       url: `https://api.d-id.com/talks/${video_id}`,
@@ -50,7 +52,6 @@ export async function getDIDVideo(
     if (response.status === 429) {
       console.warn("API rate limit exceeded. Please try again later.");
       return {
-        id: "",
         error: "Rate limit exceeded. Please try again later.",
       };
     }
@@ -59,7 +60,6 @@ export async function getDIDVideo(
       console.error("API request failed with status:", response.status);
       console.error("Error response data:", response.data);
       return {
-        id: "",
         error: `Failed with status ${response.status}: ${response.statusText}`,
       };
     }
@@ -67,15 +67,27 @@ export async function getDIDVideo(
     const id = response.data?.id;
     const status = response.data?.status;
     const result_url = response.data?.result_url;
+
+
     if (!id) {
       console.error("No ID found in API response data:", response.data);
       return {
-        id: "",
         error: "Failed to retrieve ID from the response. Please try again.",
       };
+    } else if (status == 'error') {
+      const errorDetails = response.data?.error;
+      const errorMessage = response.data?.error?.description;
+
+      if (typeof errorDetails === 'object' && 'kind' in errorDetails && errorDetails.kind === 'FaceError') {
+        return {
+          id, status, result_url,
+          errorMessage: `Issue with your source image, please try again with a different image. Error: ${errorMessage}`,
+          errorDetails: errorDetails
+        };
+      }
     }
 
-    console.log("Video generation successful. Video ID:", id);
+    console.log("Video generation successful. Video ID:", response.data);
     return { id, status, result_url };
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
@@ -89,7 +101,6 @@ export async function getDIDVideo(
 
         if (error.response.status === 429) {
           return {
-            id: "",
             error: "Rate limit exceeded. Please try again later.",
           };
         }
@@ -108,7 +119,6 @@ export async function getDIDVideo(
     }
 
     return {
-      id: "",
       error:
         "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
     };

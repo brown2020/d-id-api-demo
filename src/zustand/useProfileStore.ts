@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { useAuthStore } from "./useAuthStore";
 import { db } from "@/firebase/firebaseClient";
+import toast from "react-hot-toast";
 
 export interface ProfileType {
   email: string;
@@ -105,16 +106,13 @@ const useProfileStore = create<ProfileState>((set, get) => ({
   updateProfile: async (newProfile: Partial<ProfileType>) => {
     const uid = useAuthStore.getState().uid;
     if (!uid) return;
-
-    console.log("Updating profile:", newProfile);
-
     try {
       const userRef = doc(db, `users/${uid}/profile/userData`);
       const updatedProfile = { ...get().profile, ...newProfile };
 
       set({ profile: updatedProfile });
       await updateDoc(userRef, updatedProfile);
-      console.log("Profile updated successfully");
+      toast.success("Profile updated successfully")
     } catch (error) {
       console.error("Error updating profile:", error);
     }

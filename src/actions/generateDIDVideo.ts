@@ -14,19 +14,16 @@ export type GenerateVideoFailResponse = {
   error: string;
 }
 
-const getWebhookUrl = (id: string, secret_token: string) => `${getApiBaseUrl()}/api/video-generated/${id}?token=${secret_token}`
-
 export async function generateDIDVideo(
   apiKey: string | null,
   imageUrl: string,
+  webhookUrl: string,
   inputText?: string,
   voiceId?: string,
   audioUrl?: string,
   elevenlabsApiKey?: string,
   emotion: Emotion = "neutral",
   movement: Movement = "neutral",
-  video_id: string = "",
-  secret_token: string = ""
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
   auth().protect();
 
@@ -90,7 +87,7 @@ export async function generateDIDVideo(
         Authorization: `Basic ${apiKey}`,
       },
       data: {
-        webhook: getWebhookUrl(video_id, secret_token),
+        webhook: webhookUrl,
         script: scriptSettings,
         source_url: imageUrl,
         config: {
@@ -124,7 +121,6 @@ export async function generateDIDVideo(
     if (response.status === 429) {
       console.warn("API rate limit exceeded. Please try again later.");
       return {
-        id: "",
         error: "Rate limit exceeded. Please try again later.",
       };
     }
@@ -133,7 +129,6 @@ export async function generateDIDVideo(
       console.error("API request failed with status:", response.status);
       console.error("Error response data:", response.data);
       return {
-        id: "",
         error: `Failed with status ${response.status}: ${response.statusText}`,
       };
     }
@@ -143,7 +138,6 @@ export async function generateDIDVideo(
     if (!id) {
       console.error("No ID found in API response data:", response.data);
       return {
-        id: "",
         error: "Failed to retrieve ID from the response. Please try again.",
       };
     }
@@ -151,6 +145,7 @@ export async function generateDIDVideo(
     console.log("Video generation successful. Video ID:", id);
     return { id, status };
   } catch (error: unknown) {
+
     if (axios.isAxiosError(error)) {
       console.error("Error during video generation:", error.message);
 
@@ -160,21 +155,26 @@ export async function generateDIDVideo(
           data: JSON.stringify(error.response.data, null, 2),
         });
 
-        
 
         if (error.response.status === 429) {
           return {
-            id: "",
             error: "Rate limit exceeded. Please try again later.",
           };
-        }else if(typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data == "ValidationError") {
+        } else if (error.response.status === 402) {
+          return {
+            error: "Your account is out of credits. Please add more credits to generate video.",
+          };
+        } else if (typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data.kind == "TextToSpeechProviderError") {
+          return {
+            error: "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.",
+          };
+        } else if (typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data.kind == "ValidationError") {
           /**
            * TODO: Send Error Report
            * Message: Issue with validation of the request
            * Data: JSON.stringify(error.response.data, null, 2)
            */
           return {
-            id: "",
             error: "Something went wrong, while requesting your generate video.",
           };
         }
@@ -193,7 +193,6 @@ export async function generateDIDVideo(
     }
 
     return {
-      id: "",
       error:
         "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
     };

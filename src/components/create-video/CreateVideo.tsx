@@ -18,6 +18,8 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
+import { useAudio } from "@/hooks/useAudio";
+import { Voice } from "elevenlabs/api";
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -85,6 +87,7 @@ export default function CreateVideo() {
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
     const [processing, setProcessing] = useState(false);
+    const { isFetching, findVoice } = useAudio();
 
     const selectAvatarForm = useForm<{
         talking_photo_id: string;
@@ -139,59 +142,85 @@ export default function CreateVideo() {
 
     useEffect(() => {
         selectAvatarForm.handleSubmit(() => { })
-    }, [selectAvatarForm])  
-
-    const audioDetails = useMemo(() => {
-        return selectedAvatar && selectedAvatar.voiceId ? getAudioDetails(selectedAvatar.voiceId) : null
-    }, [selectedAvatar])
+    }, [selectAvatarForm])
 
 
     const onSubmit = writeScriptForm.handleSubmit(async () => {
+        if(!audioDetail){
+            toast.error('Please select audio');
+            return ;
+        }else if(writeScriptForm.getValues('script').length <= 3){
+            toast.error('Please write script');
+            return ;
+        }
         if (selectedAvatar) {
             toast.promise(
-                new Promise(async (resolve, reject) => {
+                new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
                     setProcessing(true);
                     try {
-                        const imageUrl = `${getApiBaseUrl()}/api/imageproxy/${selectedAvatar.talking_photo_id}.png`;
+                        const baseUrl = getApiBaseUrl() ?? window.location.origin;
                         const response = await generateVideo(
-                            profile.did_api_key, imageUrl,
+                            profile.did_api_key, baseUrl,
                             {
                                 'thumbnail_url': selectedAvatar.preview_image_url,
                             },
-                            selectedAvatar.talking_photo_id, writeScriptForm.getValues('script'), selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
+                            selectedAvatar.talking_photo_id,
+                            writeScriptForm.getValues('script'),
+                            selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
                         )
-                        if (response.status) {
-                            resolve(true);
-                            setTimeout(() => {
-                                router.push(`/videos/${response.id}/show`);
-                                setProcessing(false);
-                            }, 2000);
+                        if (response.status && response.id != undefined) {
+                            resolve({ status: true, data: response.id });
                         } else {
-                            reject(response.message);
-                            setProcessing(false);
+                            reject({ status: false, data: response.message });
                         }
                     } catch (error) {
                         console.log("Error", error);
                         /**
                          * TODO: Handle error
                          */
-                        setProcessing(false);
                     }
                 }),
                 {
                     loading: 'Requesting to generate your video...',
-                    success: `Successfully requested, Processing your video.`,
-                    error: err => `Error : ${err}`,
+                    success: (result) => {
+                        router.push(`/videos/${result.data}/show`);
+                        // setProcessing(false);
+                        return `Successfully requested, Processing your video.`;
+                    },
+                    error: (err) => {
+                        setProcessing(false);
+                        return `Error : ${err.data}`;
+                    },
                 }
             );
         }
     });
 
+    const handleChangeAvatar = async (avatar: DIDTalkingPhoto) => {
+        setProcessing(true);
+        setSelectedAvatar(avatar);
+        let _audio = null;
+        if(avatar.voiceId){
+            const audio = await findVoice(avatar.voiceId);
+            if(audio.status && audio.voice){
+                _audio = audio.voice
+            }
+        }
+        setAudioDetail(_audio);
+        setProcessing(false);
+    }
+
+    const [audioDetail, setAudioDetail] = useState<Voice | null>(null);
+
+    const stepOneCompeted = useMemo(() => {
+        return selectedAvatar != null && audioDetail != null && selectedAvatar.voiceId == audioDetail.voice_id
+    }, [selectedAvatar, audioDetail])
+
     return <div className="px-4 max-h-full h-full flex flex-col">
         <ol className="flex items-center w-full gap-4">
             {
                 steps.map((step, index) => <li key={index} className="flex-1 ">
-                    <button disabled={processing}  onClick={() => { setActiveStep(step.code) }} className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
+                    <button disabled={processing} onClick={() => { setActiveStep(step.code) }} className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
                         <span className="w-8 h-8 bg-gray-600  rounded-full flex justify-center items-center mr-3 text-sm text-white lg:w-10 lg:h-10">
                             <step.icon />
                         </span>
@@ -206,16 +235,16 @@ export default function CreateVideo() {
                 <div className={`${selectedAvatar ? 'w-1/4' : 'w-full'} flex flex-col h-full  max-h-full overflow-auto relative`}>
                     <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
                         {personalTalkingPhotos.map((avatar, index) => (
-                            <article key={index} onClick={() => { setSelectedAvatar(avatar) }} className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full">
+                            <article key={index} onClick={() => { handleChangeAvatar(avatar) }} className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full">
                                 {
-                                    avatar.preview_image_url ? 
-                                    <Image
-                                        src={avatar.preview_image_url}
-                                        alt={avatar.talking_photo_name}
-                                        width={512}
-                                        height={512}
-                                        className="absolute inset-0 h-full w-full object-cover"
-                                    /> : <></>
+                                    avatar.preview_image_url ?
+                                        <Image
+                                            src={avatar.preview_image_url}
+                                            alt={avatar.talking_photo_name}
+                                            width={512}
+                                            height={512}
+                                            className="absolute inset-0 h-full w-full object-cover"
+                                        /> : <></>
                                 }
                                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>
                                 <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{avatar.talking_photo_name}</h3>
@@ -228,14 +257,14 @@ export default function CreateVideo() {
                         <div className="flex h-full">
                             <div className="self-center">
                                 {
-                                    selectedAvatar.preview_image_url ? 
-                                    <Image
-                                        src={selectedAvatar.preview_image_url}
-                                        alt={selectedAvatar.talking_photo_name}
-                                        width={512}
-                                        height={512}
-                                        className="h-56 w-56 object-cover"
-                                    /> : <></>
+                                    selectedAvatar.preview_image_url ?
+                                        <Image
+                                            src={selectedAvatar.preview_image_url}
+                                            alt={selectedAvatar.talking_photo_name}
+                                            width={512}
+                                            height={512}
+                                            className="h-56 w-56 object-cover"
+                                        /> : <></>
                                 }
                             </div>
                             <div className="grow px-4 flex flex-col">
@@ -245,12 +274,12 @@ export default function CreateVideo() {
                                     <div>
                                         <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Audio</label>
                                         {
-                                            audioDetails ?
+                                            audioDetail ?
                                                 <div className="flex w-full gap-4 items-center">
-                                                    <CustomAudioOption2 data={audioDetails} />
+                                                    <CustomAudioOption2 data={audioDetail} />
                                                     <div>
-                                                        <audio controls key={audioDetails.voice_id}>
-                                                            <source src={audioDetails.preview_url} type="audio/mpeg" />
+                                                        <audio controls key={audioDetail.voice_id}>
+                                                            <source src={audioDetail.preview_url} type="audio/mpeg" />
                                                             Your browser does not support the audio element.
                                                         </audio>
                                                     </div>
@@ -306,7 +335,7 @@ export default function CreateVideo() {
 
                                 </div>
                                 <div className="">
-                                    <button onClick={() => { setActiveStep('write-script') }} className="float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
+                                    <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script') }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
                                         Next
                                     </button>
                                 </div>

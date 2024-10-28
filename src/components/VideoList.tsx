@@ -74,7 +74,21 @@ export default function VideosPage() {
                                                             
                                                             <div className="z-10 relative text-white">
                                                                 <h1 className="font-bold text-xl">{video.title}</h1>
-                                                                <p className="font-semibold text-lg">{video.type}</p>
+                                                                {
+                                                                    video.d_id_status =='done' ? 
+                                                                    <span className="bg-green-700 text-white px-2 py-1 rounded-full">Generated</span>
+                                                                    : <></>
+                                                                }
+                                                                {
+                                                                    video.d_id_status =='error' ? 
+                                                                    <span className="bg-red-700 text-white px-2 py-1 rounded-full">Error</span>
+                                                                    : <></>
+                                                                }
+                                                                {
+                                                                    video.d_id_status =='created' ? 
+                                                                    <span className="bg-yellow-600 text-white px-2 py-1 rounded-full">Processing...</span>
+                                                                    : <></>
+                                                                }
                                                             </div>
                                                         </div>
                                                     )

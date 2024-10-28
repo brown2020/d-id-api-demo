@@ -25,7 +25,6 @@ export default function VideoDetail() {
     }, [params])
 
     const loadVideo = useCallback(async (video: VideoDetailType) => {
-        console.log("set video data", video);
 
         // Load video with ID
         setVideoData(video);
@@ -34,39 +33,20 @@ export default function VideoDetail() {
         }
 
         // check video url exist
-        if (!video.video_url) {
-            // show video
+        if (!video.video_url && profile.did_api_key && video.d_id_status !== "error") {
+
             setGenerating(true);
             const response = await getVideo(profile.did_api_key, video.id);
-            console.log("response", response);
+            if (response && "error" in response && response.error) {
+                setGenerating(false);
+                toast.error(response.error, { duration: 7000 });
+            }
         } else {
             setGenerating(false);
         }
         // if not exist, call fetch video api only if video type is "personal"
         // if exist, show video
     }, [profile.did_api_key, videoStatus]);
-
-    // useEffect(() => {
-    //     if (videoID === null || !uid) return;
-
-    //     const docRef = doc(collection(db, VIDEO_COLLECTION), videoID);
-    //     setLoading(true);
-    //     const unsubscribe = onSnapshot(docRef, (snapshot) => {
-    //         setLoading(false);
-
-    //         if (!snapshot.exists()) {
-    //             setLoading(false);
-    //             notFound()
-
-    //         } else {
-    //             loadVideo(snapshot.data() as VideoDetailType);
-    //         }
-    //     });
-    //     return () => {
-    //         unsubscribe();
-    //     };
-    // }, [videoID, uid, loadVideo])
-
 
     useEffect(() => {
         if (videoID === null || !uid) return;
@@ -86,7 +66,7 @@ export default function VideoDetail() {
             },
             error: (error) => {
                 console.log("Error", error);
-                
+
                 setLoading(false);
             }
         });
@@ -102,13 +82,21 @@ export default function VideoDetail() {
         {videoData ?
             <div className="h-full">
                 <h2 className="text-2xl font-bold">{videoData.title ?? "Untitled Video"}</h2>
-
                 {
                     generating ? <div className="flex items-center justify-center h-full">
                         <h2 className="text-2xl font-bold animate-pulse">Generating video...</h2>
-                    </div> : <div className="h-full flex items-center justify-center">
-                        <video controls src={videoData.video_url} className="h-4/5"></video>
-                    </div>
+                    </div> : <></>
+                }
+                {
+                    videoData.d_id_status == 'error' ? <div className="flex items-center justify-center h-full">
+                        <h2 className="text-2xl font-bold">{videoData.errorMessage}</h2>
+                    </div> : <></>
+                }
+                {
+                    videoData.d_id_status == 'done' && videoData.video_url ?
+                        <div className="h-full flex items-center justify-center">
+                            <video controls src={videoData.video_url} className="h-4/5"></video>
+                        </div> : <></>
                 }
             </div>
             : <div className="h-full">

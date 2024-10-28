@@ -110,7 +110,8 @@ export default function Header() {
   }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
 
   const notificationMessage = useMemo(() => ({
-    "video_generated": () => "Your video is created successfully"
+    "video_generated": () => "Your video is created successfully",
+    "video_generation_failed": () => <span className="text-red-500">Your video generation failed</span>,
 }), []);  
 
   const router = useRouter();
@@ -153,9 +154,9 @@ export default function Header() {
       </SignedOut>
       <SignedIn>
         <div className="flex gap-2 items-center">
-          {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
+          {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
             <Link href="/generate">Generate</Link>
-          )}
+          )} */}
           <div className="relative group inline-block">
             <button className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-300 ease-in-out transform ">Create</button>
             <div

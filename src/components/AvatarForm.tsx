@@ -12,8 +12,11 @@ import { Image as ImageIcon } from "lucide-react"
 import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import Select from 'react-select';
+import Select, { components, ControlProps } from 'react-select';
 import CustomAudioOption from "./CustomAudioOption";
+import { useAudio } from "@/hooks/useAudio";
+import { Voice } from "elevenlabs/api";
+import CustomAudioOption2 from "./CustomAudioOption2";
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
     create: boolean,
@@ -23,6 +26,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const { handleSubmit, control, formState, reset, watch, setValue, getValues } = useForm<AvatarValues>({ mode: 'all' });
     const [dragging, setDragging] = useState(false);
     const [loading, setLoading] = useState(false);
+    const { audioList: options, isFetching: fetchingAudio } = useAudio();
     const onSubmit = handleSubmit((data) => {
         setProcessing(true);
         try {
@@ -42,20 +46,6 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const [avatarId, setAvatarId] = useState<string>('');
     const uid = useAuthStore((state) => state.uid);
 
-    const options: AudioDetails[] = AUDIO_LIST.map((audio) => {
-        return {
-            value: audio.voice_id,
-            label: audio.name,
-            name: audio.name,
-            labels: audio.labels,
-            accent: audio.accent,
-            language: audio.language,
-            voice_id: audio.voice_id,
-            preview_url: audio.preview_url,
-        }
-    })
-
-
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setDragging(true);
@@ -68,18 +58,18 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setDragging(false);
-    
+
         const file = e.dataTransfer.files[0];
         setLoading(true);
         setProcessing(true);
         const id = avatarId;
-    
+
         try {
             // Resize the image before uploading
             const resizedImage = await resizeImage(file);
             const filePath = `images/${uid}/${id}/${file.name}`;
             const storageRef = ref(storage, filePath);
-    
+
             await uploadBytes(storageRef, resizedImage);
             const url = await getFileUrl(filePath);
             setValue('preview_image_url', url);
@@ -110,15 +100,15 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             })
             setAvatarId(avatarDetail.talking_photo_id)
         }
-    }, [create, avatarDetail,reset])
+    }, [create, avatarDetail, reset])
 
     const voiceId = watch('voiceId');
     const previewImageUrl = watch('preview_image_url');
     const voiceDetail = useMemo(() => {
-        return AUDIO_LIST.find((audio) => audio.voice_id === voiceId);
-    }, [voiceId]);
+        return options.find((audio) => audio.voice_id === voiceId);
+    }, [voiceId, options]);
     const voiceValue = useMemo(() => {
-        return options.find((option) => option.value === voiceId);
+        return options.find((option) => option.voice_id === voiceId);
     }, [voiceId, options]);
 
     const createNewTalkingPhoto = async () => {
@@ -176,11 +166,11 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                 <div className="relative">
                     <div className="relative h-full w-full bg-white rounded-md border border-dashed border-gray-400">
                         <div className={`${!previewImageUrl && 'hidden'}`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
                         >
-                        {/* {previewImageUrl} */}
+                            {/* {previewImageUrl} */}
                             <Image
                                 src={previewImageUrl}
                                 alt="Avatar Image"
@@ -200,15 +190,15 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                             </div>
                         </label>
                     </div>
-                    { loading &&
+                    {loading &&
                         <div className="backdrop-blur-sm absolute border top-0 h-full w-full rounded-md border-dashed border-gray-400 z-20 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full animate-spin
+                            <div className="w-12 h-12 rounded-full animate-spin
                     border-2 border-white border-dashed border-t-transparent"></div>
-                    </div>
+                        </div>
                     }
-                    { dragging &&
+                    {dragging &&
                         <div className="bg-black opacity-40 absolute border top-0 h-full w-full rounded-md border-dashed border-gray-400 z-20 flex items-center justify-center">
-                    </div>
+                        </div>
                     }
                 </div>
                 <div className="col-span-2">
@@ -245,11 +235,22 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                             control={control}
                                             name="voiceId"
                                             render={({ field }) => (
-                                                <Select value={voiceValue} onChange={(e) => { setValue('voiceId', (e as AudioDetails)?.value); field.onBlur(); }} options={options}
-                                                components={{ Option: CustomAudioOption }}   
-                                                />
+                                                !fetchingAudio ?
+                                                    <Select value={voiceValue} onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur(); }} options={options}
+                                                        components={{
+                                                            Option: CustomAudioOption, Control: ({ children, ...props }: ControlProps<Voice, false>) => {
+                                                                // @ts-ignore
+                                                                return (
+                                                                    <components.Control {...props}>
+                                                                        {voiceValue ? <CustomAudioOption2 data={voiceValue} /> : <></>}
+                                                                        {children}
+                                                                    </components.Control>
+                                                                );
+                                                            }
+                                                        }}
+                                                    /> : <span>Fetching...</span>
                                             )}
-                                        />  
+                                        />
 
                                         {
                                             voiceDetail ?

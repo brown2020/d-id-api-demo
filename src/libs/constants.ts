@@ -10,6 +10,7 @@ export const AVATAR_TYPE_TEMPLATE = 'template';
 
 export const NOTIFICATION_TYPE = {
     VIDEO_GENERATED: "video_generated",
+    VIDEO_GENERATION_FAILED: "video_generation_failed",
 };
 
 export const NOTIFICATION_STATUS = {
