@@ -5,7 +5,7 @@ import { NOTIFICATION_COLLECTION, NOTIFICATION_STATUS } from "@/libs/constants";
 import { NotificationDetail } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
-// import useProfileStore from "@/zustand/useProfileStore";
+import useProfileStore from "@/zustand/useProfileStore";
 import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover';
 import {
   SignedIn,
@@ -35,7 +35,7 @@ export default function Header() {
   const [processing, setProcessing] = useState(true);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
-  // const profile = useProfileStore((state) => state.profile);
+  const profile = useProfileStore((state) => state.profile);
   useInitializeStores();
 
   useEffect(() => {
@@ -68,6 +68,7 @@ export default function Header() {
 
   useEffect(() => {
     console.log("notifications", notifications);
+    console.log("profile", profile);
   }, [notifications])
 
   useEffect(() => {
