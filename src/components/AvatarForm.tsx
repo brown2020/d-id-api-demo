@@ -1,8 +1,8 @@
 'use client';
 import { getFileUrl } from "@/actions/getFileUrl";
 import { db, storage } from "@/firebase/firebaseClient";
-import { AUDIO_LIST, AVATAR_TYPE_PERSONAL, DEFAULT_AUDIO } from "@/libs/constants";
-import { AudioDetails, AvatarValues, DIDTalkingPhoto } from "@/types/did";
+import { AVATAR_TYPE_PERSONAL, DEFAULT_AUDIO } from "@/libs/constants";
+import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
 import { resizeImage } from "@/utils/resizeImage";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { ErrorMessage } from "@hookform/error-message";
@@ -239,7 +239,6 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                                     <Select value={voiceValue} onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur(); }} options={options}
                                                         components={{
                                                             Option: CustomAudioOption, Control: ({ children, ...props }: ControlProps<Voice, false>) => {
-                                                                // @ts-ignore
                                                                 return (
                                                                     <components.Control {...props}>
                                                                         {voiceValue ? <CustomAudioOption2 data={voiceValue} /> : <></>}

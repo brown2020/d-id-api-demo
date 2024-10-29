@@ -40,23 +40,23 @@ export const useAudio = () => {
     }
 
     const loadAudioList = async () => {
-        // if (profile.elevenlabs_api_key !== null) {
-        //     setIsFetching(true);
-        //     const audioList = await getAudioList(profile.elevenlabs_api_key);
-        //     setIsFetching(false);
-        //     if ("error" in audioList && audioList.error) {
-        //         console.error("Error fetching audio list: ", audioList.error);
-        //         toast.error(audioList.error);
-        //         return;
-        //     }
+        if (profile.elevenlabs_api_key !== null) {
+            setIsFetching(true);
+            const audioList = await getAudioList(profile.elevenlabs_api_key);
+            setIsFetching(false);
+            if ("error" in audioList && audioList.error) {
+                console.error("Error fetching audio list: ", audioList.error);
+                toast.error(audioList.error);
+                return;
+            }
 
-        //     if (audioList.status && Array.isArray(audioList.voices)) {
-        //         setVoiceList(audioList.voices);
-        //     } else {
-        //         setVoiceList([]);
-        //     }
+            if (audioList.status && Array.isArray(audioList.voices)) {
+                setVoiceList(audioList.voices);
+            } else {
+                setVoiceList([]);
+            }
 
-        // }
+        }
     }
 
 

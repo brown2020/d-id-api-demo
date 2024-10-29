@@ -5,21 +5,14 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import useProfileStore from "@/zustand/useProfileStore";
-import { generateDIDVideo } from "@/actions/generateDIDVideo";
 import { retrieveDIDVideo } from "@/actions/retrieveDIDVideo";
 import AvatarCard from "@/components/AvatarCard";
 import { PulseLoader } from "react-spinners";
 import PreviousVideos from "@/components/PreviousVideos";
 import TextareaAutosize from "react-textarea-autosize";
-import { getApiBaseUrl, getWebhookUrl, imageProxyUrl } from "@/libs/utils";
+import { getApiBaseUrl } from "@/libs/utils";
 import { generateVideo } from "@/actions/generateVideo";
 import { DIDTalkingPhoto } from "@/types/did";
-
-interface ItemDetails {
-  voiceId?: string;
-  preview_image_url?: string;
-  // Add other properties if there are more fields in the document
-}
 
 export default function Generate() {
   const router = useRouter();

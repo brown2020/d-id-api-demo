@@ -1,7 +1,6 @@
 import React from 'react';
 import { FlagIcon } from '../utils/FlagIcon';
 import { Languages } from '../utils/Languages';
-import { AudioDetails } from '@/types/did';
 import { Voice } from 'elevenlabs/api';
 
 const CustomAudioOption2 = ({ data }: { data: Voice }) => {

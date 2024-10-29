@@ -8,7 +8,7 @@ import { collection, onSnapshot, or, query, where } from "firebase/firestore";
 import { Captions, icons, Meh, Smile, UserRound, Video } from "lucide-react";
 import { ComponentType, Fragment, ReactElement, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { getApiBaseUrl, getAudioDetails } from "@/libs/utils";
+import { getApiBaseUrl } from "@/libs/utils";
 import { Controller, useForm } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import { generateVideo } from "@/actions/generateVideo";
@@ -87,7 +87,7 @@ export default function CreateVideo() {
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
     const [processing, setProcessing] = useState(false);
-    const { isFetching, findVoice } = useAudio();
+    const { findVoice } = useAudio();
 
     const selectAvatarForm = useForm<{
         talking_photo_id: string;

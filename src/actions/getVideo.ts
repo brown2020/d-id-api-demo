@@ -48,7 +48,7 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
             // Then send response
             return { status: true, video_url: syncResponse.video_url };
         } else if (response.status == 'error') {
-            const syncResponse = await syncVideo(video_id, videoData.did_id, response.status, response.result_url, response.errorMessage, response.errorDetails);
+            await syncVideo(video_id, videoData.did_id, response.status, response.result_url, response.errorMessage, response.errorDetails);
             // Then send response
             return { error: response.errorMessage };
         }
