@@ -17,7 +17,7 @@
     "@nextui-org/theme": "^2.2.11",
     "@stripe/react-stripe-js": "^2.8.0",
     "axios": "^1.7.7",
-    "elevenlabs": "^0.17.1",
+    "elevenlabs": "^0.18.0",
     "firebase": "^11.0.1",
     "firebase-admin": "^12.5.0",
     "framer-motion": "^11.11.9",
