@@ -101,8 +101,11 @@ export default function Avatars() {
   };
 
   const filteredTalkingPhotos = showFavorites
-    ? personalTalkingPhotos.filter((p) => p.favorite)
+    ? personalTalkingPhotos.filter((p) => p.favorite_of?.includes(uid))
     : personalTalkingPhotos;
+  const filteredTemplateTalkingPhotos = showFavorites
+    ? templateTalkingPhotos.filter((p) => p.favorite_of?.includes(uid))
+    : templateTalkingPhotos;
 
 
   return (
@@ -137,7 +140,7 @@ export default function Avatars() {
         <div>
           <h3 className="mb-3 text-lg font-semibold text-gray-600">Demo Avatars</h3>
           <ul className="grid min-[450px]:grid-cols-2 grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {templateTalkingPhotos.map((photo, index) => (
+            {filteredTemplateTalkingPhotos.map((photo, index) => (
               <AvatarCard avatar={photo} key={index} id={photo.talking_photo_id} />
             ))}
           </ul>

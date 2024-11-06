@@ -119,7 +119,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             talking_photo_id: formValues.talking_photo_id,
             talking_photo_name: formValues.name,
             preview_image_url: formValues.preview_image_url, // Placeholder URL or default image
-            favorite: false,
+            favorite_of: [],
             type: AVATAR_TYPE_PERSONAL,
             voiceId: formValues.voiceId,
             owner: uid
