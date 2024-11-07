@@ -1,12 +1,12 @@
 'use client';
 import { getFileUrl } from "@/actions/getFileUrl";
 import { db, storage } from "@/firebase/firebaseClient";
-import { AVATAR_TYPE_PERSONAL, DEFAULT_AUDIO } from "@/libs/constants";
+import { AVATAR_TYPE_PERSONAL, DEFAULT_AUDIO, DOCUMENT_COLLECTION } from "@/libs/constants";
 import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
 import { resizeImage } from "@/utils/resizeImage";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { ErrorMessage } from "@hookform/error-message";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
 import { Image as ImageIcon } from "lucide-react"
 import Image from "next/image";
@@ -158,6 +158,17 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const cancelEdit = () => {
         submit({ status: false, data: null });
     }
+
+    const deleteAvatar = async () => {
+        try {
+            const docRef = doc(db, DOCUMENT_COLLECTION, avatarId);
+            await deleteDoc(docRef);
+            submit({ status: true, data: null });
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     return <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
@@ -269,6 +280,11 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                             <button disabled={processing} onClick={cancelEdit} type="button" className="disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
                                 Cancel
                             </button>
+                            { !create &&
+                                <button disabled={processing} onClick={deleteAvatar} type="button" className="sm:mr-3 disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex bg-red-600 w-full justify-center rounded-md  px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-white hover:bg-red-400 sm:mt-0 sm:w-auto">
+                                    Delete
+                                </button>
+                            }
                         </div>
                     </form>
                 </div>
