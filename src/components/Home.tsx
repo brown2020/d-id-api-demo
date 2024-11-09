@@ -14,9 +14,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col gap-5 bg-white shadow-md rounded-lg p-8 max-w-md w-full">
-          <div className="text-2xl font-bold text-center">D-ID API Demo</div>
+      <div className="flex items-center justify-center h-full gap-[100px] px-[30px]">
+        <div className="flex flex-col gap-[30px] bg-white shadow-pop-up-shadow rounded-2xl p-[30px] max-w-[616px] w-full">
+          {/* <div className="font-medium text-[32px] max-xs:text-2xl max-xs:text-center">D-ID API Demo</div> */}
 
           <SignedIn>
             <div className="flex flex-col items-center gap-3">
@@ -59,10 +59,10 @@ export default function Home() {
 
           <SignedOut>
             <div className="flex flex-col items-center mb-4">
-              <div className="text-lg font-medium text-gray-700 mb-2 text-center">
+              <div className="text-center font-medium  text-[26px] max-xs:text-[22px]">
                 Welcome to the D-ID API Demo!
               </div>
-              <div className="text-sm text-gray-600 text-center">
+              <div className="text-lg text-center max-xs:text-xs mt-5 xs:px-9">
                 This demo showcases the capabilities of the D-ID API, allowing
                 you to interact with various features and explore the potential
                 of integrating D-ID into your projects. Sign in to start
