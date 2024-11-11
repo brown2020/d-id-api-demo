@@ -15,6 +15,7 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import Model from "./Model";
 import AvatarForm from "./AvatarForm";
 import toast from 'react-hot-toast';
+import { Plus } from "lucide-react";
 
 export default function Avatars() {
   const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
@@ -101,8 +102,11 @@ export default function Avatars() {
   };
 
   const filteredTalkingPhotos = showFavorites
-    ? personalTalkingPhotos.filter((p) => p.favorite)
+    ? personalTalkingPhotos.filter((p) => p.favorite_of?.includes(uid))
     : personalTalkingPhotos;
+  const filteredTemplateTalkingPhotos = showFavorites
+    ? templateTalkingPhotos.filter((p) => p.favorite_of?.includes(uid))
+    : templateTalkingPhotos;
 
 
   return (
@@ -129,6 +133,16 @@ export default function Avatars() {
         <div>
           <h3 className="mb-3 text-lg font-semibold text-gray-600">My Avatars</h3>
           <ul className="grid min-[450px]:grid-cols-2 grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <article className="group/avatar relative border-2 border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
+            <div className="absolute w-full h-full right-0 top-0 px-4 flex justify-center items-center">
+              <div>
+                <div onClick={createNewTalkingPhoto} className="border mx-auto w-fit rounded-full cursor-pointer p-2 bg-gray-300">
+                  <Plus size={24} className="text-gray-600" />
+                </div>
+                <p className="w-full mt-2 font-semibold text-center text-gray-600">Create Avatar</p>
+              </div>
+            </div>
+          </article>
             {filteredTalkingPhotos.map((photo, index) => (
               <AvatarCard avatar={photo} key={index} id={photo.talking_photo_id} edit={() => openForm(photo)} />
             ))}
@@ -137,7 +151,7 @@ export default function Avatars() {
         <div>
           <h3 className="mb-3 text-lg font-semibold text-gray-600">Demo Avatars</h3>
           <ul className="grid min-[450px]:grid-cols-2 grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {templateTalkingPhotos.map((photo, index) => (
+            {filteredTemplateTalkingPhotos.map((photo, index) => (
               <AvatarCard avatar={photo} key={index} id={photo.talking_photo_id} />
             ))}
           </ul>
