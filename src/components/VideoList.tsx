@@ -58,7 +58,7 @@ export default function VideosPage() {
                                 (
                                     <>
                                         <h3 className="mb-3 text-lg font-semibold text-gray-600">My Videos</h3>
-                                        <div className="grid grid-cols-12 gap-x-2 gap-y-3">
+                                        <div className="grid sm:grid-cols-9 xs:grid-cols-6 md:grid-cols-12 gap-x-2 gap-y-3">
                                             {
                                                 videoList.map((video, index) => {
                                                     return (

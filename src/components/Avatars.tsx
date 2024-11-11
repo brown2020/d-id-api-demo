@@ -110,13 +110,13 @@ export default function Avatars() {
 
 
   return (
-    <div className="relative">
-      <div className="sticky h-0 top-0 bg-transparent z-10 right-0 float-end">
+    <div className="relative p-2">
+      <div className="sticky xs:h-0 max-xs:w-full top-0 bg-transparent z-10 right-0 float-end">
         <div className="flex justify-between items-center">
-          <div className="flex gap-2">
+          <div className="flex gap-2 max-xs:justify-between w-full">
             <button
               onClick={() => setShowFavorites(!showFavorites)}
-              className="bg-gray-200 text-gray-700 px-3 py-2 rounded-md"
+              className="bg-gray-200 text-gray-700 max-xs:text-sm px-3 py-2 rounded-md"
             >
               {showFavorites ? "Show All" : "Show Favorites"}
             </button>
