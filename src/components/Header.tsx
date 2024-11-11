@@ -113,7 +113,7 @@ export default function Header() {
   const notificationMessage = useMemo(() => ({
     "video_generated": () => "Your video is created successfully",
     "video_generation_failed": () => <span className="text-red-500">Your video generation failed</span>,
-}), []);  
+  }), []);
 
   const router = useRouter();
 
@@ -145,13 +145,17 @@ export default function Header() {
   }, [notifications, notificationMessage, openNotification]);
 
   return (
-    <div className="flex h-14 items-center justify-between px-4 py-2">
-      <Link href="/" className="font-medium text-xl">
+    <div className="flex h-14 items-center justify-end px-4 py-2">
+      {/* <Link href="/" className="font-medium text-xl">
         D-ID API Demo
-      </Link>
+      </Link> */}
 
       <SignedOut>
-        <SignInButton />
+        <SignInButton>
+          <button className="text-white bg-blue-500 h-full px-3 rounded-lg ">
+            Sign In
+          </button>
+        </SignInButton>
       </SignedOut>
       <SignedIn>
         <div className="flex gap-2 items-center">
