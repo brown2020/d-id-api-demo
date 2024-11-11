@@ -185,7 +185,11 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>
       <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{avatar?.talking_photo_name}</h3>
       <button onClick={toggleFavorite} className="transition duration-300 absolute top-3 left-3 p-2 rounded-full">
-        <svg className={`${avatar?.favorite_of?.includes(uid) ? "text-red-600" : "text-gray-200"}`} xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path className="shadow-xl" fill="currentColor" d="M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125" /></svg>
+        {
+          avatar?.favorite_of?.includes(uid) ? 
+          <svg className={`${avatar?.favorite_of?.includes(uid) ? "text-red-600" : "text-gray-200"}`} xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path className="shadow-xl" fill="currentColor" d="M12 20.325q-.35 0-.712-.125t-.638-.4l-1.725-1.575q-2.65-2.425-4.788-4.812T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.325 0 2.5.562t2 1.538q.825-.975 2-1.537t2.5-.563q2.35 0 3.925 1.575T22 8.15q0 2.875-2.125 5.275T15.05 18.25l-1.7 1.55q-.275.275-.637.4t-.713.125" /></svg>
+          : <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 48"><defs><mask id="ipTLike0"><path fill="#555" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M15 8C8.925 8 4 12.925 4 19c0 11 13 21 20 23.326C31 40 44 30 44 19c0-6.075-4.925-11-11-11c-3.72 0-7.01 1.847-9 4.674A10.99 10.99 0 0 0 15 8"/></mask></defs><path fill="currentColor" d="M0 0h48v48H0z" mask="url(#ipTLike0)"/></svg>
+        }
       </button>
       {
         avatar?.type == AVATAR_TYPE_PERSONAL ?
