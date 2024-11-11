@@ -7,11 +7,11 @@ import axios from "axios";
 export type GenerateVideoSuccessResponse = {
   id: string;
   status: DIDVideoStatus;
-}
+};
 
 export type GenerateVideoFailResponse = {
   error: string;
-}
+};
 
 export async function generateDIDVideo(
   apiKey: string | null,
@@ -22,9 +22,9 @@ export async function generateDIDVideo(
   audioUrl?: string,
   elevenlabsApiKey?: string,
   emotion: Emotion = "neutral",
-  movement: Movement = "neutral",
+  movement: Movement = "neutral"
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
-  auth().protect();
+  await auth.protect();
 
   console.log("Starting generateDIDVideo function with parameters:", {
     apiKey: apiKey ? "provided" : "not provided",
@@ -36,10 +36,10 @@ export async function generateDIDVideo(
   });
 
   if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
-    apiKey = process.env.D_ID_API_KEY
+    apiKey = process.env.D_ID_API_KEY;
   }
   if (!elevenlabsApiKey && process.env.ELEVENLABS_API_KEY !== undefined) {
-    elevenlabsApiKey = process.env.ELEVENLABS_API_KEY
+    elevenlabsApiKey = process.env.ELEVENLABS_API_KEY;
   }
 
   try {
@@ -91,15 +91,15 @@ export async function generateDIDVideo(
         source_url: imageUrl,
         config: {
           stitch: true,
-          "driver_expressions": {
-            "expressions": [
+          driver_expressions: {
+            expressions: [
               {
-                "expression": emotion,
-                "start_frame": 0,
-                "intensity": movement == 'lively' ? 1 : 0.5
+                expression: emotion,
+                start_frame: 0,
+                intensity: movement == "lively" ? 1 : 0.5,
               },
-            ]
-          }
+            ],
+          },
         },
       },
     };
@@ -144,7 +144,6 @@ export async function generateDIDVideo(
     console.log("Video generation successful. Video ID:", id);
     return { id, status };
   } catch (error: unknown) {
-
     if (axios.isAxiosError(error)) {
       console.error("Error during video generation:", error.message);
 
@@ -154,27 +153,37 @@ export async function generateDIDVideo(
           data: JSON.stringify(error.response.data, null, 2),
         });
 
-
         if (error.response.status === 429) {
           return {
             error: "Rate limit exceeded. Please try again later.",
           };
         } else if (error.response.status === 402) {
           return {
-            error: "Your account is out of credits. Please add more credits to generate video.",
+            error:
+              "Your account is out of credits. Please add more credits to generate video.",
           };
-        } else if (typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data.kind == "TextToSpeechProviderError") {
+        } else if (
+          typeof error.response.data === "object" &&
+          "kind" in error.response.data &&
+          error.response.data.kind == "TextToSpeechProviderError"
+        ) {
           return {
-            error: "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.",
+            error:
+              "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.",
           };
-        } else if (typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data.kind == "ValidationError") {
+        } else if (
+          typeof error.response.data === "object" &&
+          "kind" in error.response.data &&
+          error.response.data.kind == "ValidationError"
+        ) {
           /**
            * TODO: Send Error Report
            * Message: Issue with validation of the request
            * Data: JSON.stringify(error.response.data, null, 2)
            */
           return {
-            error: "Something went wrong, while requesting your generate video.",
+            error:
+              "Something went wrong, while requesting your generate video.",
           };
         }
       } else if (error.request) {

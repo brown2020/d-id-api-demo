@@ -17,16 +17,19 @@ interface GetVideoFailResponse {
 
 export async function getDIDVideo(
   apiKey: string | null,
-  video_id: string,
+  video_id: string
 ): Promise<GetVideoSuccessResponse | GetVideoFailResponse | null> {
-  auth().protect();
+  await auth.protect();
 
   if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
-    apiKey = process.env.D_ID_API_KEY
+    apiKey = process.env.D_ID_API_KEY;
   }
 
   try {
-    console.log("Preparing Axios request to D-ID API for video ID:", `https://api.d-id.com/talks/${video_id}`);
+    console.log(
+      "Preparing Axios request to D-ID API for video ID:",
+      `https://api.d-id.com/talks/${video_id}`
+    );
 
     const config = {
       method: "get",
@@ -68,21 +71,26 @@ export async function getDIDVideo(
     const status = response.data?.status;
     const result_url = response.data?.result_url;
 
-
     if (!id) {
       console.error("No ID found in API response data:", response.data);
       return {
         error: "Failed to retrieve ID from the response. Please try again.",
       };
-    } else if (status == 'error') {
+    } else if (status == "error") {
       const errorDetails = response.data?.error;
       const errorMessage = response.data?.error?.description;
 
-      if (typeof errorDetails === 'object' && 'kind' in errorDetails && errorDetails.kind === 'FaceError') {
+      if (
+        typeof errorDetails === "object" &&
+        "kind" in errorDetails &&
+        errorDetails.kind === "FaceError"
+      ) {
         return {
-          id, status, result_url,
+          id,
+          status,
+          result_url,
           errorMessage: `Issue with your source image, please try again with a different image. Error: ${errorMessage}`,
-          errorDetails: errorDetails
+          errorDetails: errorDetails,
         };
       }
     }

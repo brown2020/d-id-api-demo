@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.6.0",
+    "@clerk/nextjs": "^6.3.0",
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^3.9.0",
     "@nextui-org/popover": "^2.1.29",

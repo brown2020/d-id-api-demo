@@ -13,7 +13,7 @@ interface RetrieveVideoResponse {
 
 // Helper function to fetch the result of the talk
 async function fetchResult(talkId: string, apiKey: string) {
-  auth().protect();
+  await auth.protect();
   const response = await axios.get(`https://api.d-id.com/talks/${talkId}`, {
     headers: {
       Authorization: `Basic ${apiKey}`,
@@ -36,9 +36,8 @@ export async function retrieveDIDVideo(
   try {
     let resultData;
     while (true) {
-
-      if(!apiKey && process.env.D_ID_API_KEY !== undefined) {
-        apiKey = process.env.D_ID_API_KEY
+      if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
+        apiKey = process.env.D_ID_API_KEY;
       }
 
       resultData = await fetchResult(talkId, apiKey);
