@@ -110,7 +110,7 @@ export default function Avatars() {
 
 
   return (
-    <div className="relative border p-2">
+    <div className="relative p-2">
       <div className="sticky xs:h-0 max-xs:w-full top-0 bg-transparent z-10 right-0 float-end">
         <div className="flex justify-between items-center">
           <div className="flex gap-2 max-xs:justify-between w-full">

@@ -163,7 +163,7 @@ export default function Header() {
       </SignedOut>
       <SignedIn>
         <div className="flex items-center justify-end px-4 py-3 border-b shadow-md z-30">
-          <div className="max-xs:hidden flex gap-3 items-center">
+          <div className="max-xs:hidden flex items-center">
             {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
               <Link href="/generate">Generate</Link>
             )} */}
@@ -189,15 +189,15 @@ export default function Header() {
               </PopoverContent>
             </Popover>
             <div className="group">
-              <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform ">Create</button>
+              <button className="hover:text-blue-500 px-4 py-2 rounded-lg transition duration-300 ease-in-out transform ">Create</button>
               <div
                 className="opacity-0 z-20 invisible group-hover:opacity-100 group-hover:visible absolute mt-0 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-lg py-2 z-10">
                 <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
               </div>
             </div>
-            <Link href="/videos" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">Videos</Link>
-            <Link href="/avatars" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">Avatars</Link>
-            <Link href="/profile" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">Profile</Link>
+            <Link href="/videos" className="hover:text-blue-500 px-4 py-2 rounded-lg transition">Videos</Link>
+            <Link href="/avatars" className="hover:text-blue-500 px-4 py-2 rounded-lg transition">Avatars</Link>
+            <Link href="/profile" className="hover:text-blue-500 px-4 py-2 rounded-lg transition">Profile</Link>
             <UserButton />
           </div>
           <div className="xs:hidden relative flex-1">
