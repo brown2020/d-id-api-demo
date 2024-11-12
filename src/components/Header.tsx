@@ -7,6 +7,7 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import useProfileStore from "@/zustand/useProfileStore";
 import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover';
+import Image from "next/image";
 import {
   SignedIn,
   SignedOut,
@@ -26,6 +27,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import moment from "moment";
 import { useRouter } from "next/navigation";
+import logo from "@/assets/images/logo.png"
 
 export default function Header() {
   const { getToken, isSignedIn } = useAuth();
@@ -155,14 +157,15 @@ export default function Header() {
       <SignedOut>
         <div className="flex items-center justify-end px-4 py-3 border-b shadow-md z-30">
           <SignInButton>
-            <button className="text-white bg-blue-500 h-full px-2 py-1 rounded-lg ">
+            <button className="text-white bg-blue-500 h-full px-4 py-2 rounded-lg ">
               Sign In
             </button>
           </SignInButton>
         </div>
       </SignedOut>
       <SignedIn>
-        <div className="flex items-center justify-end px-4 py-3 border-b shadow-md z-30">
+        <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-10">
+          <Image src={logo} alt="logo" className="w-[80.28px] h-[50px]" />
           <div className="max-xs:hidden flex items-center">
             {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
               <Link href="/generate">Generate</Link>
@@ -200,7 +203,7 @@ export default function Header() {
             <Link href="/profile" className="hover:text-blue-500 px-4 py-2 rounded-lg transition">Profile</Link>
             <UserButton />
           </div>
-          <div className="xs:hidden relative flex-1">
+          <div className="xs:hidden">
             <div className="flex justify-end">
               <div className="flex gap-3 items-center">
                 <Popover placement="bottom-end" showArrow={true}>
@@ -228,22 +231,24 @@ export default function Header() {
                 <UserButton />
               </div>
             </div>
-            <div className={`absolute border shadow-md bg-white rounded-b-lg ${isManuOpen ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-all duration-300 z-20 top-11 w-full left-0`}>
-              <div className="flex flex-col p-2">
-                <div className="group w-full relative">
-                  <button onClick={() => setIsCreateManuOpen(!isCreateManuOpen)} className={`hover:text-white flex justify-between text-start px-4 w-full py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform`}>
-                    <p>Create</p>
-                    <ArrowDown className={`${isCreateManuOpen ? 'rotate-0' : 'rotate-90'} `} />
-                  </button>
-                  <div
-                    className={` ${isCreateManuOpen ? 'visible' : 'hidden'} top-10 right-0 w-full z-20 absolute mt-0 bg-white text-gray-800 border border-gray-300 rounded-b-lg shadow-lg py-2`}>
-                    <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
-                  </div>
+          </div>
+        </div>
+        <div className="relative">
+          <div className={`absolute shadow-md bg-white rounded-b-lg ${isManuOpen ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-all duration-300  w-full left-0`}>
+            <div className="flex flex-col p-2">
+              <div className="group w-full relative">
+                <button onClick={() => setIsCreateManuOpen(!isCreateManuOpen)} className={`hover:text-white flex justify-between text-start px-4 w-full py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform`}>
+                  <p>Create</p>
+                  <ArrowDown className={`${isCreateManuOpen ? 'rotate-0' : 'rotate-90'} `} />
+                </button>
+                <div
+                  className={` ${isCreateManuOpen ? 'visible' : 'hidden'} top-10 right-0 w-full z-20 absolute mt-0 bg-white text-gray-800 border border-gray-300 rounded-b-lg shadow-lg py-2`}>
+                  <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
                 </div>
-                <Link onClick={() => setIsManuOpen(false)} href="/videos" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Videos</Link>
-                <Link onClick={() => setIsManuOpen(false)} href="/avatars" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Avatars</Link>
-                <Link onClick={() => setIsManuOpen(false)} href="/profile" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Profile</Link>
               </div>
+              <Link onClick={() => setIsManuOpen(false)} href="/videos" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Videos</Link>
+              <Link onClick={() => setIsManuOpen(false)} href="/avatars" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Avatars</Link>
+              <Link onClick={() => setIsManuOpen(false)} href="/profile" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Profile</Link>
             </div>
           </div>
         </div>
