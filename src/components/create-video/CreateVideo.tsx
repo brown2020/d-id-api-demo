@@ -146,12 +146,12 @@ export default function CreateVideo() {
 
 
     const onSubmit = writeScriptForm.handleSubmit(async () => {
-        if(!audioDetail){
+        if (!audioDetail) {
             toast.error('Please select audio');
-            return ;
-        }else if(writeScriptForm.getValues('script').length <= 3){
+            return;
+        } else if (writeScriptForm.getValues('script').length <= 3) {
             toast.error('Please write script');
-            return ;
+            return;
         }
         if (selectedAvatar) {
             toast.promise(
@@ -200,9 +200,9 @@ export default function CreateVideo() {
         setProcessing(true);
         setSelectedAvatar(avatar);
         let _audio = null;
-        if(avatar.voiceId){
+        if (avatar.voiceId) {
             const audio = await findVoice(avatar.voiceId);
-            if(audio.status && audio.voice){
+            if (audio.status && audio.voice) {
                 _audio = audio.voice
             }
         }
@@ -216,7 +216,7 @@ export default function CreateVideo() {
         return selectedAvatar != null && audioDetail != null && selectedAvatar.voiceId == audioDetail.voice_id
     }, [selectedAvatar, audioDetail])
 
-    return <div className="px-4 max-h-full h-full flex flex-col">
+    return <div className="px-4 max-h-full h-full flex flex-col video-create">
         <ol className="flex items-center w-full gap-4">
             {
                 steps.map((step, index) => <li key={index} className="flex-1 ">
@@ -253,32 +253,20 @@ export default function CreateVideo() {
                     </ul>
                 </div>
                 {selectedAvatar ?
-                    <div className="grow bg-gray-50 rounded-lg p-4">
-                        <div className="flex h-full">
-                            <div className="self-center">
-                                {
-                                    selectedAvatar.preview_image_url ?
-                                        <Image
-                                            src={selectedAvatar.preview_image_url}
-                                            alt={selectedAvatar.talking_photo_name}
-                                            width={512}
-                                            height={512}
-                                            className="h-56 w-56 object-cover"
-                                        /> : <></>
-                                }
-                            </div>
-                            <div className="grow px-4 flex flex-col">
+                    <div className="grow bg-gray-50 rounded-lg p-4 h-full flex flex-col justify-between">
+                        <div className="flex">
+                            <div className="px-4 flex flex-col w-1/3">
                                 <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
                                 {/* <p className="text-2xl font-bold">{selectedAvatar.voiceId}</p> */}
-                                <div className="flex flex-col gap-4 mt-5 px-4 grow">
+                                <div className="flex flex-col gap-4 mt-5 pe-4 grow">
                                     <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Audio</label>
+                                        <label className="label">Audio</label>
                                         {
                                             audioDetail ?
-                                                <div className="flex w-full gap-4 items-center">
+                                                <div className="flex flex-col w-full gap-4">
                                                     <CustomAudioOption2 data={audioDetail} />
                                                     <div>
-                                                        <audio controls key={audioDetail.voice_id}>
+                                                        <audio className="w-full" controls key={audioDetail.voice_id}>
                                                             <source src={audioDetail.preview_url} type="audio/mpeg" />
                                                             Your browser does not support the audio element.
                                                         </audio>
@@ -292,13 +280,13 @@ export default function CreateVideo() {
                                         name="emotion"
                                         render={({ field }) => (
                                             <div>
-                                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Emotions</label>
+                                                <label className="label">Emotions</label>
 
-                                                <ul className="items-center w-full text-sm font-medium border-gray-200 rounded-lg sm:flex ">
+                                                <ul className="items-center w-full text-sm font-medium grid grid-cols-2 gap-1">
                                                     {
-                                                        emotions.map((emotion, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('emotion', emotion.code) }} className={`cursor-pointer w-full border-gray-200 sm:border-r first:rounded-l-lg last:rounded-r-lg ${field.value == emotion.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
-                                                            <div className="flex items-center ps-3 ">
-                                                                <label className="w-full py-3 ms-2 text-sm font-medium cursor-pointer">{emotion.label}</label>
+                                                        emotions.map((emotion, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('emotion', emotion.code) }} className={`p-2 rounded-md cursor-pointer w-full ${field.value == emotion.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                            <div className="flex items-center">
+                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{emotion.label}</label>
                                                             </div>
                                                         </li>)
                                                     }
@@ -316,13 +304,13 @@ export default function CreateVideo() {
                                         }}
                                         render={({ field }) => (
                                             <div>
-                                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Movements</label>
+                                                <label className="label">Movements</label>
 
-                                                <ul className="items-center w-full text-sm font-medium border-gray-200 rounded-lg sm:flex ">
+                                                <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-2 gap-1 ">
                                                     {
-                                                        movements.map((movements, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('movement', movements.code) }} className={`cursor-pointer w-full border-gray-200 sm:border-r first:rounded-l-lg last:rounded-r-lg ${field.value == movements.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
-                                                            <div className="flex items-center ps-3 ">
-                                                                <label className="w-full py-3 ms-2 text-sm font-medium cursor-pointer">{movements.label}</label>
+                                                        movements.map((movements, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('movement', movements.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == movements.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                            <div className="flex items-center">
+                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{movements.label}</label>
                                                             </div>
                                                         </li>)
                                                     }
@@ -334,12 +322,24 @@ export default function CreateVideo() {
                                     />
 
                                 </div>
-                                <div className="">
-                                    <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script') }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
-                                        Next
-                                    </button>
-                                </div>
                             </div>
+                            <div className="self-center grow justify-center flex">
+                                {
+                                    selectedAvatar.preview_image_url ?
+                                        <Image
+                                            src={selectedAvatar.preview_image_url}
+                                            alt={selectedAvatar.talking_photo_name}
+                                            width={630}
+                                            height={900}
+                                            className="w-56 object-cover"
+                                        /> : <></>
+                                }
+                            </div>
+                        </div>
+                        <div className="">
+                            <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script') }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
+                                Next
+                            </button>
                         </div>
                     </div> : <Fragment />
                 }
