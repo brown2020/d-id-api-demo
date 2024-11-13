@@ -2,10 +2,10 @@
 
 import { db } from "@/firebase/firebaseClient";
 import { AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
-import { DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
+import { DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { collection, onSnapshot, or, query, where } from "firebase/firestore";
-import { Captions, icons, Meh, Smile, UserRound, Video } from "lucide-react";
+import { Captions, icons, Meh, Scaling, Smile, UserRound, Video } from "lucide-react";
 import { ComponentType, Fragment, ReactElement, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { getApiBaseUrl } from "@/libs/utils";
@@ -20,6 +20,8 @@ import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
+import { FabricJSCanvas, useFabricJSEditor } from 'fabricjs-react'
+
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -47,6 +49,28 @@ const movements: { code: Movement, label: string, icon: IconType }[] = [
         label: 'Lively',
         icon: Video
     }
+]
+const frames: { code: Frame, label: string, icon: IconType }[] = [
+    {
+        code: 'fit',
+        label: 'Fit',
+        icon: Scaling
+    },
+    {
+        code: 'landscape',
+        label: 'Landscape (16:9)',
+        icon: Scaling
+    },
+    {
+        code: 'portrait',
+        label: 'Portrait (9:16)',
+        icon: Scaling
+    },
+    {
+        code: 'square',
+        label: 'Square (1:1)',
+        icon: Scaling
+    },
 ]
 const emotions: { code: Emotion, label: string, icon: IconType }[] = [
     {
@@ -78,6 +102,7 @@ const schema = Yup.object().shape({
     voice_id: Yup.string().required("Required."),
     emotion: Yup.string().required("Required.").oneOf(emotions.map((emotion) => emotion.code)),
     movement: Yup.string().required("Required.").oneOf(movements.map((movement) => movement.code)),
+    frame: Yup.string().required("Required.").oneOf(frames.map((frame) => frame.code)),
 });
 
 export default function CreateVideo() {
@@ -89,17 +114,27 @@ export default function CreateVideo() {
     const [processing, setProcessing] = useState(false);
     const { findVoice } = useAudio();
 
+    const { editor, onReady } = useFabricJSEditor()
+    const onAddCircle = () => {
+        editor?.addCircle()
+    }
+    const onAddRectangle = () => {
+        editor?.addRectangle()
+    }
+
     const selectAvatarForm = useForm<{
         talking_photo_id: string;
         voice_id: string;
         emotion: Emotion;
         movement: Movement;
+        frame: Frame;
     }>({
         mode: 'all',
         resolver: yupResolver(schema),
         defaultValues: {
             emotion: 'neutral',
-            movement: 'neutral'
+            movement: 'neutral',
+            frame: 'fit'
         },
     });
 
@@ -321,10 +356,40 @@ export default function CreateVideo() {
                                         )}
                                     />
 
+                                    <Controller
+                                        control={selectAvatarForm.control}
+                                        name="frame"
+                                        rules={{
+                                            required: { message: 'Required.', value: true },
+                                        }}
+                                        render={({ field }) => (
+                                            <div>
+                                                <label className="label">Frame</label>
+
+                                                <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-1 gap-1 ">
+                                                    {
+                                                        frames.map((frame, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('frame', frame.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == frame.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                            <div className="flex items-center">
+                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{frame.label}</label>
+                                                            </div>
+                                                        </li>)
+                                                    }
+
+                                                </ul>
+
+                                            </div>
+                                        )}
+                                    />
+                                    
                                 </div>
                             </div>
                             <div className="self-center grow justify-center flex">
-                                {
+                                <div>
+                                    <button onClick={onAddCircle}>Add circle</button>
+                                    <button onClick={onAddRectangle}>Add Rectangle</button>
+                                    <FabricJSCanvas className="sample-canvas" onReady={onReady} />
+                                </div>
+                                {/* {
                                     selectedAvatar.preview_image_url ?
                                         <Image
                                             src={selectedAvatar.preview_image_url}
@@ -333,7 +398,7 @@ export default function CreateVideo() {
                                             height={900}
                                             className="w-56 object-cover"
                                         /> : <></>
-                                }
+                                } */}
                             </div>
                         </div>
                         <div className="">
