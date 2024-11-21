@@ -6,10 +6,10 @@ import { DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { collection, onSnapshot, or, query, where } from "firebase/firestore";
 import { Captions, icons, Meh, Scaling, Smile, UserRound, Video } from "lucide-react";
-import { ComponentType, Fragment, ReactElement, useEffect, useMemo, useState } from "react";
+import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { getApiBaseUrl } from "@/libs/utils";
-import { Controller, useForm } from "react-hook-form";
+import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import { generateVideo } from "@/actions/generateVideo";
 import * as Yup from "yup";
@@ -20,6 +20,7 @@ import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
+import * as fabric from 'fabric';
 import { FabricJSCanvas, useFabricJSEditor } from 'fabricjs-react'
 
 
@@ -114,13 +115,11 @@ export default function CreateVideo() {
     const [processing, setProcessing] = useState(false);
     const { findVoice } = useAudio();
 
-    const { editor, onReady } = useFabricJSEditor()
-    const onAddCircle = () => {
-        editor?.addCircle()
-    }
-    const onAddRectangle = () => {
-        editor?.addRectangle()
-    }
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+    const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+    const [canvasElements, setCanvasElements] = useState<fabric.Object[]>([]);
+    const [canvasMainImage, setCanvasMainImage] = useState<fabric.Object | null>(null);
 
     const selectAvatarForm = useForm<{
         talking_photo_id: string;
@@ -138,18 +137,219 @@ export default function CreateVideo() {
         },
     });
 
-    const writeScriptForm = useForm<{
-        script: string;
-    }>({
-        mode: 'all',
-    });
+    const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
+    useEffect(() => {
+        onAddRectangle(updatedFields[0])
+    }, [updatedFields])
+
+    const onAddCircle = useCallback(() => {
+        if (!selectedAvatar) {
+            console.log("No avatar selected");
+        }
+        if (canvas && selectedAvatar) {
+            const imageURL = imageProxyUrl(getApiBaseUrl(), `${selectedAvatar.talking_photo_id}.png`);
+            fabric.FabricImage.fromURL(imageURL, { crossOrigin: 'anonymous' })
+                .then((img) => {
+                    // Show processing while uploading image
+                    // remove existing image while uploading new image
+                    // Set current image in specific dimensions
+
+                    if (canvasContainerRef.current !== null) {
+                        // Get screen dimensions
+                        const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
+
+                        // Get original image dimensions
+                        const imageWidth = img.width;
+                        const imageHeight = img.height;
+
+                        // Calculate scaling factor to fit the image within the screen size
+                        const scaleFactor = Math.min(screenWidth / imageWidth, screenHeight / imageHeight);
+
+                        // If the image is larger than the screen, scale it down
+                        const scaledWidth = imageWidth * scaleFactor;
+                        const scaledHeight = imageHeight * scaleFactor;
+
+                        // Set the new dimensions for the canvas
+                        canvas.setWidth(scaledWidth);
+                        canvas.setHeight(scaledHeight);
+                        canvas?.renderAll();
+
+                        // Add the image to the canvas with the scaled dimensions
+                        img.set({
+                            scaleX: scaleFactor,
+                            scaleY: scaleFactor,
+                        });
+                        canvas.add(img);
+                        setCanvasElements([...canvasElements, img]);
+                        setCanvasMainImage(img);
+                    }
+                });
+        }
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [canvas, selectedAvatar])
+
+    const onAddRectangle = (frame: Frame) => {
+        if (canvasMainImage && canvasContainerRef.current) {
+            const { width } = getContainerHeightWidth();
+            if (frame == 'fit') {
+                setCanvasDimensions(width, null, canvasMainImage);
+            } else if (frame == 'landscape') {
+                setCanvasDimensions(width, { width: 16, height: 9 }, canvasMainImage);
+            } else if (frame == 'portrait') {
+                setCanvasDimensions(width, { width: 9, height: 16 }, canvasMainImage);
+            } else if (frame == 'square') {
+                setCanvasDimensions(width, { width: 1, height: 1 }, canvasMainImage);
+            }
+        }
+    }
+
+    const getContainerHeightWidth = () => {
+        const container = canvasContainerRef.current;
+
+        return container ? {
+            width: (container.offsetWidth),
+            height: (container.offsetHeight),
+        } : {
+            width: 0,
+            height: 0,
+        };
+    }
+
+    const setCanvasDimensions = (
+        widthOrHeight: number,
+        aspectRatio: { width: number, height: number } | null,
+        img: fabric.Object
+    ) => {
+        const container = canvasContainerRef.current;
+        if (canvas && container) {
+
+            if (aspectRatio == null) {
+                // Get screen dimensions
+                const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
+
+                // Get original image dimensions
+                const imageWidth = img.width;
+                const imageHeight = img.height;
+
+                // Calculate scaling factor to fit the image within the screen size
+                const scaleFactor = Math.min(screenWidth / imageWidth, screenHeight / imageHeight);
+
+                // If the image is larger than the screen, scale it down
+                const scaledWidth = imageWidth * scaleFactor;
+                const scaledHeight = imageHeight * scaleFactor;
+
+                // Set the new dimensions for the canvas
+                canvas.setWidth(scaledWidth);
+                canvas.setHeight(scaledHeight);
+
+                // Add the image to the canvas with the scaled dimensions
+                img.set({
+                    scaleX: scaleFactor,
+                    scaleY: scaleFactor,
+                    left: 0,
+                    top: 0,
+                });
+                img.setCoords();
+                canvas?.renderAll();
+            } else {
+                let canvasWidth, canvasHeight;
+
+                // Calculate width and height based on the aspect ratio
+                if (widthOrHeight === aspectRatio.width) {
+                    canvasHeight = (widthOrHeight * aspectRatio.height) / aspectRatio.width;
+                    canvasWidth = widthOrHeight;
+                } else {
+                    canvasWidth = (widthOrHeight * aspectRatio.width) / aspectRatio.height;
+                    canvasHeight = widthOrHeight;
+                }
+
+                // Get the container's width and height
+                const containerWidth = container.offsetWidth;
+                const containerHeight = container.offsetHeight;
+
+                // Check if the calculated dimensions exceed the container's size
+                if (canvasWidth > containerWidth) {
+                    const scale = containerWidth / canvasWidth;
+                    canvasWidth = containerWidth;
+                    canvasHeight = canvasHeight * scale; // Scale height based on width adjustment
+                }
+
+                if (canvasHeight > containerHeight) {
+                    const scale = containerHeight / canvasHeight;
+                    canvasHeight = containerHeight;
+                    canvasWidth = canvasWidth * scale; // Scale width based on height adjustment
+                }
+
+                // Set the calculated width and height for the canvas
+                canvas.setWidth(canvasWidth - 4);
+                canvas.setHeight(canvasHeight - 4);
+
+                // Scale the image uniformly to fit within the canvas
+                const imageAspectRatio = img.width / img.height;
+                const canvasAspectRatio = canvasWidth / canvasHeight;
+
+                let scaleFactor;
+                if (imageAspectRatio > canvasAspectRatio) {
+                    // Image is wider than the canvas
+                    scaleFactor = canvasWidth / img.width;
+                } else {
+                    // Image is taller than the canvas
+                    scaleFactor = canvasHeight / img.height;
+                }
+
+                img.set({
+                    scaleX: scaleFactor,
+                    scaleY: scaleFactor,
+                    left: (canvasWidth - img.width * scaleFactor) / 2, // Center horizontally
+                    top: (canvasHeight - img.height * scaleFactor) / 2, // Center vertically
+                });
+
+                img.setCoords();
+
+                canvas.renderAll();
+            }
+
+        }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (canvas !== null) {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                const activeObject = canvas.getActiveObject();
+                if (activeObject) {
+                    canvas.remove(activeObject);
+                    canvas.renderAll();
+                }
+            }
+        }
+    };
+
+
+
+    const writeScriptForm = useForm<{ script: string; }>({ mode: 'all' });
 
     useEffect(() => {
         selectAvatarForm.setValue('talking_photo_id', selectedAvatar ? selectedAvatar.talking_photo_id : '')
         selectAvatarForm.setValue('voice_id', selectedAvatar && selectedAvatar.voiceId ? selectedAvatar.voiceId : '')
+        if (!canvas && canvasRef.current) {
+            const _canvas = new fabric.Canvas(canvasRef.current, {
+                width: canvasRef.current.width,
+            });
+            setCanvas(_canvas);
+        }
     }, [selectedAvatar, selectAvatarForm])
+    useEffect(() => {
+        onAddCircle()
+    }, [selectedAvatar, canvas])
+
+
 
     const [activeStep, setActiveStep] = useState('select-avatar')
+
+
 
     useEffect(() => {
         const personalTalkingPhotosCollection = query(
@@ -178,7 +378,6 @@ export default function CreateVideo() {
     useEffect(() => {
         selectAvatarForm.handleSubmit(() => { })
     }, [selectAvatarForm])
-
 
     const onSubmit = writeScriptForm.handleSubmit(async () => {
         if (!audioDetail) {
@@ -289,11 +488,10 @@ export default function CreateVideo() {
                 </div>
                 {selectedAvatar ?
                     <div className="grow bg-gray-50 rounded-lg p-4 h-full flex flex-col justify-between">
-                        <div className="flex">
+                        <div className="flex grow overflow-x-auto">
                             <div className="px-4 flex flex-col w-1/3">
                                 <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
-                                {/* <p className="text-2xl font-bold">{selectedAvatar.voiceId}</p> */}
-                                <div className="flex flex-col gap-4 mt-5 pe-4 grow">
+                                <div className="flex flex-col gap-4 mt-5 pe-4 grow overflow-y-auto">
                                     <div>
                                         <label className="label">Audio</label>
                                         {
@@ -380,25 +578,11 @@ export default function CreateVideo() {
                                             </div>
                                         )}
                                     />
-                                    
+
                                 </div>
                             </div>
-                            <div className="self-center grow justify-center flex">
-                                <div>
-                                    <button onClick={onAddCircle}>Add circle</button>
-                                    <button onClick={onAddRectangle}>Add Rectangle</button>
-                                    <FabricJSCanvas className="sample-canvas" onReady={onReady} />
-                                </div>
-                                {/* {
-                                    selectedAvatar.preview_image_url ?
-                                        <Image
-                                            src={selectedAvatar.preview_image_url}
-                                            alt={selectedAvatar.talking_photo_name}
-                                            width={630}
-                                            height={900}
-                                            className="w-56 object-cover"
-                                        /> : <></>
-                                } */}
+                            <div className="self-center grow justify-center flex h-full" ref={canvasContainerRef}>
+                                <canvas className="border-2 border-gray-500 w-full h-full rounded-lg" ref={canvasRef} id="fabricCanvas" />
                             </div>
                         </div>
                         <div className="">

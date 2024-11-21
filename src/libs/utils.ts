@@ -13,6 +13,6 @@ export function randomString(n: number) {
     return token;
 }
 
-export const getApiBaseUrl = () => process.env.NEXT_PUBLIC_IS_LOCAL == "1" ? process.env.NEXT_PUBLIC_API_BASE_URL : window.location.origin;
+export const getApiBaseUrl = () => process.env.NEXT_PUBLIC_IS_LOCAL == "1" && process.env.NEXT_PUBLIC_API_BASE_URL ? process.env.NEXT_PUBLIC_API_BASE_URL : window.location.origin;
 export const imageProxyUrl = (baseUrl: string, image: string) => `${baseUrl}/api/imageproxy/${image}`;
 export const getWebhookUrl = (baseUrl: string, id: string, secret_token: string) => `${baseUrl}/api/video-generated/${id}?token=${secret_token}`;
