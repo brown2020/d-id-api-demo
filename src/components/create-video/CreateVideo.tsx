@@ -21,7 +21,6 @@ import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
 import * as fabric from 'fabric';
-import { FabricJSCanvas, useFabricJSEditor } from 'fabricjs-react'
 
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -113,7 +112,10 @@ export default function CreateVideo() {
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [fetchingImage, setFetchingImage] = useState(false);
     const { findVoice } = useAudio();
+
+    const [activeStep, setActiveStep] = useState('select-avatar')
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
@@ -141,55 +143,89 @@ export default function CreateVideo() {
     useEffect(() => {
         onAddRectangle(updatedFields[0])
     }, [updatedFields])
-
-    const onAddCircle = useCallback(() => {
-        if (!selectedAvatar) {
-            console.log("No avatar selected");
-        }
-        if (canvas && selectedAvatar) {
-            const imageURL = imageProxyUrl(getApiBaseUrl(), `${selectedAvatar.talking_photo_id}.png`);
-            fabric.FabricImage.fromURL(imageURL, { crossOrigin: 'anonymous' })
-                .then((img) => {
-                    // Show processing while uploading image
-                    // remove existing image while uploading new image
-                    // Set current image in specific dimensions
-
-                    if (canvasContainerRef.current !== null) {
-                        // Get screen dimensions
-                        const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
-
-                        // Get original image dimensions
-                        const imageWidth = img.width;
-                        const imageHeight = img.height;
-
-                        // Calculate scaling factor to fit the image within the screen size
-                        const scaleFactor = Math.min(screenWidth / imageWidth, screenHeight / imageHeight);
-
-                        // If the image is larger than the screen, scale it down
-                        const scaledWidth = imageWidth * scaleFactor;
-                        const scaledHeight = imageHeight * scaleFactor;
-
-                        // Set the new dimensions for the canvas
-                        canvas.setWidth(scaledWidth);
-                        canvas.setHeight(scaledHeight);
-                        canvas?.renderAll();
-
-                        // Add the image to the canvas with the scaled dimensions
-                        img.set({
-                            scaleX: scaleFactor,
-                            scaleY: scaleFactor,
-                        });
-                        canvas.add(img);
-                        setCanvasElements([...canvasElements, img]);
-                        setCanvasMainImage(img);
-                    }
-                });
-        }
+    useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         }
-    }, [canvas, selectedAvatar])
+    }, [canvas])
+    
+    const changeAvatarImageOnFrame = useCallback(async () => {
+        if (fetchingImage) return;
+
+        if (!selectedAvatar) {
+            console.log("No avatar selected");
+        }
+
+        if (canvas && selectedAvatar) {
+            const imageURL = imageProxyUrl(getApiBaseUrl(), `${selectedAvatar.talking_photo_id}.png`);
+            toast.promise(
+                new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
+                    try {
+                        // Show processing while uploading image
+                        setFetchingImage(true);
+
+                        // remove existing image while uploading new image
+                        if(canvasMainImage) {
+                            canvas.remove(canvasMainImage); canvas.renderAll();
+                        }
+
+                        const img = await fabric.FabricImage.fromURL(imageURL, { crossOrigin: 'anonymous' });
+                        setFetchingImage(false);
+
+                        // Set current image in specific dimensions
+
+                        if (canvasContainerRef.current !== null) {
+                            // Get screen dimensions
+                            const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
+
+                            // Get original image dimensions
+                            const imageWidth = img.width;
+                            const imageHeight = img.height;
+
+                            // Calculate scaling factor to fit the image within the screen size
+                            const scaleFactor = Math.min(screenWidth / imageWidth, screenHeight / imageHeight);
+
+                            // If the image is larger than the screen, scale it down
+                            const scaledWidth = imageWidth * scaleFactor;
+                            const scaledHeight = imageHeight * scaleFactor;
+
+                            // Set the new dimensions for the canvas
+                            canvas.setWidth(scaledWidth);
+                            canvas.setHeight(scaledHeight);
+                            canvas?.renderAll();
+
+                            // Add the image to the canvas with the scaled dimensions
+                            img.set({
+                                scaleX: scaleFactor,
+                                scaleY: scaleFactor,
+                            });
+                            canvas.add(img);
+                            setCanvasElements([...canvasElements, img]);
+                            setCanvasMainImage(img);
+                        }
+                        resolve({ status: true, data: 'Successfully fetched image' });
+                    } catch (error) {
+                        console.log("Error on fetching image", error);
+                        
+                        setFetchingImage(false);
+                        reject({ status: false, data: error });
+                    }
+                }),
+                {
+                    loading: 'Fetching orignal image...',
+                    success: (result) => {
+                        return `Successfully fetched image`;
+                    },
+                    error: (err) => {
+                        return `Error : ${err.data}`;
+                    },
+                }
+            )
+
+
+        }
+    }, [canvas, selectedAvatar, fetchingImage, processing])
 
     const onAddRectangle = (frame: Frame) => {
         if (canvasMainImage && canvasContainerRef.current) {
@@ -224,6 +260,7 @@ export default function CreateVideo() {
         img: fabric.Object
     ) => {
         const container = canvasContainerRef.current;
+
         if (canvas && container) {
 
             if (aspectRatio == null) {
@@ -342,14 +379,8 @@ export default function CreateVideo() {
         }
     }, [selectedAvatar, selectAvatarForm])
     useEffect(() => {
-        onAddCircle()
+        changeAvatarImageOnFrame()
     }, [selectedAvatar, canvas])
-
-
-
-    const [activeStep, setActiveStep] = useState('select-avatar')
-
-
 
     useEffect(() => {
         const personalTalkingPhotosCollection = query(
@@ -388,15 +419,23 @@ export default function CreateVideo() {
             return;
         }
         if (selectedAvatar) {
+
+            // Check thumbnail url is generates if not then display message
+            if(!canvas){
+                toast.error('Selected avatar is not able to generate video.');
+                return;
+            }
+
             toast.promise(
                 new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
                     setProcessing(true);
                     try {
+                        const thumbnailUrl = canvas.toDataURL();
                         const baseUrl = getApiBaseUrl() ?? window.location.origin;
                         const response = await generateVideo(
                             profile.did_api_key, baseUrl,
                             {
-                                'thumbnail_url': selectedAvatar.preview_image_url,
+                                'thumbnail_url': thumbnailUrl,
                             },
                             selectedAvatar.talking_photo_id,
                             writeScriptForm.getValues('script'),
@@ -465,7 +504,7 @@ export default function CreateVideo() {
         </ol>
 
         <div className="py-4 px-1 grow overflow-hidden">
-            {activeStep == 'select-avatar' ? <div className="flex w-full max-h-full h-full gap-4 overflow-auto">
+            <div className={`flex w-full max-h-full h-full gap-4 overflow-auto ${activeStep == 'select-avatar' ? '' : 'hidden'}`}>
                 <div className={`${selectedAvatar ? 'w-1/4' : 'w-full'} flex flex-col h-full  max-h-full overflow-auto relative`}>
                     <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
                         {personalTalkingPhotos.map((avatar, index) => (
@@ -592,7 +631,7 @@ export default function CreateVideo() {
                         </div>
                     </div> : <Fragment />
                 }
-            </div> : <Fragment />}
+            </div>
 
             {
                 activeStep == 'write-script' ? <div className="grow bg-gray-50 rounded-lg px-4 pt-6 pb-4 h-full flex flex-col">

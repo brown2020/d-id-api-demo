@@ -19,124 +19,6 @@ export default function Home() {
   const handleClick = () => {
     setLoading(true);
   };
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-
-  const onAddCircle = useCallback(() => {
-    if (canvas) {
-      fabric.FabricImage.fromURL('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSX5vnHdn0pL9uBJQRDMTqVEBux0hrUsUbYHQ&s', { crossOrigin: 'anonymous' })
-        .then((img) => {
-          if(canvasContainerRef.current !== null){
-            // Get screen dimensions
-            const screenWidth = canvasContainerRef.current.clientWidth;
-            const screenHeight = canvasContainerRef.current.clientHeight;
-  
-            // Get original image dimensions
-            const imageWidth = img.width;
-            const imageHeight = img.height;
-  
-            // Calculate scaling factor to fit the image within the screen size
-            const scaleFactor = Math.min(screenWidth / imageWidth, screenHeight / imageHeight);
-  
-            // If the image is larger than the screen, scale it down
-            const scaledWidth = imageWidth * scaleFactor;
-            const scaledHeight = imageHeight * scaleFactor;
-            
-            // Set the new dimensions for the canvas
-            canvas.setWidth(scaledWidth);
-            canvas.setHeight(scaledHeight);
-            canvas?.renderAll();
-  
-            // Add the image to the canvas with the scaled dimensions
-            img.set({
-              scaleX: scaleFactor,
-              scaleY: scaleFactor,
-            });
-            canvas.add(img);
-          }
-        });
-    }
-  }, [canvas])
-  
-  const onAddRectangle = () => {
-    setCanvasDimensions(500, { width: 16, height: 9 });
-  }
-
-  const setCanvasDimensions = (
-    widthOrHeight: number,
-    aspectRatio: { width: number, height: number }
-  ) => {
-    const container = canvasContainerRef.current;
-    if (canvas && container) {
-      let width, height;
-  
-      // Calculate width and height based on the aspect ratio
-      if (widthOrHeight === aspectRatio.width) {
-        height = (widthOrHeight * aspectRatio.height) / aspectRatio.width;
-        width = widthOrHeight;
-      } else {
-        width = (widthOrHeight * aspectRatio.width) / aspectRatio.height;
-        height = widthOrHeight;
-      }
-  
-      // Get the container's width and height
-      const containerWidth = container.offsetWidth;
-      const containerHeight = container.offsetHeight;
-  
-      // Check if the calculated dimensions exceed the container's size
-      if (width > containerWidth) {
-        const scale = containerWidth / width;
-        width = containerWidth;
-        height = height * scale; // Scale height based on width adjustment
-      }
-  
-      if (height > containerHeight) {
-        const scale = containerHeight / height;
-        height = containerHeight;
-        width = width * scale; // Scale width based on height adjustment
-      }
-  
-      // Set the calculated width and height for the canvas
-      canvas.setWidth(width);
-      canvas.setHeight(height);
-  
-      canvas.renderAll();
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (canvas !== null) {
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        const activeObject = canvas.getActiveObject();
-        if (activeObject) {
-          canvas.remove(activeObject);
-          canvas.renderAll();
-        }
-      }
-    }
-  };
-
-  // Feet to image
-  // Square
-  // Landscape
-  // Portrait
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      const canvas = new fabric.Canvas(canvasRef.current, {
-        width: canvasRef.current.width,
-      });
-      setCanvas(canvas);
-    }
-  }, [])
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [canvas])
 
   return (<>
 
@@ -147,14 +29,6 @@ export default function Home() {
         <div className="flex items-center justify-center h-full gap-[100px] px-[30px]">
           <div className="flex flex-col gap-[30px] bg-white shadow-pop-up-shadow rounded-2xl p-[30px] max-w-[616px] w-full">
             <h2 className="text-center font-medium  text-[26px] max-xs:text-[22px]">D-ID API Demo</h2>
-
-            <div >
-              <button onClick={onAddCircle}>Add circle</button>
-              <button onClick={onAddRectangle}>Add Rectangle</button>
-              <div ref={canvasContainerRef} className="h-96 w-full">
-                <canvas className="border-2 border-gray-500 w-full h-full" ref={canvasRef} id="fabricCanvas"  />
-              </div>
-            </div>
 
             {/* <div className="flex flex-col items-center mb-[10px] gap-2">
               <div className="w-20 h-20 rounded-full overflow-hidden">
