@@ -23,7 +23,7 @@ export default function VideosPage() {
         const videoCollection = query(
             collection(db, "generated-videos"),
             where('type', '==', AVATAR_TYPE_PERSONAL),
-            where('owner', '==', uid)
+            where('owner', '==', uid),
         );
 
         const unsubscribeVideoCollection = onSnapshot(

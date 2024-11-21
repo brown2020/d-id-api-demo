@@ -105,7 +105,7 @@ const schema = Yup.object().shape({
     frame: Yup.string().required("Required.").oneOf(frames.map((frame) => frame.code)),
 });
 
-export default function CreateVideo() {
+export default function CreateVideo({} : {video_id: string | null}) {
     const uid = useAuthStore((state) => state.uid);
     const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
@@ -122,6 +122,10 @@ export default function CreateVideo() {
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
     const [canvasElements, setCanvasElements] = useState<fabric.Object[]>([]);
     const [canvasMainImage, setCanvasMainImage] = useState<fabric.Object | null>(null);
+
+    // If video id is exist then fetch video details
+    // If exist then set selected avatar
+    // update canvas variable
 
     const selectAvatarForm = useForm<{
         talking_photo_id: string;
@@ -141,8 +145,9 @@ export default function CreateVideo() {
 
     const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
     useEffect(() => {
-        onAddRectangle(updatedFields[0])
+        updateCanvasAsPerVariable(updatedFields[0])
     }, [updatedFields])
+
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
         return () => {
@@ -214,7 +219,7 @@ export default function CreateVideo() {
                 }),
                 {
                     loading: 'Fetching orignal image...',
-                    success: (result) => {
+                    success: () => {
                         return `Successfully fetched image`;
                     },
                     error: (err) => {
@@ -227,7 +232,7 @@ export default function CreateVideo() {
         }
     }, [canvas, selectedAvatar, fetchingImage, processing])
 
-    const onAddRectangle = (frame: Frame) => {
+    const updateCanvasAsPerVariable = (frame: Frame) => {
         if (canvasMainImage && canvasContainerRef.current) {
             const { width } = getContainerHeightWidth();
             if (frame == 'fit') {
@@ -430,7 +435,23 @@ export default function CreateVideo() {
                 new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
                     setProcessing(true);
                     try {
-                        const thumbnailUrl = canvas.toDataURL();
+                        const width = canvas.getWidth();
+                        const height = canvas.getHeight();
+
+                        // Minimum required resolution (1024px)
+                        const minSize = 1024;
+
+                        // Calculate the multiplier based on width and height
+                        const widthMultiplier = width < minSize ? minSize / width : 1;
+                        const heightMultiplier = height < minSize ? minSize / height : 1;
+
+                        // Get the larger multiplier to ensure the image is at least 1024px in width or height
+                        const multiplier = Math.min(widthMultiplier, heightMultiplier);
+
+                        const thumbnailUrl = canvas.toDataURL({
+                            multiplier,
+                        });
+
                         const baseUrl = getApiBaseUrl() ?? window.location.origin;
                         const response = await generateVideo(
                             profile.did_api_key, baseUrl,

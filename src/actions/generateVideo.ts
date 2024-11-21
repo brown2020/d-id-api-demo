@@ -5,7 +5,8 @@ import { auth } from "@clerk/nextjs/server";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { admin, adminDb } from "@/firebase/firebaseAdmin";
-import { getWebhookUrl, imageProxyUrl, randomString } from "@/libs/utils";
+import { getWebhookUrl, randomString, videoImageProxyUrl } from "@/libs/utils";
+import { getFileUrl } from "./getFileUrl";
 
 export async function generateVideo(apiKey: string | null,
     baseUrl: string,
@@ -20,10 +21,11 @@ export async function generateVideo(apiKey: string | null,
 ) {
     auth().protect();
     const { userId } = auth();
+    const id = `new-video-${Date.now()}`;
 
     // Generate video thubnail 
     const filename = `thumbnail-${randomString(10)}.png`;
-    const filePath = `images/${userId}/${avatar_id}/${filename}`;
+    const filePath = `video-image/${id}/${filename}`;
     console.log('filePath', filePath);
 
     // Add that thumbnail to firebase storage
@@ -48,51 +50,59 @@ export async function generateVideo(apiKey: string | null,
         },
     });
 
-    // // add that thumbnail id to video object
-    // // Create proxy link
+    // Create public url for that thumbnail
+    const thumbnailUrl = await getFileUrl(filePath);
 
-    // const id = `new-video-${Date.now()}`;
-    // const secret_token = randomString(32);
-    // const imageUrl = imageProxyUrl(baseUrl, `${avatar_id}.png`);
-    // const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
-    // const response = await generateDIDVideo(
-    //     apiKey,
-    //     imageUrl,
-    //     webhookUrl,
-    //     inputText,
-    //     voiceId,
-    //     audioUrl,
-    //     elevenlabsApiKey,
-    //     emotion,
-    //     movement,
-    // )
+    // add that thumbnail id to video object
+    const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+    await videoRef.set({
+        id,
+        title: "Untitled Video",
+        did_id: '',
+        d_id_status: '',
+        avatar_id: avatar_id,
+        owner: userId,
+        type: 'personal',
+        thumbnail_url: thumbnailUrl,
+    }, { merge: true });
 
-    // if (response) {
-    //     if ("error" in response && response.error) {
-    //         return { status: false, message: response.error || 'Error generating video' }
-    //     } else if ("id" in response) {
+    // Create proxy link
+    const secret_token = randomString(32);
+    const imageUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
+    const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
 
-    //         const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
 
-    //         await videoRef.set({
-    //             id,
-    //             title: "Untitled Video",
-    //             did_id: response.id,
-    //             d_id_status: response.status,
-    //             avatar_id: avatar_id,
-    //             owner: userId,
-    //             type: 'personal',
-    //             video_url: '',
-    //             thumbnail_url: extraDetail.thumbnail_url,
-    //             secret_token
-    //         }, { merge: true });
-    //         return {
-    //             status: true,
-    //             id: id
-    //         }
-    //     }
-    //     return { status: false, message: 'Error generating video' };
-    // }
+    const response = await generateDIDVideo(
+        apiKey,
+        imageUrl,
+        webhookUrl,
+        inputText,
+        voiceId,
+        audioUrl,
+        elevenlabsApiKey,
+        emotion,
+        movement,
+    )
+
+    if (response) {
+        if ("error" in response && response.error) {
+            return { status: false, message: response.error || 'Error generating video' }
+        } else if ("id" in response) {
+
+            const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+
+            await videoRef.set({
+                did_id: response.id,
+                d_id_status: response.status,
+                secret_token
+            }, { merge: true });
+            return {
+                status: true,
+                id: id
+            }
+        }
+        return { status: false, message: 'Error generating video' };
+    }
 
     return { status: false, message: 'Error generating video' };
 

@@ -20,7 +20,7 @@ interface AvatarCardProps {
 }
 
 export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
-  const [favorite, setFavorite] = useState(false);
+  const [favorite] = useState(false);
   const [talkingPhotoName, setTalkingPhotoName] = useState("");
   const [project, setProject] = useState("");
   const [voiceId, setVoiceId] = useState("");

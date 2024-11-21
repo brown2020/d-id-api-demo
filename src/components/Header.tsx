@@ -5,7 +5,6 @@ import { NOTIFICATION_COLLECTION, NOTIFICATION_STATUS } from "@/libs/constants";
 import { NotificationDetail } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
-import useProfileStore from "@/zustand/useProfileStore";
 import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover';
 import {
   SignedIn,
@@ -35,9 +34,8 @@ export default function Header() {
   const [processing, setProcessing] = useState(true);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
-  const profile = useProfileStore((state) => state.profile);
-  const [isManuOpen, setIsManuOpen] = useState(false);
-  const [isCreateManuOpen, setIsCreateManuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   useInitializeStores();
 
   useEffect(() => {
@@ -67,11 +65,6 @@ export default function Header() {
       unsubscribe();
     };
   }, [uid]);
-
-  useEffect(() => {
-    console.log("notifications", notifications);
-    console.log("profile", profile);
-  }, [notifications])
 
   useEffect(() => {
     const syncAuthState = async () => {
@@ -164,9 +157,7 @@ export default function Header() {
       <SignedIn>
         <div className="flex items-center justify-end px-4 py-3 border-b shadow-md z-30">
           <div className="max-xs:hidden flex items-center">
-            {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
-              <Link href="/generate">Generate</Link>
-            )} */}
+          
             <Popover placement="bottom-end" showArrow={true}>
               <PopoverTrigger>
                 <button className="px-2 py-1 bg-white relative">
@@ -224,25 +215,25 @@ export default function Header() {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <AlignJustify className="cursor-pointer" onClick={() => setIsManuOpen(!isManuOpen)} />
+                <AlignJustify className="cursor-pointer" onClick={() => setIsMenuOpen(!isMenuOpen)} />
                 <UserButton />
               </div>
             </div>
-            <div className={`absolute border shadow-md bg-white rounded-b-lg ${isManuOpen ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-all duration-300 z-20 top-11 w-full left-0`}>
+            <div className={`absolute border shadow-md bg-white rounded-b-lg ${isMenuOpen ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-all duration-300 z-20 top-11 w-full left-0`}>
               <div className="flex flex-col p-2">
                 <div className="group w-full relative">
-                  <button onClick={() => setIsCreateManuOpen(!isCreateManuOpen)} className={`hover:text-white flex justify-between text-start px-4 w-full py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform`}>
+                  <button onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)} className={`hover:text-white flex justify-between text-start px-4 w-full py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform`}>
                     <p>Create</p>
-                    <ArrowDown className={`${isCreateManuOpen ? 'rotate-0' : 'rotate-90'} `} />
+                    <ArrowDown className={`${isCreateMenuOpen ? 'rotate-0' : 'rotate-90'} `} />
                   </button>
                   <div
-                    className={` ${isCreateManuOpen ? 'visible' : 'hidden'} top-10 right-0 w-full z-20 absolute mt-0 bg-white text-gray-800 border border-gray-300 rounded-b-lg shadow-lg py-2`}>
+                    className={` ${isCreateMenuOpen ? 'visible' : 'hidden'} top-10 right-0 w-full z-20 absolute mt-0 bg-white text-gray-800 border border-gray-300 rounded-b-lg shadow-lg py-2`}>
                     <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
                   </div>
                 </div>
-                <Link onClick={() => setIsManuOpen(false)} href="/videos" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Videos</Link>
-                <Link onClick={() => setIsManuOpen(false)} href="/avatars" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Avatars</Link>
-                <Link onClick={() => setIsManuOpen(false)} href="/profile" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Profile</Link>
+                <Link onClick={() => setIsMenuOpen(false)} href="/videos" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Videos</Link>
+                <Link onClick={() => setIsMenuOpen(false)} href="/avatars" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Avatars</Link>
+                <Link onClick={() => setIsMenuOpen(false)} href="/profile" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Profile</Link>
               </div>
             </div>
           </div>

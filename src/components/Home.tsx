@@ -5,10 +5,8 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import Footer from "./Footer";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
-import * as fabric from 'fabric';
-import { useWatch } from "react-hook-form";
 
 export default function Home() {
   const uid = useAuthStore((state) => state.uid);
@@ -30,7 +28,7 @@ export default function Home() {
           <div className="flex flex-col gap-[30px] bg-white shadow-pop-up-shadow rounded-2xl p-[30px] max-w-[616px] w-full">
             <h2 className="text-center font-medium  text-[26px] max-xs:text-[22px]">D-ID API Demo</h2>
 
-            {/* <div className="flex flex-col items-center mb-[10px] gap-2">
+            <div className="flex flex-col items-center mb-[10px] gap-2">
               <div className="w-20 h-20 rounded-full overflow-hidden">
                 {photoUrl ? (
                   <Image
@@ -65,7 +63,7 @@ export default function Home() {
                   )}
                 </div>
               </div>
-            </div> */}
+            </div>
 
             <div className="flex justify-center">
               {firebaseUid && (
