@@ -9,13 +9,13 @@ export default function AuthDataDisplay() {
       <h2 className="text-2xl font-sans font-medium mb-5 max-sm:text-lg max-sm:mb-7">User Profile</h2>
       <div className="flex flex-col">
         <div className="text-base mb-1">Login email</div>
-        <div className="px-[15px] py-[10px] text-sm text-black bg-lightGray rounded-lg h-10 overflow-x-auto">
+        <div className="px-[15px] py-[10px] text-sm text-black bg-lightGray rounded-lg h-10 overflow-x-auto overflow-y-hidden">
           {authEmail}
         </div>
       </div>
       <div className="flex flex-col mt-[15px]">
         <div className="text-base mb-1">User ID</div>
-        <div className="px-[15px] py-[10px] text-black text-sm bg-lightGray rounded-lg h-10 overflow-x-auto">
+        <div className="px-[15px] py-[10px] text-black text-sm bg-lightGray rounded-lg h-10 overflow-x-auto overflow-y-hidden">
           {uid}
         </div>
       </div>
