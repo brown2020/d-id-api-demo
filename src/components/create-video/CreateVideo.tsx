@@ -514,7 +514,7 @@ export default function CreateVideo({} : {video_id: string | null}) {
         <ol className="flex items-center w-full gap-4">
             {
                 steps.map((step, index) => <li key={index} className="flex-1 ">
-                    <button disabled={processing} onClick={() => { setActiveStep(step.code) }} className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
+                    <button disabled={processing} onClick={() => { setActiveStep(step.code); }} className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${activeStep == step.code && 'active'}`}>
                         <span className="w-8 h-8 bg-gray-600  rounded-full flex justify-center items-center mr-3 text-sm text-white lg:w-10 lg:h-10">
                             <step.icon />
                         </span>
