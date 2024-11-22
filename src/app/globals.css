@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body{
+    font-family: "GeneralSans-Variable";
+}
 
 @layer components {
     .create-video-step{
