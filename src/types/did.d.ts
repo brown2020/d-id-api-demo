@@ -11,6 +11,7 @@ export interface DIDTalkingPhoto {
 
 export type Emotion = 'neutral' | 'happy' | 'surprise' | 'serious';
 export type Movement = 'neutral' | 'lively';
+export type Frame = 'landscape' | 'square' | 'portrait' | 'fit';
 
 export interface CreateVideoForm {
   talking_photo_id: string;

@@ -17,6 +17,7 @@ export default function Home() {
   const handleClick = () => {
     setLoading(true);
   };
+
   return (<>
 
     {/* <div className="font-medium text-[32px] max-xs:text-2xl max-xs:text-center">D-ID API Demo</div> */}
@@ -25,7 +26,8 @@ export default function Home() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-center h-full gap-[100px] px-[30px]">
           <div className="flex flex-col gap-[30px] bg-white shadow-pop-up-shadow rounded-2xl p-[30px] max-w-[616px] w-full">
-          <h2 className="text-center font-medium  text-[26px] max-xs:text-[22px]">D-ID API Demo</h2>
+            <h2 className="text-center font-medium  text-[26px] max-xs:text-[22px]">D-ID API Demo</h2>
+
             <div className="flex flex-col items-center mb-[10px] gap-2">
               <div className="w-20 h-20 rounded-full overflow-hidden">
                 {photoUrl ? (

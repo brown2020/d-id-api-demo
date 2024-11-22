@@ -2,14 +2,14 @@
 
 import { db } from "@/firebase/firebaseClient";
 import { AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
-import { DIDTalkingPhoto, Emotion, Movement } from "@/types/did";
+import { DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { collection, onSnapshot, or, query, where } from "firebase/firestore";
-import { Captions, icons, Meh, Smile, UserRound, Video } from "lucide-react";
-import { ComponentType, Fragment, ReactElement, useEffect, useMemo, useState } from "react";
+import { Captions, icons, Meh, Scaling, Smile, UserRound, Video } from "lucide-react";
+import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { getApiBaseUrl } from "@/libs/utils";
-import { Controller, useForm } from "react-hook-form";
+import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import { generateVideo } from "@/actions/generateVideo";
 import * as Yup from "yup";
@@ -20,6 +20,8 @@ import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
+import * as fabric from 'fabric';
+
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -47,6 +49,28 @@ const movements: { code: Movement, label: string, icon: IconType }[] = [
         label: 'Lively',
         icon: Video
     }
+]
+const frames: { code: Frame, label: string, icon: IconType }[] = [
+    {
+        code: 'fit',
+        label: 'Fit',
+        icon: Scaling
+    },
+    {
+        code: 'landscape',
+        label: 'Landscape (16:9)',
+        icon: Scaling
+    },
+    {
+        code: 'portrait',
+        label: 'Portrait (9:16)',
+        icon: Scaling
+    },
+    {
+        code: 'square',
+        label: 'Square (1:1)',
+        icon: Scaling
+    },
 ]
 const emotions: { code: Emotion, label: string, icon: IconType }[] = [
     {
@@ -78,43 +102,290 @@ const schema = Yup.object().shape({
     voice_id: Yup.string().required("Required."),
     emotion: Yup.string().required("Required.").oneOf(emotions.map((emotion) => emotion.code)),
     movement: Yup.string().required("Required.").oneOf(movements.map((movement) => movement.code)),
+    frame: Yup.string().required("Required.").oneOf(frames.map((frame) => frame.code)),
 });
 
-export default function CreateVideo() {
+export default function CreateVideo({} : {video_id: string | null}) {
     const uid = useAuthStore((state) => state.uid);
     const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [fetchingImage, setFetchingImage] = useState(false);
     const { findVoice } = useAudio();
+
+    const [activeStep, setActiveStep] = useState('select-avatar')
+
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+    const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+    const [canvasElements, setCanvasElements] = useState<fabric.Object[]>([]);
+    const [canvasMainImage, setCanvasMainImage] = useState<fabric.Object | null>(null);
+
+    // If video id is exist then fetch video details
+    // If exist then set selected avatar
+    // update canvas variable
 
     const selectAvatarForm = useForm<{
         talking_photo_id: string;
         voice_id: string;
         emotion: Emotion;
         movement: Movement;
+        frame: Frame;
     }>({
         mode: 'all',
         resolver: yupResolver(schema),
         defaultValues: {
             emotion: 'neutral',
-            movement: 'neutral'
+            movement: 'neutral',
+            frame: 'fit'
         },
     });
 
-    const writeScriptForm = useForm<{
-        script: string;
-    }>({
-        mode: 'all',
-    });
+    const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
+    useEffect(() => {
+        updateCanvasAsPerVariable(updatedFields[0])
+    }, [updatedFields])
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [canvas])
+    
+    const changeAvatarImageOnFrame = useCallback(async () => {
+        if (fetchingImage) return;
+
+        if (!selectedAvatar) {
+            console.log("No avatar selected");
+        }
+
+        if (canvas && selectedAvatar) {
+            const imageURL = imageProxyUrl(getApiBaseUrl(), `${selectedAvatar.talking_photo_id}.png`);
+            toast.promise(
+                new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
+                    try {
+                        // Show processing while uploading image
+                        setFetchingImage(true);
+
+                        // remove existing image while uploading new image
+                        if(canvasMainImage) {
+                            canvas.remove(canvasMainImage); canvas.renderAll();
+                        }
+
+                        const img = await fabric.FabricImage.fromURL(imageURL, { crossOrigin: 'anonymous' });
+                        setFetchingImage(false);
+
+                        // Set current image in specific dimensions
+
+                        if (canvasContainerRef.current !== null) {
+                            // Get screen dimensions
+                            const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
+
+                            // Get original image dimensions
+                            const imageWidth = img.width;
+                            const imageHeight = img.height;
+
+                            // Calculate scaling factor to fit the image within the screen size
+                            const scaleFactor = Math.min(screenWidth / imageWidth, screenHeight / imageHeight);
+
+                            // If the image is larger than the screen, scale it down
+                            const scaledWidth = imageWidth * scaleFactor;
+                            const scaledHeight = imageHeight * scaleFactor;
+
+                            // Set the new dimensions for the canvas
+                            canvas.setWidth(scaledWidth);
+                            canvas.setHeight(scaledHeight);
+                            canvas?.renderAll();
+
+                            // Add the image to the canvas with the scaled dimensions
+                            img.set({
+                                scaleX: scaleFactor,
+                                scaleY: scaleFactor,
+                            });
+                            canvas.add(img);
+                            setCanvasElements([...canvasElements, img]);
+                            setCanvasMainImage(img);
+                        }
+                        resolve({ status: true, data: 'Successfully fetched image' });
+                    } catch (error) {
+                        console.log("Error on fetching image", error);
+                        
+                        setFetchingImage(false);
+                        reject({ status: false, data: error });
+                    }
+                }),
+                {
+                    loading: 'Fetching orignal image...',
+                    success: () => {
+                        return `Successfully fetched image`;
+                    },
+                    error: (err) => {
+                        return `Error : ${err.data}`;
+                    },
+                }
+            )
+
+
+        }
+    }, [canvas, selectedAvatar, fetchingImage, processing])
+
+    const updateCanvasAsPerVariable = (frame: Frame) => {
+        if (canvasMainImage && canvasContainerRef.current) {
+            const { width } = getContainerHeightWidth();
+            if (frame == 'fit') {
+                setCanvasDimensions(width, null, canvasMainImage);
+            } else if (frame == 'landscape') {
+                setCanvasDimensions(width, { width: 16, height: 9 }, canvasMainImage);
+            } else if (frame == 'portrait') {
+                setCanvasDimensions(width, { width: 9, height: 16 }, canvasMainImage);
+            } else if (frame == 'square') {
+                setCanvasDimensions(width, { width: 1, height: 1 }, canvasMainImage);
+            }
+        }
+    }
+
+    const getContainerHeightWidth = () => {
+        const container = canvasContainerRef.current;
+
+        return container ? {
+            width: (container.offsetWidth),
+            height: (container.offsetHeight),
+        } : {
+            width: 0,
+            height: 0,
+        };
+    }
+
+    const setCanvasDimensions = (
+        widthOrHeight: number,
+        aspectRatio: { width: number, height: number } | null,
+        img: fabric.Object
+    ) => {
+        const container = canvasContainerRef.current;
+
+        if (canvas && container) {
+
+            if (aspectRatio == null) {
+                // Get screen dimensions
+                const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
+
+                // Get original image dimensions
+                const imageWidth = img.width;
+                const imageHeight = img.height;
+
+                // Calculate scaling factor to fit the image within the screen size
+                const scaleFactor = Math.min(screenWidth / imageWidth, screenHeight / imageHeight);
+
+                // If the image is larger than the screen, scale it down
+                const scaledWidth = imageWidth * scaleFactor;
+                const scaledHeight = imageHeight * scaleFactor;
+
+                // Set the new dimensions for the canvas
+                canvas.setWidth(scaledWidth);
+                canvas.setHeight(scaledHeight);
+
+                // Add the image to the canvas with the scaled dimensions
+                img.set({
+                    scaleX: scaleFactor,
+                    scaleY: scaleFactor,
+                    left: 0,
+                    top: 0,
+                });
+                img.setCoords();
+                canvas?.renderAll();
+            } else {
+                let canvasWidth, canvasHeight;
+
+                // Calculate width and height based on the aspect ratio
+                if (widthOrHeight === aspectRatio.width) {
+                    canvasHeight = (widthOrHeight * aspectRatio.height) / aspectRatio.width;
+                    canvasWidth = widthOrHeight;
+                } else {
+                    canvasWidth = (widthOrHeight * aspectRatio.width) / aspectRatio.height;
+                    canvasHeight = widthOrHeight;
+                }
+
+                // Get the container's width and height
+                const containerWidth = container.offsetWidth;
+                const containerHeight = container.offsetHeight;
+
+                // Check if the calculated dimensions exceed the container's size
+                if (canvasWidth > containerWidth) {
+                    const scale = containerWidth / canvasWidth;
+                    canvasWidth = containerWidth;
+                    canvasHeight = canvasHeight * scale; // Scale height based on width adjustment
+                }
+
+                if (canvasHeight > containerHeight) {
+                    const scale = containerHeight / canvasHeight;
+                    canvasHeight = containerHeight;
+                    canvasWidth = canvasWidth * scale; // Scale width based on height adjustment
+                }
+
+                // Set the calculated width and height for the canvas
+                canvas.setWidth(canvasWidth - 4);
+                canvas.setHeight(canvasHeight - 4);
+
+                // Scale the image uniformly to fit within the canvas
+                const imageAspectRatio = img.width / img.height;
+                const canvasAspectRatio = canvasWidth / canvasHeight;
+
+                let scaleFactor;
+                if (imageAspectRatio > canvasAspectRatio) {
+                    // Image is wider than the canvas
+                    scaleFactor = canvasWidth / img.width;
+                } else {
+                    // Image is taller than the canvas
+                    scaleFactor = canvasHeight / img.height;
+                }
+
+                img.set({
+                    scaleX: scaleFactor,
+                    scaleY: scaleFactor,
+                    left: (canvasWidth - img.width * scaleFactor) / 2, // Center horizontally
+                    top: (canvasHeight - img.height * scaleFactor) / 2, // Center vertically
+                });
+
+                img.setCoords();
+
+                canvas.renderAll();
+            }
+
+        }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (canvas !== null) {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                const activeObject = canvas.getActiveObject();
+                if (activeObject) {
+                    canvas.remove(activeObject);
+                    canvas.renderAll();
+                }
+            }
+        }
+    };
+
+
+
+    const writeScriptForm = useForm<{ script: string; }>({ mode: 'all' });
 
     useEffect(() => {
         selectAvatarForm.setValue('talking_photo_id', selectedAvatar ? selectedAvatar.talking_photo_id : '')
         selectAvatarForm.setValue('voice_id', selectedAvatar && selectedAvatar.voiceId ? selectedAvatar.voiceId : '')
+        if (!canvas && canvasRef.current) {
+            const _canvas = new fabric.Canvas(canvasRef.current, {
+                width: canvasRef.current.width,
+            });
+            setCanvas(_canvas);
+        }
     }, [selectedAvatar, selectAvatarForm])
-
-    const [activeStep, setActiveStep] = useState('select-avatar')
+    useEffect(() => {
+        changeAvatarImageOnFrame()
+    }, [selectedAvatar, canvas])
 
     useEffect(() => {
         const personalTalkingPhotosCollection = query(
@@ -144,25 +415,48 @@ export default function CreateVideo() {
         selectAvatarForm.handleSubmit(() => { })
     }, [selectAvatarForm])
 
-
     const onSubmit = writeScriptForm.handleSubmit(async () => {
-        if(!audioDetail){
+        if (!audioDetail) {
             toast.error('Please select audio');
-            return ;
-        }else if(writeScriptForm.getValues('script').length <= 3){
+            return;
+        } else if (writeScriptForm.getValues('script').length <= 3) {
             toast.error('Please write script');
-            return ;
+            return;
         }
         if (selectedAvatar) {
+
+            // Check thumbnail url is generates if not then display message
+            if(!canvas){
+                toast.error('Selected avatar is not able to generate video.');
+                return;
+            }
+
             toast.promise(
                 new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
                     setProcessing(true);
                     try {
+                        const width = canvas.getWidth();
+                        const height = canvas.getHeight();
+
+                        // Minimum required resolution (1024px)
+                        const minSize = 1024;
+
+                        // Calculate the multiplier based on width and height
+                        const widthMultiplier = width < minSize ? minSize / width : 1;
+                        const heightMultiplier = height < minSize ? minSize / height : 1;
+
+                        // Get the larger multiplier to ensure the image is at least 1024px in width or height
+                        const multiplier = Math.min(widthMultiplier, heightMultiplier);
+
+                        const thumbnailUrl = canvas.toDataURL({
+                            multiplier,
+                        });
+
                         const baseUrl = getApiBaseUrl() ?? window.location.origin;
                         const response = await generateVideo(
                             profile.did_api_key, baseUrl,
                             {
-                                'thumbnail_url': selectedAvatar.preview_image_url,
+                                'thumbnail_url': thumbnailUrl,
                             },
                             selectedAvatar.talking_photo_id,
                             writeScriptForm.getValues('script'),
@@ -200,9 +494,9 @@ export default function CreateVideo() {
         setProcessing(true);
         setSelectedAvatar(avatar);
         let _audio = null;
-        if(avatar.voiceId){
+        if (avatar.voiceId) {
             const audio = await findVoice(avatar.voiceId);
-            if(audio.status && audio.voice){
+            if (audio.status && audio.voice) {
                 _audio = audio.voice
             }
         }
@@ -216,7 +510,7 @@ export default function CreateVideo() {
         return selectedAvatar != null && audioDetail != null && selectedAvatar.voiceId == audioDetail.voice_id
     }, [selectedAvatar, audioDetail])
 
-    return <div className="px-4 max-h-full h-full flex flex-col">
+    return <div className="px-4 max-h-full h-full flex flex-col video-create">
         <ol className="flex items-center w-full gap-4">
             {
                 steps.map((step, index) => <li key={index} className="flex-1 ">
@@ -231,7 +525,7 @@ export default function CreateVideo() {
         </ol>
 
         <div className="py-4 px-1 grow overflow-hidden">
-            {activeStep == 'select-avatar' ? <div className="flex w-full max-h-full h-full gap-4 overflow-auto">
+            <div className={`flex w-full max-h-full h-full gap-4 overflow-auto ${activeStep == 'select-avatar' ? '' : 'hidden'}`}>
                 <div className={`${selectedAvatar ? 'w-1/4' : 'w-full'} flex flex-col h-full  max-h-full overflow-auto relative`}>
                     <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
                         {personalTalkingPhotos.map((avatar, index) => (
@@ -253,32 +547,19 @@ export default function CreateVideo() {
                     </ul>
                 </div>
                 {selectedAvatar ?
-                    <div className="grow bg-gray-50 rounded-lg p-4">
-                        <div className="flex h-full">
-                            <div className="self-center">
-                                {
-                                    selectedAvatar.preview_image_url ?
-                                        <Image
-                                            src={selectedAvatar.preview_image_url}
-                                            alt={selectedAvatar.talking_photo_name}
-                                            width={512}
-                                            height={512}
-                                            className="h-56 w-56 object-cover"
-                                        /> : <></>
-                                }
-                            </div>
-                            <div className="grow px-4 flex flex-col">
+                    <div className="grow bg-gray-50 rounded-lg p-4 h-full flex flex-col justify-between">
+                        <div className="flex grow overflow-x-auto">
+                            <div className="px-4 flex flex-col w-1/3">
                                 <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
-                                {/* <p className="text-2xl font-bold">{selectedAvatar.voiceId}</p> */}
-                                <div className="flex flex-col gap-4 mt-5 px-4 grow">
+                                <div className="flex flex-col gap-4 mt-5 pe-4 grow overflow-y-auto">
                                     <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Audio</label>
+                                        <label className="label">Audio</label>
                                         {
                                             audioDetail ?
-                                                <div className="flex w-full gap-4 items-center">
+                                                <div className="flex flex-col w-full gap-4">
                                                     <CustomAudioOption2 data={audioDetail} />
                                                     <div>
-                                                        <audio controls key={audioDetail.voice_id}>
+                                                        <audio className="w-full" controls key={audioDetail.voice_id}>
                                                             <source src={audioDetail.preview_url} type="audio/mpeg" />
                                                             Your browser does not support the audio element.
                                                         </audio>
@@ -292,13 +573,13 @@ export default function CreateVideo() {
                                         name="emotion"
                                         render={({ field }) => (
                                             <div>
-                                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Emotions</label>
+                                                <label className="label">Emotions</label>
 
-                                                <ul className="items-center w-full text-sm font-medium border-gray-200 rounded-lg sm:flex ">
+                                                <ul className="items-center w-full text-sm font-medium grid grid-cols-2 gap-1">
                                                     {
-                                                        emotions.map((emotion, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('emotion', emotion.code) }} className={`cursor-pointer w-full border-gray-200 sm:border-r first:rounded-l-lg last:rounded-r-lg ${field.value == emotion.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
-                                                            <div className="flex items-center ps-3 ">
-                                                                <label className="w-full py-3 ms-2 text-sm font-medium cursor-pointer">{emotion.label}</label>
+                                                        emotions.map((emotion, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('emotion', emotion.code) }} className={`p-2 rounded-md cursor-pointer w-full ${field.value == emotion.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                            <div className="flex items-center">
+                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{emotion.label}</label>
                                                             </div>
                                                         </li>)
                                                     }
@@ -316,13 +597,38 @@ export default function CreateVideo() {
                                         }}
                                         render={({ field }) => (
                                             <div>
-                                                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Movements</label>
+                                                <label className="label">Movements</label>
 
-                                                <ul className="items-center w-full text-sm font-medium border-gray-200 rounded-lg sm:flex ">
+                                                <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-2 gap-1 ">
                                                     {
-                                                        movements.map((movements, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('movement', movements.code) }} className={`cursor-pointer w-full border-gray-200 sm:border-r first:rounded-l-lg last:rounded-r-lg ${field.value == movements.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
-                                                            <div className="flex items-center ps-3 ">
-                                                                <label className="w-full py-3 ms-2 text-sm font-medium cursor-pointer">{movements.label}</label>
+                                                        movements.map((movements, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('movement', movements.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == movements.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                            <div className="flex items-center">
+                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{movements.label}</label>
+                                                            </div>
+                                                        </li>)
+                                                    }
+
+                                                </ul>
+
+                                            </div>
+                                        )}
+                                    />
+
+                                    <Controller
+                                        control={selectAvatarForm.control}
+                                        name="frame"
+                                        rules={{
+                                            required: { message: 'Required.', value: true },
+                                        }}
+                                        render={({ field }) => (
+                                            <div>
+                                                <label className="label">Frame</label>
+
+                                                <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-1 gap-1 ">
+                                                    {
+                                                        frames.map((frame, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('frame', frame.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == frame.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                            <div className="flex items-center">
+                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{frame.label}</label>
                                                             </div>
                                                         </li>)
                                                     }
@@ -334,16 +640,19 @@ export default function CreateVideo() {
                                     />
 
                                 </div>
-                                <div className="">
-                                    <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script') }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
-                                        Next
-                                    </button>
-                                </div>
                             </div>
+                            <div className="self-center grow justify-center flex h-full" ref={canvasContainerRef}>
+                                <canvas className="border-2 border-gray-500 w-full h-full rounded-lg" ref={canvasRef} id="fabricCanvas" />
+                            </div>
+                        </div>
+                        <div className="">
+                            <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script') }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
+                                Next
+                            </button>
                         </div>
                     </div> : <Fragment />
                 }
-            </div> : <Fragment />}
+            </div>
 
             {
                 activeStep == 'write-script' ? <div className="grow bg-gray-50 rounded-lg px-4 pt-6 pb-4 h-full flex flex-col">

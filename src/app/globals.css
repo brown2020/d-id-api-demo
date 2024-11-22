@@ -6,9 +6,14 @@ html, body{
     font-family: "GeneralSans-Variable";
 }
 
-.create-video-step{
-    @apply border border-transparent transition-all duration-300 hover:border-gray-300 rounded-lg cursor-pointer;
-}
-.create-video-step.active{
-    @apply bg-gray-50;
+@layer components {
+    .create-video-step{
+        @apply border border-transparent transition-all duration-300 hover:border-gray-300 rounded-lg cursor-pointer;
+    }
+    .create-video-step.active{
+        @apply bg-gray-50;
+    }
+    .video-create .label {
+      @apply block mb-1 text-sm text-gray-600 dark:text-white;
+    }
 }
