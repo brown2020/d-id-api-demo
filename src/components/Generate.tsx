@@ -77,10 +77,20 @@ export default function Generate() {
 
     try {
       const result  = await generateVideo(
+        null,
         profile.did_api_key || "",
         baseUrl,
         {
           'thumbnail_url': itemDetails.preview_image_url ?? '',
+          canvas_object: {
+            objects: [],
+            version: "",
+          },
+          canvas_detail: {
+            height: 0,
+            width: 0,
+            aspectRatio: 0
+          },
         },
         itemDetails.talking_photo_id,
         script,

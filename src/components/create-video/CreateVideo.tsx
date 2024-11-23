@@ -1,14 +1,14 @@
 "use client";
 
 import { db } from "@/firebase/firebaseClient";
-import { AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
-import { DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
+import { AVATAR_TYPE_TEMPLATE, DOCUMENT_COLLECTION, VIDEO_COLLECTION } from "@/libs/constants";
+import { CanvasObject, CustomFabricImage, DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { collection, onSnapshot, or, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, or, query, where } from "firebase/firestore";
 import { Captions, icons, Meh, Scaling, Smile, UserRound, Video } from "lucide-react";
 import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
+import { checkCanvasObjectImageDomain, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import { generateVideo } from "@/actions/generateVideo";
@@ -94,8 +94,16 @@ const emotions: { code: Emotion, label: string, icon: IconType }[] = [
         'icon': SuprisedIcon,
         // 'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 9H8m8 0h-2m4 6H6m-4-3c0 5.523 4.477 10 10 10s10-4.477 10-10S17.523 2 12 2S2 6.477 2 12" /></svg>
     }
-]
+];
 
+const colors = [
+    { color: "#fecaca", tailwind_class: 'red-200' },
+    { color: "#e7e5e4", tailwind_class: 'stone-200' },
+    { color: "#fed7aa", tailwind_class: 'orange-200' },
+    { color: "#fde68a", tailwind_class: 'amber-200' },
+    { color: "#fef08a", tailwind_class: 'yellow-200' },
+    { color: "#86efac", tailwind_class: 'green-200' },
+];
 
 const schema = Yup.object().shape({
     talking_photo_id: Yup.string().required("Required."),
@@ -105,7 +113,7 @@ const schema = Yup.object().shape({
     frame: Yup.string().required("Required.").oneOf(frames.map((frame) => frame.code)),
 });
 
-export default function CreateVideo({} : {video_id: string | null}) {
+export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const uid = useAuthStore((state) => state.uid);
     const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
@@ -116,16 +124,18 @@ export default function CreateVideo({} : {video_id: string | null}) {
     const { findVoice } = useAudio();
 
     const [activeStep, setActiveStep] = useState('select-avatar')
+    const [videoId, setVideoId] = useState<string | null>(null);
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
     const [canvasElements, setCanvasElements] = useState<fabric.Object[]>([]);
-    const [canvasMainImage, setCanvasMainImage] = useState<fabric.Object | null>(null);
+    const [loadFirstTime, setLoadFirstTime] = useState(false);
 
     // If video id is exist then fetch video details
     // If exist then set selected avatar
     // update canvas variable
+
 
     const selectAvatarForm = useForm<{
         talking_photo_id: string;
@@ -154,7 +164,100 @@ export default function CreateVideo({} : {video_id: string | null}) {
             window.removeEventListener('keydown', handleKeyDown);
         }
     }, [canvas])
-    
+
+    useEffect(() => {
+        const personalTalkingPhotosCollection = query(
+            collection(db, DOCUMENT_COLLECTION),
+            or(
+                where('owner', '==', uid),
+                where('type', '==', AVATAR_TYPE_TEMPLATE)
+            ),
+        );
+        const unsubscribeTalkingPhotos = onSnapshot(
+            personalTalkingPhotosCollection,
+            (snapshot) => {
+                const talkingPhotosList = snapshot.docs.map(
+                    (doc) => doc.data() as DIDTalkingPhoto
+                );
+                setPersonalTalkingPhotos(talkingPhotosList);
+            }
+        );
+
+        return () => {
+            unsubscribeTalkingPhotos();
+        };
+    }, [uid]);
+
+    const [videoCanvasDetail, setVideoCanvasDetail] = useState<{
+        canvas_json: CanvasObject;
+        canvas_detail: {
+            height: number;
+            width: number;
+            aspectRatio: number;
+        }
+    } | null>(null);
+
+    useEffect(() => {
+        // If video id is exist then fetch video details
+        // Check personal talking photo should exist
+        setVideoId(video_id);
+        if (video_id && uid && personalTalkingPhotos.length > 0) {
+
+            const docRef = doc(collection(db, VIDEO_COLLECTION), video_id);
+            setProcessing(true);
+
+            const unsubscribe = onSnapshot(docRef, {
+                next: (snapshot) => {
+                    setProcessing(false);
+
+                    if (!snapshot.exists()) {
+                        toast.error('Video not found');
+                        // TODO: Send back to video list
+                    } else {
+                        console.log("snapshot.data()", snapshot.data());
+                        // Set avatar selected
+                        const videoDetail = snapshot.data();
+                        const avatar_id = videoDetail.avatar_id;
+                        const avatar = personalTalkingPhotos.find((avatar) => avatar.talking_photo_id == avatar_id);
+                        if (!avatar) {
+                            toast.error('Selected avatar not found');
+                            // TODO: Send back to video list
+                        } else {
+                            handleChangeAvatar(avatar);
+                            if (
+                                typeof videoDetail == 'object' && "canvas_json" in videoDetail &&
+                                typeof videoDetail.canvas_json == 'object' && "objects" in videoDetail.canvas_json &&
+                                Array.isArray(videoDetail.canvas_json.objects)
+                            ) {
+                                videoDetail.canvas_json.objects = checkCanvasObjectImageDomain(videoDetail.canvas_json.objects)
+                                setVideoCanvasDetail({
+                                    canvas_json: videoDetail.canvas_json,
+                                    canvas_detail: {
+                                        height: videoDetail.canvas_detail.height,
+                                        width: videoDetail.canvas_detail.width,
+                                        aspectRatio: videoDetail.canvas_detail.aspectRatio,
+                                    }
+                                });
+                            }
+
+                        }
+
+                    }
+                },
+                error: (error) => {
+                    console.log("Error", error);
+
+                    setProcessing(false);
+                }
+            });
+
+            return () => {
+                unsubscribe();
+            };
+
+        }
+    }, [video_id, uid, personalTalkingPhotos])
+
     const changeAvatarImageOnFrame = useCallback(async () => {
         if (fetchingImage) return;
 
@@ -171,11 +274,12 @@ export default function CreateVideo({} : {video_id: string | null}) {
                         setFetchingImage(true);
 
                         // remove existing image while uploading new image
-                        if(canvasMainImage) {
-                            canvas.remove(canvasMainImage); canvas.renderAll();
+                        const mainImage = canvasMainImage();
+                        if (mainImage) {
+                            canvas.remove(mainImage); canvas.renderAll();
                         }
 
-                        const img = await fabric.FabricImage.fromURL(imageURL, { crossOrigin: 'anonymous' });
+                        const img: CustomFabricImage = await fabric.FabricImage.fromURL(imageURL, { crossOrigin: 'anonymous' });
                         setFetchingImage(false);
 
                         // Set current image in specific dimensions
@@ -205,14 +309,14 @@ export default function CreateVideo({} : {video_id: string | null}) {
                                 scaleX: scaleFactor,
                                 scaleY: scaleFactor,
                             });
+                            img.is_avatar = true;
                             canvas.add(img);
                             setCanvasElements([...canvasElements, img]);
-                            setCanvasMainImage(img);
                         }
                         resolve({ status: true, data: 'Successfully fetched image' });
                     } catch (error) {
                         console.log("Error on fetching image", error);
-                        
+
                         setFetchingImage(false);
                         reject({ status: false, data: error });
                     }
@@ -232,17 +336,26 @@ export default function CreateVideo({} : {video_id: string | null}) {
         }
     }, [canvas, selectedAvatar, fetchingImage, processing])
 
+    const canvasMainImage = useCallback(() => {
+        if (canvas) {
+            const object = canvas.getObjects('image').find((obj) => obj.type == 'image');
+            return object ? object : null;
+        }
+        return null;
+    }, [canvas, loadFirstTime])
+
     const updateCanvasAsPerVariable = (frame: Frame) => {
-        if (canvasMainImage && canvasContainerRef.current) {
+        const mainImage = canvasMainImage();
+        if (mainImage && canvasContainerRef.current) {
             const { width } = getContainerHeightWidth();
             if (frame == 'fit') {
-                setCanvasDimensions(width, null, canvasMainImage);
+                setCanvasDimensions(width, null, mainImage);
             } else if (frame == 'landscape') {
-                setCanvasDimensions(width, { width: 16, height: 9 }, canvasMainImage);
+                setCanvasDimensions(width, { width: 16, height: 9 }, mainImage);
             } else if (frame == 'portrait') {
-                setCanvasDimensions(width, { width: 9, height: 16 }, canvasMainImage);
+                setCanvasDimensions(width, { width: 9, height: 16 }, mainImage);
             } else if (frame == 'square') {
-                setCanvasDimensions(width, { width: 1, height: 1 }, canvasMainImage);
+                setCanvasDimensions(width, { width: 1, height: 1 }, mainImage);
             }
         }
     }
@@ -369,8 +482,6 @@ export default function CreateVideo({} : {video_id: string | null}) {
         }
     };
 
-
-
     const writeScriptForm = useForm<{ script: string; }>({ mode: 'all' });
 
     useEffect(() => {
@@ -383,33 +494,63 @@ export default function CreateVideo({} : {video_id: string | null}) {
             setCanvas(_canvas);
         }
     }, [selectedAvatar, selectAvatarForm])
-    useEffect(() => {
-        changeAvatarImageOnFrame()
-    }, [selectedAvatar, canvas])
 
     useEffect(() => {
-        const personalTalkingPhotosCollection = query(
-            collection(db, "didTalkingPhotos"),
-            or(
-                where('owner', '==', uid),
-                where('type', '==', AVATAR_TYPE_TEMPLATE)
-            ),
-        );
-        const unsubscribeTalkingPhotos = onSnapshot(
-            personalTalkingPhotosCollection,
-            (snapshot) => {
-                const talkingPhotosList = snapshot.docs.map(
-                    (doc) => doc.data() as DIDTalkingPhoto
-                );
-                setPersonalTalkingPhotos(talkingPhotosList);
+        if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
+            loadCanvasForFirstTime()
+        } else {
+            changeAvatarImageOnFrame()
+        }
+    }, [selectedAvatar, canvas, videoCanvasDetail])
+
+    const loadCanvasForFirstTime = async () => {
+        if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
+            const jsonData = {
+                objects: videoCanvasDetail.canvas_json,
+                canvasSize: videoCanvasDetail.canvas_detail,
+            };
+            const originalWidth = jsonData.canvasSize.width;
+            const originalHeight = jsonData.canvasSize.height;
+            const aspectRatio = jsonData.canvasSize.aspectRatio;
+
+            // Get the container's maximum dimensions
+            const containerWidth = canvasContainerRef.current.clientWidth;
+            const containerHeight = canvasContainerRef.current.clientHeight;
+
+            // Calculate new dimensions while maintaining aspect ratio
+            let targetWidth = containerWidth;
+            let targetHeight = targetWidth / aspectRatio;
+
+            // Check if height exceeds container height
+            if (targetHeight > containerHeight) {
+                targetHeight = containerHeight;
+                targetWidth = targetHeight * aspectRatio;
             }
-        );
+
+            // Resize the canvas to fit within container constraints
+            canvas.setWidth(targetWidth);
+            canvas.setHeight(targetHeight);
+
+            // Calculate scale factors for the objects
+            const scaleX = targetWidth / originalWidth;
+            const scaleY = targetHeight / originalHeight;
+
+            // Load the canvas objects and scale them
+            await canvas.loadFromJSON(jsonData.objects);
+            const objects = canvas.getObjects();
 
 
-        return () => {
-            unsubscribeTalkingPhotos();
-        };
-    }, [uid]);
+            objects.forEach((obj) => {
+                obj.scaleX *= scaleX;
+                obj.scaleY *= scaleY;
+                obj.left *= scaleX;
+                obj.top *= scaleY;
+                obj.setCoords(); // Update object's bounding box
+            });
+            canvas.renderAll();
+            setLoadFirstTime(true)
+        }
+    }
 
     useEffect(() => {
         selectAvatarForm.handleSubmit(() => { })
@@ -426,7 +567,7 @@ export default function CreateVideo({} : {video_id: string | null}) {
         if (selectedAvatar) {
 
             // Check thumbnail url is generates if not then display message
-            if(!canvas){
+            if (!canvas) {
                 toast.error('Selected avatar is not able to generate video.');
                 return;
             }
@@ -454,14 +595,29 @@ export default function CreateVideo({} : {video_id: string | null}) {
 
                         const baseUrl = getApiBaseUrl() ?? window.location.origin;
                         const response = await generateVideo(
+                            videoId,
                             profile.did_api_key, baseUrl,
                             {
                                 'thumbnail_url': thumbnailUrl,
+                                canvas_object: canvas.toJSON(),
+                                canvas_detail: {
+                                    width: width,
+                                    height: height,
+                                    aspectRatio: width / height,
+                                }
                             },
                             selectedAvatar.talking_photo_id,
                             writeScriptForm.getValues('script'),
                             selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
                         )
+                        if ("id" in response) {
+                            setVideoId(response.id);
+                        }
+
+                        /**
+                         * TODO: If status is false and id is provided then redirect it to video detail page
+                         */
+
                         if (response.status && response.id != undefined) {
                             resolve({ status: true, data: response.id });
                         } else {
@@ -490,7 +646,16 @@ export default function CreateVideo({} : {video_id: string | null}) {
         }
     });
 
+    const setBackgroundColor = useCallback((color: string) => {
+        if (canvas) {
+            canvas.backgroundColor = color;
+            canvas.renderAll();
+        }
+    }, [canvas])
+
     const handleChangeAvatar = async (avatar: DIDTalkingPhoto) => {
+        console.log("avatar',", avatar);
+
         setProcessing(true);
         setSelectedAvatar(avatar);
         let _audio = null;
@@ -638,6 +803,21 @@ export default function CreateVideo({} : {video_id: string | null}) {
                                             </div>
                                         )}
                                     />
+
+                                    <div>
+                                        <label className="label">Background Color</label>
+
+                                        <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-5 gap-1 ">
+                                            {
+                                                colors.map((color, index) => <li key={index} onClick={() => {setBackgroundColor(color.color)}} className={`p-2 rounded-md cursor-pointer`} style={{background: color.color}}>
+                                                    <div className="flex items-center h-3">
+                                                    </div>
+                                                </li>)
+                                            }
+
+                                        </ul>
+
+                                    </div>
 
                                 </div>
                             </div>

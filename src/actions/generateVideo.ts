@@ -1,6 +1,6 @@
 "use server";
 
-import { Emotion, Movement } from "@/types/did";
+import { CanvasObject, Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "@/libs/constants";
@@ -8,9 +8,17 @@ import { admin, adminDb } from "@/firebase/firebaseAdmin";
 import { getWebhookUrl, randomString, videoImageProxyUrl } from "@/libs/utils";
 import { getFileUrl } from "./getFileUrl";
 
-export async function generateVideo(apiKey: string | null,
+export async function generateVideo(video_id: string | null, 
+    apiKey: string | null,
     baseUrl: string,
-    extraDetail: { thumbnail_url: string },
+    extraDetail: { 
+        thumbnail_url: string, canvas_object: CanvasObject,
+        canvas_detail: {
+            height: number;
+            width: number;
+            aspectRatio: number;
+        }
+    },
     avatar_id: string,
     inputText?: string,
     voiceId?: string,
@@ -21,7 +29,12 @@ export async function generateVideo(apiKey: string | null,
 ) {
     auth().protect();
     const { userId } = auth();
-    const id = `new-video-${Date.now()}`;
+
+    // TODO: If video id provided
+    // TODO: check exist
+    // TODO: status should be draft
+    
+    const id = video_id ? video_id : `new-video-${Date.now()}`;
 
     // Generate video thubnail 
     const filename = `thumbnail-${randomString(10)}.png`;
@@ -31,7 +44,7 @@ export async function generateVideo(apiKey: string | null,
     // Add that thumbnail to firebase storage
     const bucket = admin.storage().bucket();
     const file = bucket.file(filePath);
-    const { thumbnail_url } = extraDetail;
+    const { thumbnail_url, canvas_object, canvas_detail } = extraDetail;
     const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
     if (!matches) {
         throw new Error('Invalid data URL format');
@@ -64,6 +77,8 @@ export async function generateVideo(apiKey: string | null,
         owner: userId,
         type: 'personal',
         thumbnail_url: thumbnailUrl,
+        canvas_json: canvas_object,
+        canvas_detail: canvas_detail,
     }, { merge: true });
 
     // Create proxy link
@@ -86,7 +101,7 @@ export async function generateVideo(apiKey: string | null,
 
     if (response) {
         if ("error" in response && response.error) {
-            return { status: false, message: response.error || 'Error generating video' }
+            return { status: false, message: response.error || 'Error generating video', id: id }
         } else if ("id" in response) {
 
             const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
@@ -101,9 +116,9 @@ export async function generateVideo(apiKey: string | null,
                 id: id
             }
         }
-        return { status: false, message: 'Error generating video' };
+        return { status: false, message: 'Error generating video', id };
     }
 
-    return { status: false, message: 'Error generating video' };
+    return { status: false, message: 'Error generating video', id };
 
 }
