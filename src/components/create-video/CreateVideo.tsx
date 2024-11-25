@@ -308,7 +308,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                             img.set({
                                 scaleX: scaleFactor,
                                 scaleY: scaleFactor,
-                                borderColor: 'red', 
+                                borderColor: 'red',
                             });
                             img.is_avatar = true;
                             canvas.add(img);
@@ -649,10 +649,55 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
     const setBackgroundColor = useCallback((color: string) => {
         if (canvas) {
+            if(canvas.backgroundImage){ 
+                canvas.backgroundImage = undefined;
+            }
             canvas.backgroundColor = color;
             canvas.renderAll();
         }
     }, [canvas])
+
+    const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files;
+        const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
+        const scaleFactor = Math.min(screenWidth, screenHeight);
+        if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const image = new window.Image();
+        image.src = e.target?.result as string;
+        image.onload = function () {
+            const fabricImage = new fabric.Image(image, {
+                left: 0,
+                top: 0,
+            });
+            const canvasWidth = canvas ? canvas.width : 0;
+            const canvasHeight = canvas ? canvas.height : 0;
+
+            const scaleX = canvasWidth / fabricImage.width;
+            const scaleY = canvasHeight / fabricImage.height;
+            const scale = Math.max(scaleX, scaleY);
+
+            fabricImage.scale(scale);
+
+            fabricImage.set({
+                left: (canvasWidth - fabricImage.getScaledWidth()) / 2,
+                top: (canvasHeight - fabricImage.getScaledHeight()) / 2,
+            });
+
+            setBackgroundImage(fabricImage);
+        };
+    };
+    reader.readAsDataURL(file[0]);
+}
+    }, [canvas])
+
+    const setBackgroundImage = useCallback((image: fabric.FabricImage) => {
+        if (canvas) {
+            canvas.backgroundImage = image;
+            canvas.renderAll();
+        }
+    }, [canvas, handleImageUpload])
 
     const handleChangeAvatar = async (avatar: DIDTalkingPhoto) => {
         console.log("avatar',", avatar);
@@ -818,6 +863,11 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
                                         </ul>
 
+                                    </div>
+
+                                    <div>
+                                        {/* getBackgroundImage */}
+                                        <input type="file" onChange={handleImageUpload} />
                                     </div>
 
                                 </div>
