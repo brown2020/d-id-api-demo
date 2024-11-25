@@ -308,6 +308,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                             img.set({
                                 scaleX: scaleFactor,
                                 scaleY: scaleFactor,
+                                borderColor: 'red', 
                             });
                             img.is_avatar = true;
                             canvas.add(img);
