@@ -5,7 +5,7 @@ import { AVATAR_TYPE_TEMPLATE, DOCUMENT_COLLECTION, VIDEO_COLLECTION } from "@/l
 import { CanvasObject, CustomFabricImage, DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { collection, doc, onSnapshot, or, query, where } from "firebase/firestore";
-import { Captions, icons, Meh, Scaling, Smile, UserRound, Video } from "lucide-react";
+import { Captions, FileIcon, icons, Meh, Plus, Repeat2, Scaling, Smile, UserRound, Video } from "lucide-react";
 import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { checkCanvasObjectImageDomain, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
@@ -21,7 +21,8 @@ import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
 import * as fabric from 'fabric';
-
+import { Background_Images } from "./BackgroundImages";
+import AvatarGallery from "./AvatarGallery";
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -131,7 +132,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
     const [canvasElements, setCanvasElements] = useState<fabric.Object[]>([]);
     const [loadFirstTime, setLoadFirstTime] = useState(false);
-
+    const [replaceAvatarModel, setReplaceAvatarModel] = useState(false);
+    const [fabricBackgroundImage, setFabricBackgroundImage] = useState<fabric.Image | null>(null);
     // If video id is exist then fetch video details
     // If exist then set selected avatar
     // update canvas variable
@@ -358,6 +360,12 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             } else if (frame == 'square') {
                 setCanvasDimensions(width, { width: 1, height: 1 }, mainImage);
             }
+            if (fabricBackgroundImage) {
+                setBackgroundImageDimension(fabricBackgroundImage);
+                if (canvas) {
+                    canvas.renderAll();
+                }
+            }
         }
     }
 
@@ -466,10 +474,27 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 img.setCoords();
 
                 canvas.renderAll();
+
+                console.log("Canvas dimensions", fabricBackgroundImage);
             }
 
         }
     };
+
+    const setBackgroundImageDimension = (fabricImage: fabric.Image) => {
+        const canvasWidth = canvas ? canvas.width : 0;
+        const canvasHeight = canvas ? canvas.height : 0;
+
+        const scaleX = canvasWidth / fabricImage.width;
+        const scaleY = canvasHeight / fabricImage.height;
+        const scale = Math.max(scaleX, scaleY);
+
+        fabricImage.scale(scale);
+        fabricImage.set({
+            left: (canvasWidth - fabricImage.getScaledWidth()) / 2,
+            top: (canvasHeight - fabricImage.getScaledHeight()) / 2,
+        });
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
         if (canvas !== null) {
@@ -649,7 +674,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
     const setBackgroundColor = useCallback((color: string) => {
         if (canvas) {
-            if(canvas.backgroundImage){ 
+            if (canvas.backgroundImage) {
                 canvas.backgroundImage = undefined;
             }
             canvas.backgroundColor = color;
@@ -659,51 +684,77 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
     const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files;
-        const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
-        const scaleFactor = Math.min(screenWidth, screenHeight);
         if (file) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const image = new window.Image();
-        image.src = e.target?.result as string;
-        image.onload = function () {
-            const fabricImage = new fabric.Image(image, {
-                left: 0,
-                top: 0,
-            });
-            const canvasWidth = canvas ? canvas.width : 0;
-            const canvasHeight = canvas ? canvas.height : 0;
+            toast.promise(
+                new Promise<void>(async (resolve, reject) => {
+                    try {
+                        // Show processing toast while uploading image
+                        setFetchingImage(true);
 
-            const scaleX = canvasWidth / fabricImage.width;
-            const scaleY = canvasHeight / fabricImage.height;
-            const scale = Math.max(scaleX, scaleY);
+                        const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
+                        const scaleFactor = Math.min(screenWidth, screenHeight);
 
-            fabricImage.scale(scale);
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            const image = new window.Image();
+                            image.src = e.target?.result as string;
+                            image.onload = function () {
+                                const fabricImage = new fabric.Image(image, {
+                                    left: 0,
+                                    top: 0,
+                                });
 
-            fabricImage.set({
-                left: (canvasWidth - fabricImage.getScaledWidth()) / 2,
-                top: (canvasHeight - fabricImage.getScaledHeight()) / 2,
-            });
-
-            setBackgroundImage(fabricImage);
-        };
-    };
-    reader.readAsDataURL(file[0]);
-}
-    }, [canvas])
+                                setBackgroundImageDimension(fabricImage);
+                                setBackgroundImage(fabricImage);
+                                setFetchingImage(false);
+                                resolve();
+                            };
+                        };
+                        reader.readAsDataURL(file[0]);
+                    } catch (error) {
+                        console.log("Error on image upload", error);
+                        setFetchingImage(false);
+                        reject();
+                    }
+                }),
+                {
+                    loading: 'Uploading and processing image...',
+                    success: () => 'Image successfully uploaded and scaled!',
+                    error: (err) => `Error: ${err}`,
+                }
+            );
+        }
+    }, [canvas]);
 
     const setBackgroundImage = useCallback((image: fabric.FabricImage) => {
+        setFabricBackgroundImage(image);
         if (canvas) {
             canvas.backgroundImage = image;
             canvas.renderAll();
         }
     }, [canvas, handleImageUpload])
 
-    const handleChangeAvatar = async (avatar: DIDTalkingPhoto) => {
-        console.log("avatar',", avatar);
+    const handleSetBackground = useCallback(
+        (src: string) => {
+            const image = new window.Image();
+            image.src = src;
+            image.onload = function () {
+                const fabricImage = new fabric.Image(image, {
+                    left: 0,
+                    top: 0,
+                });
 
+                setBackgroundImageDimension(fabricImage);
+                setBackgroundImage(fabricImage);
+            };
+        },
+        [canvas, setBackgroundImage]
+    );
+
+    const handleChangeAvatar = async (avatar: DIDTalkingPhoto) => {
         setProcessing(true);
         setSelectedAvatar(avatar);
+        setReplaceAvatarModel(false);
         let _audio = null;
         if (avatar.voiceId) {
             const audio = await findVoice(avatar.voiceId);
@@ -737,146 +788,185 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
         <div className="py-4 px-1 grow overflow-hidden">
             <div className={`flex w-full max-h-full h-full gap-4 overflow-auto ${activeStep == 'select-avatar' ? '' : 'hidden'}`}>
-                <div className={`${selectedAvatar ? 'w-1/4' : 'w-full'} flex flex-col h-full  max-h-full overflow-auto relative`}>
-                    <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
-                        {personalTalkingPhotos.map((avatar, index) => (
-                            <article key={index} onClick={() => { handleChangeAvatar(avatar) }} className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full">
-                                {
-                                    avatar.preview_image_url ?
-                                        <Image
-                                            src={avatar.preview_image_url}
-                                            alt={avatar.talking_photo_name}
-                                            width={512}
-                                            height={512}
-                                            className="absolute inset-0 h-full w-full object-cover"
-                                        /> : <></>
-                                }
-                                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>
-                                <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">{avatar.talking_photo_name}</h3>
-                            </article>
-                        ))}
-                    </ul>
+                <div className={`${selectedAvatar ? 'w-1/4 hidden' : 'w-full'} flex flex-col h-full max-h-full overflow-auto relative`}>
+                    <AvatarGallery selectedAvatar={selectedAvatar} personalTalkingPhotos={personalTalkingPhotos} handleChangeAvatar={handleChangeAvatar} />
                 </div>
                 {selectedAvatar ?
                     <div className="grow bg-gray-50 rounded-lg p-4 h-full flex flex-col justify-between">
                         <div className="flex grow overflow-x-auto">
-                            <div className="px-4 flex flex-col w-1/3">
-                                <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
-                                <div className="flex flex-col gap-4 mt-5 pe-4 grow overflow-y-auto">
-                                    <div>
-                                        <label className="label">Audio</label>
-                                        {
-                                            audioDetail ?
-                                                <div className="flex flex-col w-full gap-4">
-                                                    <CustomAudioOption2 data={audioDetail} />
-                                                    <div>
-                                                        <audio className="w-full" controls key={audioDetail.voice_id}>
-                                                            <source src={audioDetail.preview_url} type="audio/mpeg" />
-                                                            Your browser does not support the audio element.
-                                                        </audio>
-                                                    </div>
-                                                </div>
-                                                : <Fragment />
-                                        }
-                                    </div>
-                                    <Controller
-                                        control={selectAvatarForm.control}
-                                        name="emotion"
-                                        render={({ field }) => (
-                                            <div>
-                                                <label className="label">Emotions</label>
-
-                                                <ul className="items-center w-full text-sm font-medium grid grid-cols-2 gap-1">
-                                                    {
-                                                        emotions.map((emotion, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('emotion', emotion.code) }} className={`p-2 rounded-md cursor-pointer w-full ${field.value == emotion.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
-                                                            <div className="flex items-center">
-                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{emotion.label}</label>
-                                                            </div>
-                                                        </li>)
-                                                    }
-
-                                                </ul>
-
-                                            </div>
-                                        )}
-                                    />
-                                    <Controller
-                                        control={selectAvatarForm.control}
-                                        name="movement"
-                                        rules={{
-                                            required: { message: 'Required.', value: true },
-                                        }}
-                                        render={({ field }) => (
-                                            <div>
-                                                <label className="label">Movements</label>
-
-                                                <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-2 gap-1 ">
-                                                    {
-                                                        movements.map((movements, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('movement', movements.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == movements.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
-                                                            <div className="flex items-center">
-                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{movements.label}</label>
-                                                            </div>
-                                                        </li>)
-                                                    }
-
-                                                </ul>
-
-                                            </div>
-                                        )}
-                                    />
-
-                                    <Controller
-                                        control={selectAvatarForm.control}
-                                        name="frame"
-                                        rules={{
-                                            required: { message: 'Required.', value: true },
-                                        }}
-                                        render={({ field }) => (
-                                            <div>
-                                                <label className="label">Frame</label>
-
-                                                <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-1 gap-1 ">
-                                                    {
-                                                        frames.map((frame, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('frame', frame.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == frame.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
-                                                            <div className="flex items-center">
-                                                                <label className="w-full ms-2 text-sm font-medium cursor-pointer">{frame.label}</label>
-                                                            </div>
-                                                        </li>)
-                                                    }
-
-                                                </ul>
-
-                                            </div>
-                                        )}
-                                    />
-
-                                    <div>
-                                        <label className="label">Background Color</label>
-
-                                        <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-5 gap-1 ">
-                                            {
-                                                colors.map((color, index) => <li key={index} onClick={() => {setBackgroundColor(color.color)}} className={`p-2 rounded-md cursor-pointer`} style={{background: color.color}}>
-                                                    <div className="flex items-center h-3">
-                                                    </div>
-                                                </li>)
-                                            }
-
-                                        </ul>
-
-                                    </div>
-
-                                    <div>
-                                        {/* getBackgroundImage */}
-                                        <input type="file" onChange={handleImageUpload} />
-                                    </div>
-
-                                </div>
+                            {replaceAvatarModel ? <div className="w-1/4 flex flex-col h-full max-h-full overflow-auto relative ">
+                                <AvatarGallery selectedAvatar={selectedAvatar} personalTalkingPhotos={personalTalkingPhotos} handleChangeAvatar={handleChangeAvatar} />
                             </div>
+                                : <div className="px-4 flex flex-col w-1/4">
+                                    <p className="text-2xl font-bold">{selectedAvatar.talking_photo_name}</p>
+                                    <div className="flex flex-col gap-4 mt-5 pe-4 grow overflow-y-auto">
+                                        <div className="relative">
+                                            {fetchingImage ? <div className="bg-gray-300 animate-pulse w-full h-96 rounded-lg"></div> : <div className="relative w-full h-96">
+                                                <Image
+                                                    className="rounded-md cursor-pointer object-cover"
+                                                    src={selectedAvatar.preview_image_url}
+                                                    alt="avatar"
+                                                    layout="fill"
+                                                />
+                                                <div>
+                                                    <button onClick={() => { setReplaceAvatarModel(true) }} className="flex hover:bg-gray-200 gap-2 absolute items-center bottom-0 right-0 bg-white p-2 rounded-md mr-2 mb-2">
+                                                        <Repeat2 size={22} />
+                                                        <label className="cursor-pointer font-medium text-sm ">Replace</label>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label className="label">Audio</label>
+                                            {
+                                                audioDetail ?
+                                                    <div className="flex flex-col w-full gap-4">
+                                                        <CustomAudioOption2 data={audioDetail} />
+                                                        <div>
+                                                            <audio className="w-full" controls key={audioDetail.voice_id}>
+                                                                <source src={audioDetail.preview_url} type="audio/mpeg" />
+                                                                Your browser does not support the audio element.
+                                                            </audio>
+                                                        </div>
+                                                    </div>
+                                                    : <Fragment />
+                                            }
+                                        </div>
+                                        <Controller
+                                            control={selectAvatarForm.control}
+                                            name="emotion"
+                                            render={({ field }) => (
+                                                <div>
+                                                    <label className="label">Emotions</label>
+
+                                                    <ul className="items-center w-full text-sm font-medium grid grid-cols-2 gap-1">
+                                                        {
+                                                            emotions.map((emotion, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('emotion', emotion.code) }} className={`p-2 rounded-md cursor-pointer w-full ${field.value == emotion.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                                <div className="flex items-center">
+                                                                    <label className="w-full ms-2 text-sm font-medium cursor-pointer">{emotion.label}</label>
+                                                                </div>
+                                                            </li>)
+                                                        }
+
+                                                    </ul>
+
+                                                </div>
+                                            )}
+                                        />
+                                        <Controller
+                                            control={selectAvatarForm.control}
+                                            name="movement"
+                                            rules={{
+                                                required: { message: 'Required.', value: true },
+                                            }}
+                                            render={({ field }) => (
+                                                <div>
+                                                    <label className="label">Movements</label>
+
+                                                    <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-2 gap-1 ">
+                                                        {
+                                                            movements.map((movements, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('movement', movements.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == movements.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                                <div className="flex items-center">
+                                                                    <label className="w-full ms-2 text-sm font-medium cursor-pointer">{movements.label}</label>
+                                                                </div>
+                                                            </li>)
+                                                        }
+
+                                                    </ul>
+
+                                                </div>
+                                            )}
+                                        />
+
+                                        <Controller
+                                            control={selectAvatarForm.control}
+                                            name="frame"
+                                            rules={{
+                                                required: { message: 'Required.', value: true },
+                                            }}
+                                            render={({ field }) => (
+                                                <div>
+                                                    <label className="label">Frame</label>
+
+                                                    <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-1 gap-1 ">
+                                                        {
+                                                            frames.map((frame, index) => <li key={index} onClick={() => { selectAvatarForm.setValue('frame', frame.code) }} className={`p-2 rounded-md cursor-pointer ${field.value == frame.code ? 'bg-slate-600 text-white' : 'bg-white border text-gray-900'}`}>
+                                                                <div className="flex items-center">
+                                                                    <label className="w-full ms-2 text-sm font-medium cursor-pointer">{frame.label}</label>
+                                                                </div>
+                                                            </li>)
+                                                        }
+
+                                                    </ul>
+
+                                                </div>
+                                            )}
+                                        />
+
+                                        <div>
+                                            <label className="label">Background Color</label>
+
+                                            <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-5 gap-1 ">
+                                                {
+                                                    colors.map((color, index) => <li key={index} onClick={() => { setBackgroundColor(color.color) }} className={`p-2 rounded-md cursor-pointer`} style={{ background: color.color }}>
+                                                        <div className="flex items-center h-3">
+                                                        </div>
+                                                    </li>)
+                                                }
+
+                                            </ul>
+
+                                        </div>
+
+                                        <div className="flex flex-col items-start space-y-2">
+                                            <label className="label">My Background</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="file"
+                                                    onChange={handleImageUpload}
+                                                    id="file-upload"
+                                                    className="hidden"
+                                                />
+                                                <label
+                                                    htmlFor="file-upload"
+                                                    className="flex items-center space-x-2 px-6 py-6 bg-neutral-200 rounded-md cursor-pointer hover:bg-neutral-300"
+                                                >
+                                                    <div className="flex flex-col items-center">
+                                                        <Plus size={30} className="" />
+                                                        <p className="">Upload</p>
+                                                    </div>
+
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="label">Background Image</label>
+                                            <div className="grid grid-cols-2 gap-2 w-full text-sm font-medium border-gray-200 h-96 overflow-auto scrolls">
+                                                {Background_Images.map((data, index) => (
+                                                    <div key={index} className="p-2">
+                                                        <div className="relative w-full h-48">
+                                                            <Image
+                                                                className="rounded-md cursor-pointer object-cover"
+                                                                src={data.image}
+                                                                onClick={(e: React.MouseEvent<HTMLImageElement>) => handleSetBackground((e.target as HTMLImageElement).src)}
+                                                                alt="background"
+                                                                layout="fill"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>}
                             <div className="self-center grow justify-center flex h-full" ref={canvasContainerRef}>
                                 <canvas className="border-2 border-gray-500 w-full h-full rounded-lg" ref={canvasRef} id="fabricCanvas" />
                             </div>
                         </div>
-                        <div className="">
+                        <div>
                             <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script') }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
                                 Next
                             </button>

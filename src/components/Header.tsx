@@ -164,7 +164,7 @@ export default function Header() {
         </div>
       </SignedOut>
       <SignedIn>
-        <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-[9999]">
+        <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-[999]">
           <Image src={logo} alt="logo" className="w-[80.28px] h-[50px]" />
           <div className="max-xs:hidden flex items-center">
             {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
