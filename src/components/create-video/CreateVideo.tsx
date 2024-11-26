@@ -23,6 +23,7 @@ import { Voice } from "elevenlabs/api";
 import * as fabric from 'fabric';
 import { Background_Images } from "./BackgroundImages";
 import AvatarGallery from "./AvatarGallery";
+import TextBox from "./TextBox";
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -768,6 +769,40 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         setProcessing(false);
     }
 
+    const handleText = useCallback((textType: string) => {
+        if (canvas) {
+            let textContent = 'Heading';
+            let fontSize = 24;
+            let fontWeight = 'bold';
+
+            if (textType === 'headline') {
+                textContent = 'Heading';
+                fontSize = 42;
+                fontWeight = 'bold';
+            } else if (textType === 'subTitle') {
+                textContent = 'SubTitle';
+                fontSize = 34;
+                fontWeight = '600';
+            } else if (textType === 'body') {
+                textContent = 'Body text';
+                fontSize = 22;
+                fontWeight = 'normal';
+            }
+
+            const text = new fabric.IText(textContent, {
+                left: 100,
+                top: 100,
+                fill: 'black',
+                fontSize,
+                fontWeight,
+                selectable: true
+            });
+
+            canvas.add(text);
+            canvas.renderAll();
+        }
+    }, [canvas]);
+
     const [audioDetail, setAudioDetail] = useState<Voice | null>(null);
 
     const stepOneCompeted = useMemo(() => {
@@ -965,7 +1000,10 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                                 ))}
                                             </div>
                                         </div>
-
+                                        <div>
+                                            <label className="label">Add a text box</label>
+                                            <TextBox handleText={handleText} textType="headline" canvas={canvas} />
+                                        </div>
                                     </div>
                                 </div>}
                             <div className="self-center grow justify-center flex h-full" ref={canvasContainerRef}>
