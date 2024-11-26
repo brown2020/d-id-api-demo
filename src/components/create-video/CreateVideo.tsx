@@ -134,6 +134,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const [loadFirstTime, setLoadFirstTime] = useState(false);
     const [replaceAvatarModel, setReplaceAvatarModel] = useState(false);
     const [fabricBackgroundImage, setFabricBackgroundImage] = useState<fabric.Image | null>(null);
+    const [landscape, setLandscape] = useState('square');
     // If video id is exist then fetch video details
     // If exist then set selected avatar
     // update canvas variable
@@ -349,6 +350,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
     const updateCanvasAsPerVariable = (frame: Frame) => {
         const mainImage = canvasMainImage();
+        setLandscape(frame);
         if (mainImage && canvasContainerRef.current) {
             const { width } = getContainerHeightWidth();
             if (frame == 'fit') {
@@ -946,7 +948,11 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                             <div className="grid grid-cols-2 gap-2 w-full text-sm font-medium border-gray-200 h-96 overflow-auto scrolls">
                                                 {Background_Images.map((data, index) => (
                                                     <div key={index} className="p-2">
-                                                        <div className="relative w-full h-48">
+                                                        <div className={`relative w-full h-48 
+                                                            ${landscape == 'square' && '!h-48'}
+                                                            ${landscape == 'portrait' && '!h-64'}
+                                                            ${landscape == 'landscape' && '!h-28'}
+                                                        `}>
                                                             <Image
                                                                 className="rounded-md cursor-pointer object-cover"
                                                                 src={data.image}
