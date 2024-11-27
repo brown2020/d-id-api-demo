@@ -537,7 +537,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             });
             setCanvas(_canvas);
         }
-    }, [selectedAvatar, selectAvatarForm])
+    }, [selectedAvatar, selectAvatarForm, canvas])
 
     useEffect(() => {
         if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
@@ -545,7 +545,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         } else {
             changeAvatarImageOnFrame()
         }
-    }, [selectedAvatar, canvas, videoCanvasDetail])
+    }, [selectedAvatar, canvas, videoCanvasDetail, loadFirstTime, video_id, uid, personalTalkingPhotos, canvasContainerRef])
 
     const loadCanvasForFirstTime = async () => {
         if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
@@ -700,6 +700,14 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         }
     }, [canvas])
 
+    const setBackgroundImage = useCallback((image: fabric.FabricImage) => {
+        setFabricBackgroundImage(image);
+        if (canvas) {
+            canvas.backgroundImage = image;
+            canvas.renderAll();
+        }
+    }, [canvas])
+
     const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files;
         if (file) {
@@ -739,15 +747,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 }
             );
         }
-    }, [canvas]);
-
-    const setBackgroundImage = useCallback((image: fabric.FabricImage) => {
-        setFabricBackgroundImage(image);
-        if (canvas) {
-            canvas.backgroundImage = image;
-            canvas.renderAll();
-        }
-    }, [canvas, handleImageUpload])
+    }, [setBackgroundImage, setBackgroundImageDimension]);  
 
     const handleSetBackground = useCallback(
         (src: string) => {
@@ -763,7 +763,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 setBackgroundImage(fabricImage);
             };
         },
-        [canvas, setBackgroundImage]
+        [   setBackgroundImage, setBackgroundImageDimension]
     );
 
     const handleText = useCallback((textType: string) => {
