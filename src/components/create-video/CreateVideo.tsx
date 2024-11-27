@@ -357,35 +357,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
 
         }
-    }, [canvas, selectedAvatar, fetchingImage, processing, canvasElements, canvasMainImage])
-
-    const updateCanvasAsPerVariable = (frame: Frame) => {
-        const mainImage = canvasMainImage();
-        setLandscape(frame);
-        if (mainImage && canvasContainerRef.current) {
-            const { width } = getContainerHeightWidth();
-            if (frame == 'fit') {
-                setCanvasDimensions(width, null, mainImage);
-            } else if (frame == 'landscape') {
-                setCanvasDimensions(width, { width: 16, height: 9 }, mainImage);
-            } else if (frame == 'portrait') {
-                setCanvasDimensions(width, { width: 9, height: 16 }, mainImage);
-            } else if (frame == 'square') {
-                setCanvasDimensions(width, { width: 1, height: 1 }, mainImage);
-            }
-            if (fabricBackgroundImage) {
-                setBackgroundImageDimension(fabricBackgroundImage);
-                if (canvas) {
-                    canvas.renderAll();
-                }
-            }
-        }
-    }
-
-    const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
-    useEffect(() => {
-        updateCanvasAsPerVariable(updatedFields[0])
-    }, [updatedFields, updateCanvasAsPerVariable])
+    }, [canvas, selectedAvatar, fetchingImage, canvasElements, canvasMainImage])
 
     const getContainerHeightWidth = () => {
         const container = canvasContainerRef.current;
@@ -399,7 +371,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         };
     }
 
-    const setCanvasDimensions = (
+    const setCanvasDimensions = useCallback((
         widthOrHeight: number,
         aspectRatio: { width: number, height: number } | null,
         img: fabric.Object
@@ -497,9 +469,9 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             }
 
         }
-    };
-
-    const setBackgroundImageDimension = (fabricImage: fabric.Image) => {
+    }, [canvas, fabricBackgroundImage]);
+    
+    const setBackgroundImageDimension = useCallback((fabricImage: fabric.Image) => {
         const canvasWidth = canvas ? canvas.width : 0;
         const canvasHeight = canvas ? canvas.height : 0;
 
@@ -512,7 +484,35 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             left: (canvasWidth - fabricImage.getScaledWidth()) / 2,
             top: (canvasHeight - fabricImage.getScaledHeight()) / 2,
         });
-    }
+    }, [canvas]);
+
+    const updateCanvasAsPerVariable = useCallback((frame: Frame) => {
+        const mainImage = canvasMainImage();
+        setLandscape(frame);
+        if (mainImage && canvasContainerRef.current) {
+            const { width } = getContainerHeightWidth();
+            if (frame == 'fit') {
+                setCanvasDimensions(width, null, mainImage);
+            } else if (frame == 'landscape') {
+                setCanvasDimensions(width, { width: 16, height: 9 }, mainImage);
+            } else if (frame == 'portrait') {
+                setCanvasDimensions(width, { width: 9, height: 16 }, mainImage);
+            } else if (frame == 'square') {
+                setCanvasDimensions(width, { width: 1, height: 1 }, mainImage);
+            }
+            if (fabricBackgroundImage) {
+                setBackgroundImageDimension(fabricBackgroundImage);
+                if (canvas) {
+                    canvas.renderAll();
+                }
+            }
+        }
+    }, [canvas, canvasMainImage, setCanvasDimensions, fabricBackgroundImage, setBackgroundImageDimension])
+   
+    const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
+    useEffect(() => {
+        updateCanvasAsPerVariable(updatedFields[0])
+    }, [updatedFields, updateCanvasAsPerVariable])
 
     const handleKeyDown = (e: KeyboardEvent) => {
         if (canvas !== null) {
