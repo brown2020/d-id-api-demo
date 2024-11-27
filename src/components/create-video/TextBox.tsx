@@ -1,8 +1,9 @@
 import * as fabric from 'fabric';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fontFamilies } from './Utils';
 import { Bold, Italic, Strikethrough, Underline } from 'lucide-react';
-import { set } from 'react-hook-form';
+import textBox1 from "@/assets/images/text-box-1.png";
+import Image from 'next/image';
 
 interface TextBoxProps {
     handleText: (textType: string) => void;
@@ -69,6 +70,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             canvas.on('object:scaling', (event) => {
                 handleObjectSelection(event.target);
             });
+            canvas.renderAll();
         }
     }, [canvas]);
 
@@ -142,6 +144,27 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             strikethrough: false,
         });
     };
+
+    const handleTextPng = useCallback(() => {
+        const set1 = new fabric.IText('Life is an', {
+            left: 100,
+            top: 100,
+            fontSize: 22,
+            fill: 'black',
+            selectable: true
+        });
+        const set2 = new fabric.IText('ADVENTURE', {
+            left: 80,
+            top: 140,
+            fontSize: 38,
+            fill: 'black',
+            selectable: true
+        });
+
+        set2.fontFamily = 'Rock Salt';
+        canvas?.add(set1, set2);
+        canvas?.renderAll();
+    }, [canvas]);
 
     return (
         <div>
@@ -218,25 +241,32 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col gap-2">
-                    <button
-                        className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-2xl font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onClick={() => handleText('headline')}
-                    >
-                        Add a headline
-                    </button>
-                    <button
-                        className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-lg font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onClick={() => handleText('subTitle')}
-                    >
-                        Add a subtitle
-                    </button>
-                    <button
-                        className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-sm hover:bg-neutral-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onClick={() => handleText('body')}
-                    >
-                        Add a body
-                    </button>
+                <div>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-2xl font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onClick={() => handleText('headline')}
+                        >
+                            Add a headline
+                        </button>
+                        <button
+                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-lg font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onClick={() => handleText('subTitle')}
+                        >
+                            Add a subtitle
+                        </button>
+                        <button
+                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-sm hover:bg-neutral-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onClick={() => handleText('body')}
+                        >
+                            Add a body
+                        </button>
+                    </div>
+                    <div className='mt-5 grid grid-cols-3 gap-2'>
+                        <div onClick={() => handleTextPng()} className='border bg-white rounded-md cursor-pointer'>
+                            <Image src={textBox1} alt="Text Box" height={100} width={100} />
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

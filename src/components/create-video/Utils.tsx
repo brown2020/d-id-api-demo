@@ -75,7 +75,7 @@ export const fontFamilies = [
     "Century Gothic",
     "Futura",
     "Franklin Gothic",
-    "Roboto",  // Regular fonts
+    "Roboto", 
     "Lora",
     "Open Sans",
     "Montserrat",
@@ -92,14 +92,14 @@ export const fontFamilies = [
     "Zilla Slab",
     "Cabin",
     "Rubik",
-    "Dancing Script",  // Stylish script font
-    "Great Vibes",     // Elegant cursive
-    "Lobster",         // Popular decorative font
-    "Sacramento",      // Elegant handwritten font
-    "Rock Salt",       // Casual script font
-    "Monoton",         // Bold and modern
-    "Satisfy",         // Handwritten cursive
-    "Allura",          // Simple script font
-    "Chewy"            // Playful and rounded script
+    "Dancing Script", 
+    "Great Vibes",    
+    "Lobster",        
+    "Sacramento",     
+    "Rock Salt",      
+    "Monoton",        
+    "Satisfy",        
+    "Allura",         
+    "Chewy"           
 ];
 
