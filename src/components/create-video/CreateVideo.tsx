@@ -5,7 +5,7 @@ import { AVATAR_TYPE_TEMPLATE, DOCUMENT_COLLECTION, VIDEO_COLLECTION } from "@/l
 import { CanvasObject, CustomFabricImage, DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { collection, doc, onSnapshot, or, query, where } from "firebase/firestore";
-import { Captions, FileIcon, icons, Meh, Plus, Repeat2, Scaling, Smile, UserRound, Video } from "lucide-react";
+import { Captions, icons, Meh, Plus, Repeat2, Scaling, Smile, UserRound, Video } from "lucide-react";
 import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { checkCanvasObjectImageDomain, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
@@ -157,17 +157,12 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         },
     });
 
-    const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
-    useEffect(() => {
-        updateCanvasAsPerVariable(updatedFields[0])
-    }, [updatedFields])
-
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         }
-    }, [canvas])
+    })
 
     useEffect(() => {
         const personalTalkingPhotosCollection = query(
@@ -200,6 +195,21 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             aspectRatio: number;
         }
     } | null>(null);
+
+    const handleChangeAvatar = useCallback(async (avatar: DIDTalkingPhoto) => {
+        setProcessing(true);
+        setSelectedAvatar(avatar);
+        setReplaceAvatarModel(false);
+        let _audio = null;
+        if (avatar.voiceId) {
+            const audio = await findVoice(avatar.voiceId);
+            if (audio.status && audio.voice) {
+                _audio = audio.voice
+            }
+        }
+        setAudioDetail(_audio);
+        setProcessing(false);
+    }, [findVoice])
 
     useEffect(() => {
         // If video id is exist then fetch video details
@@ -260,7 +270,15 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             };
 
         }
-    }, [video_id, uid, personalTalkingPhotos])
+    }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar])
+
+    const canvasMainImage = useCallback(() => {
+        if (canvas) {
+            const object = canvas.getObjects('image').find((obj) => obj.type == 'image');
+            return object ? object : null;
+        }
+        return null;
+    }, [canvas])
 
     const changeAvatarImageOnFrame = useCallback(async () => {
         if (fetchingImage) return;
@@ -339,15 +357,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
 
         }
-    }, [canvas, selectedAvatar, fetchingImage, processing])
-
-    const canvasMainImage = useCallback(() => {
-        if (canvas) {
-            const object = canvas.getObjects('image').find((obj) => obj.type == 'image');
-            return object ? object : null;
-        }
-        return null;
-    }, [canvas, loadFirstTime])
+    }, [canvas, selectedAvatar, fetchingImage, processing, canvasElements, canvasMainImage])
 
     const updateCanvasAsPerVariable = (frame: Frame) => {
         const mainImage = canvasMainImage();
@@ -371,6 +381,11 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             }
         }
     }
+
+    const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
+    useEffect(() => {
+        updateCanvasAsPerVariable(updatedFields[0])
+    }, [updatedFields, updateCanvasAsPerVariable])
 
     const getContainerHeightWidth = () => {
         const container = canvasContainerRef.current;
@@ -694,9 +709,6 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         // Show processing toast while uploading image
                         setFetchingImage(true);
 
-                        const { width: screenWidth, height: screenHeight } = getContainerHeightWidth();
-                        const scaleFactor = Math.min(screenWidth, screenHeight);
-
                         const reader = new FileReader();
                         reader.onload = function (e) {
                             const image = new window.Image();
@@ -753,21 +765,6 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         },
         [canvas, setBackgroundImage]
     );
-
-    const handleChangeAvatar = async (avatar: DIDTalkingPhoto) => {
-        setProcessing(true);
-        setSelectedAvatar(avatar);
-        setReplaceAvatarModel(false);
-        let _audio = null;
-        if (avatar.voiceId) {
-            const audio = await findVoice(avatar.voiceId);
-            if (audio.status && audio.voice) {
-                _audio = audio.voice
-            }
-        }
-        setAudioDetail(_audio);
-        setProcessing(false);
-    }
 
     const handleText = useCallback((textType: string) => {
         if (canvas) {
