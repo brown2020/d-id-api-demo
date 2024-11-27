@@ -2,12 +2,12 @@ import * as fabric from 'fabric';
 import { useEffect, useState } from 'react';
 
 interface TextBoxProps {
-    textType: 'headline' | 'subTitle' | 'body';
+    // textType: 'headline' | 'subTitle' | 'body';
     handleText: (textType: string) => void;
     canvas: fabric.Canvas | null;
 }
 
-export default function TextBox({ handleText, textType, canvas }: TextBoxProps) {
+export default function TextBox({ handleText, canvas }: TextBoxProps) {
     const [color, setColor] = useState("#000000"); // Default to black
     const [fontSize, setFontSize] = useState(16); // Default font size
     const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);

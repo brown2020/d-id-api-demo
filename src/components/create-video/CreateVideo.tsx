@@ -1002,7 +1002,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                         </div>
                                         <div>
                                             <label className="label">Add a text box</label>
-                                            <TextBox handleText={handleText} textType="headline" canvas={canvas} />
+                                            <TextBox handleText={handleText} canvas={canvas} />
                                         </div>
                                     </div>
                                 </div>}

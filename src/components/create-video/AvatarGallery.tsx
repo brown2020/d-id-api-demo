@@ -2,18 +2,13 @@ import React from 'react';
 import Image from 'next/image';
 import { DIDTalkingPhoto } from '@/types/did';
 
-interface Avatar {
-  preview_image_url: string;
-  talking_photo_name: string;
-}
-
 interface AvatarGalleryProps {
   selectedAvatar: DIDTalkingPhoto | null;
   personalTalkingPhotos: DIDTalkingPhoto[];
   handleChangeAvatar: (avatar: DIDTalkingPhoto) => void;
 }
 
-const AvatarGallery: React.FC<AvatarGalleryProps> = ({ selectedAvatar, personalTalkingPhotos, handleChangeAvatar}) => {
+const AvatarGallery: React.FC<AvatarGalleryProps> = ({ personalTalkingPhotos, handleChangeAvatar}) => {
   return (
       <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
         {personalTalkingPhotos.map((avatar, index) => (

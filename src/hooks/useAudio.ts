@@ -2,7 +2,7 @@ import { findAudio } from "@/actions/findAudio";
 import { getAudioList } from "@/actions/getAudioList";
 import useProfileStore from "@/zustand/useProfileStore";
 import { Voice } from "elevenlabs/api";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 export const useAudio = () => {
@@ -10,11 +10,6 @@ export const useAudio = () => {
 
     const [voiceList, setVoiceList] = useState<Voice[]>([]);
     const [isFetching, setIsFetching] = useState(false);
-
-    useEffect(() => {
-        if (profile.elevenlabs_api_key !== null)
-            loadAudioList()
-    }, [profile])
 
     const findVoice = async (voiceId: string) => {
         // Check voice list already have voice
@@ -39,7 +34,7 @@ export const useAudio = () => {
         return { status: false }
     }
 
-    const loadAudioList = async () => {
+    const loadAudioList = useCallback(async () => {
         if (profile.elevenlabs_api_key !== null) {
             setIsFetching(true);
             const audioList = await getAudioList(profile.elevenlabs_api_key);
@@ -57,8 +52,12 @@ export const useAudio = () => {
             }
 
         }
-    }
+    }, [profile.elevenlabs_api_key])
 
+    useEffect(() => {
+        if (profile.elevenlabs_api_key !== null)
+            loadAudioList()
+    }, [profile, loadAudioList])
 
     return {
         audioList: voiceList,

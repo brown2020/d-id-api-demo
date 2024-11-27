@@ -73,7 +73,7 @@ export default function Header() {
   useEffect(() => {
     console.log("notifications", notifications);
     console.log("profile", profile);
-  }, [notifications])
+  }, [notifications, profile])
 
   useEffect(() => {
     const syncAuthState = async () => {
