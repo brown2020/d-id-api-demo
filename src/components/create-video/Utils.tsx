@@ -49,3 +49,57 @@ export const Background_Images = [
         image: backgroundImage12
     }
 ];
+
+export const fontFamilies = [
+    "Arial",
+    "Helvetica",
+    "Pacifico",
+    "Times New Roman",
+    "Courier New",
+    "Bilbo Swash Caps",
+    "Verdana",
+    "Georgia",
+    "Permanent Marker",
+    "Palatino",
+    "Garamond",
+    "Comic Sans MS",
+    "Trebuchet MS",
+    "Impact",
+    "Lucida Sans",
+    "Tahoma",
+    "Francois One",
+    "Calibri",
+    "Cambria",
+    "Consolas",
+    "Monaco",
+    "Century Gothic",
+    "Futura",
+    "Franklin Gothic",
+    "Roboto",  // Regular fonts
+    "Lora",
+    "Open Sans",
+    "Montserrat",
+    "Playfair Display",
+    "Quicksand",
+    "Oswald",
+    "Anton",
+    "Poppins",
+    "Raleway",
+    "Nunito",
+    "Source Sans Pro",
+    "Archivo",
+    "Inter",
+    "Zilla Slab",
+    "Cabin",
+    "Rubik",
+    "Dancing Script",  // Stylish script font
+    "Great Vibes",     // Elegant cursive
+    "Lobster",         // Popular decorative font
+    "Sacramento",      // Elegant handwritten font
+    "Rock Salt",       // Casual script font
+    "Monoton",         // Bold and modern
+    "Satisfy",         // Handwritten cursive
+    "Allura",          // Simple script font
+    "Chewy"            // Playful and rounded script
+];
+

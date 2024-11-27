@@ -1,5 +1,6 @@
 import * as fabric from 'fabric';
 import { useEffect, useState } from 'react';
+import { fontFamilies } from './Utils';
 
 interface TextBoxProps {
     // textType: 'headline' | 'subTitle' | 'body';
@@ -8,10 +9,11 @@ interface TextBoxProps {
 }
 
 export default function TextBox({ handleText, canvas }: TextBoxProps) {
-    const [color, setColor] = useState("#000000"); // Default to black
-    const [fontSize, setFontSize] = useState(16); // Default font size
+    const [color, setColor] = useState("#000000");
+    const [fontSize, setFontSize] = useState(16);
     const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
-    const [lineHeight, setLineHeight] = useState(1.5);
+    // const [lineHeight, setLineHeight] = useState(1.5);
+    const [selectedFont, setSelectedFont] = useState('');
 
     useEffect(() => {
         if (canvas) {
@@ -44,6 +46,9 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             setColor(object.fill ? object.fill.toString() : "#000000");
             setFontSize((object as fabric.IText).fontSize ? (object as fabric.IText).fontSize : 16);
         }
+        if (object.type === "image") {
+            console.log('Image selected');
+        }
     };
 
     const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,13 +71,23 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
         }
     };
 
-    const handleLineHeight = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = parseFloat(event.target.value);
-        console.log('Line Height:', value);
-        setLineHeight(value);
+    // const handleLineHeight = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    //     const value = parseFloat(event.target.value);
+    //     console.log('Line Height:', value);
+    //     setLineHeight(value);
 
+    //     if (selectedObject && canvas) {
+    //         selectedObject.set({ lineHeight: value });
+    //         canvas.renderAll();
+    //     }
+    // }
+
+    const handleFontFamilyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = event.target.value;
+        setSelectedFont(value);
+        // set font family on local storage 
         if (selectedObject && canvas) {
-            selectedObject.set({ lineHeight: value });
+            selectedObject.set({ fontFamily: value });
             canvas.renderAll();
         }
     }
@@ -87,7 +102,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             {selectedObject && selectedObject.type === 'i-text' ? (
                 <div className="flex flex-col gap-4 p-2 border rounded-md mb-2">
                     <div className="flex items-center w-full justify-between gap-2">
-                        <p>Font Size</p>
+                        <p className="block text-sm font-medium text-gray-500 mb-2">Font Size</p>
                         <select
                             id="font-size"
                             value={fontSize}
@@ -102,7 +117,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                         </select>
                     </div>
                     <div className="flex items-center justify-between w-full gap-2">
-                        <p>Text Color</p>
+                        <p className="block text-sm font-medium text-gray-500 mb-2">Text Color</p>
                         <input
                             id="color-picker"
                             type="color"
@@ -111,8 +126,8 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                             className="w-20 h-10 rounded-md cursor-pointer"
                         />
                     </div>
-                    <div className="flex items-center w-full justify-between gap-2">
-                        <p>Line Height</p>
+                    {/* <div className="flex items-center w-full justify-between gap-2">
+                        <p className="block text-sm font-medium text-gray-500 mb-2">Line Height</p>
                         <select
                             id="line-height"
                             value={lineHeight}
@@ -122,6 +137,21 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                             {Array.from({ length: 100 }, (_, i) => (
                                 <option key={i + 1} value={i + 1}>
                                     {i + 1}
+                                </option>
+                            ))}
+                        </select>
+                    </div> */}
+                    <div className="w-full max-h-36">
+                        <label className="block text-sm font-medium text-gray-500 mb-2">Select Font Family</label>
+                        <select
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            value={selectedFont}
+                            onChange={(event) => handleFontFamilyChange(event)}
+                        >
+                            <option value="">Select a font</option>
+                            {fontFamilies.map((font, index) => (
+                                <option key={index} value={font} style={{ fontFamily: font }}>
+                                    {font}
                                 </option>
                             ))}
                         </select>

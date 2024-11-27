@@ -10,7 +10,7 @@ import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo,
 import Image from "next/image";
 import { checkCanvasObjectImageDomain, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import SuprisedIcon from "@/assets/icons/suprised-emoji.svg";
+import SurprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import { generateVideo } from "@/actions/generateVideo";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -21,7 +21,7 @@ import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
 import * as fabric from 'fabric';
-import { Background_Images } from "./BackgroundImages";
+import { Background_Images } from "./Utils";
 import AvatarGallery from "./AvatarGallery";
 import TextBox from "./TextBox";
 
@@ -93,7 +93,7 @@ const emotions: { code: Emotion, label: string, icon: IconType }[] = [
     {
         'code': 'serious',
         'label': 'Serious',
-        'icon': SuprisedIcon,
+        'icon': SurprisedIcon,
         // 'icon': <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 9H8m8 0h-2m4 6H6m-4-3c0 5.523 4.477 10 10 10s10-4.477 10-10S17.523 2 12 2S2 6.477 2 12" /></svg>
     }
 ];
@@ -331,6 +331,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                 scaleX: scaleFactor,
                                 scaleY: scaleFactor,
                                 borderColor: 'red',
+                                zIndex: 0,
                             });
                             img.is_avatar = true;
                             canvas.add(img);
@@ -345,7 +346,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                     }
                 }),
                 {
-                    loading: 'Fetching orignal image...',
+                    loading: 'Fetching original image...',
                     success: () => {
                         return `Successfully fetched image`;
                     },
@@ -725,6 +726,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                 const fabricImage = new fabric.Image(image, {
                                     left: 0,
                                     top: 0,
+                                    zIndex: 0,
                                 });
 
                                 setBackgroundImageDimension(fabricImage);
@@ -775,7 +777,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             if (textType === 'headline') {
                 textContent = 'Heading';
                 fontSize = 42;
-                fontWeight = 'bold';
+                fontWeight = '600';
             } else if (textType === 'subTitle') {
                 textContent = 'SubTitle';
                 fontSize = 34;
@@ -792,6 +794,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 fill: 'black',
                 fontSize,
                 fontWeight,
+                zIndex: 9999,
                 selectable: true
             });
 
