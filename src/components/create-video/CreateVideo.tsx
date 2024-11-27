@@ -777,11 +777,11 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             if (textType === 'headline') {
                 textContent = 'Heading';
                 fontSize = 42;
-                fontWeight = '600';
+                fontWeight = '500';
             } else if (textType === 'subTitle') {
                 textContent = 'SubTitle';
                 fontSize = 34;
-                fontWeight = '600';
+                fontWeight = '500';
             } else if (textType === 'body') {
                 textContent = 'Body text';
                 fontSize = 22;
