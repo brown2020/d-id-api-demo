@@ -94,6 +94,39 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
 
             });
 
+            document.addEventListener('keydown', function (event) {
+                if (event.ctrlKey && event.key === 'a') {
+                    event.preventDefault();
+
+                    const iTextObjects = canvas.getObjects().filter(obj => obj.type === 'i-text');
+
+                    if (iTextObjects.length > 0) {
+                        const group = new fabric.Group(iTextObjects);
+                        canvas.setActiveObject(group);
+                        canvas.renderAll();
+                    } else {
+                        console.error("No i-text objects found");
+                    }
+                }
+                if (event.key === 'Delete') {
+                    const selectedObject = canvas.getActiveObject();
+                    if (selectedObject) {
+                        if (selectedObject.type === 'group') {
+                            (selectedObject as fabric.Group).forEachObject(function (obj: fabric.Object) {
+                                if (obj.type === 'i-text') {
+                                    canvas.remove(obj);
+                                }
+                            });
+                        } else if (selectedObject.type === 'i-text') {
+                            canvas.remove(selectedObject);
+                        }
+                        canvas.discardActiveObject();
+                        canvas.renderAll();
+                        console.log("Selected i-text items deleted");
+                    }
+                }
+            });
+
             canvas.on('object:modified', (event) => {
                 setSelectedObject(event.target);
             });
