@@ -4,8 +4,10 @@ import { fontFamilies } from './Utils';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, LucideIcon, Strikethrough, Underline } from 'lucide-react';
 import textBox1 from "@/assets/images/text-box-1.png";
 import textBox2 from "@/assets/images/text-box-2.png";
+import textBox3 from "@/assets/images/text-box-3.png";
+import textBox4 from "@/assets/images/text-box-4.png";
 import Image from 'next/image';
-import { TextGroup1, TextGroup2 } from './TextGroupStyle';
+import { TextGroup1, TextGroup2, TextGroup3, TextGroup4 } from './TextGroupStyle';
 import { set } from 'react-hook-form';
 
 interface TextBoxProps {
@@ -366,6 +368,15 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                         </div>
                         <div onClick={() => TextGroup2(canvas)} className='border bg-white rounded-md cursor-pointer'>
                             <Image src={textBox2} alt="Text Box" height={100} width={100} />
+                        </div>
+                        <div onClick={() => TextGroup3(canvas)} className='border bg-white rounded-md cursor-pointer'>
+                            <Image src={textBox3} alt="Text Box" height={100} width={100} />
+                        </div>
+                        <div onClick={() => TextGroup4(canvas)} className='border bg-white rounded-md cursor-pointer'>
+                            <Image src={textBox3} alt="Text Box" height={100} width={100} />
+                        </div>
+                        <div onClick={() => TextGroup4(canvas)} className='border bg-white rounded-md cursor-pointer'>
+                            <Image src={textBox4} alt="Text Box" height={100} width={100} />
                         </div>
                     </div>
                 </div>
