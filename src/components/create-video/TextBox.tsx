@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { fontFamilies } from './Utils';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, LucideIcon, Strikethrough, Underline } from 'lucide-react';
 import textBox1 from "@/assets/images/text-box-1.png";
+import textBox2 from "@/assets/images/text-box-2.png";
 import Image from 'next/image';
 import { TextGroup1, TextGroup2 } from './TextGroupStyle';
 import { set } from 'react-hook-form';
@@ -364,7 +365,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                             <Image src={textBox1} alt="Text Box" height={100} width={100} />
                         </div>
                         <div onClick={() => TextGroup2(canvas)} className='border bg-white rounded-md cursor-pointer'>
-                            <Image src={textBox1} alt="Text Box" height={100} width={100} />
+                            <Image src={textBox2} alt="Text Box" height={100} width={100} />
                         </div>
                     </div>
                 </div>
