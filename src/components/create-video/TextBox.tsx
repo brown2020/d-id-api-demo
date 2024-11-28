@@ -1,9 +1,11 @@
 import * as fabric from 'fabric';
 import { useCallback, useEffect, useState } from 'react';
 import { fontFamilies } from './Utils';
-import { Bold, Italic, Strikethrough, Underline } from 'lucide-react';
+import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, LucideIcon, Strikethrough, Underline } from 'lucide-react';
 import textBox1 from "@/assets/images/text-box-1.png";
 import Image from 'next/image';
+import { TextGroup1, TextGroup2 } from './TextGroupStyle';
+import { set } from 'react-hook-form';
 
 interface TextBoxProps {
     handleText: (textType: string) => void;
@@ -15,6 +17,31 @@ interface TextStyle {
     italic: boolean;
     underline: boolean;
     strikethrough: boolean;
+    [key: string]: boolean;
+}
+
+interface TextAlignOption {
+    value: 'left' | 'center' | 'right';
+    icon: LucideIcon;
+    label: string;
+    styles: (textAlign: string) => string;
+}
+
+interface TextAlignConfig {
+    label: string;
+    options: TextAlignOption[];
+}
+
+interface TextStyleOption {
+    value: "underline" | "strikethrough" | "bold" | "italic";
+    icon: LucideIcon;
+    label: string;
+    styles: (textStyle: { [key: string]: boolean }) => string;
+}
+
+interface TextStyleConfig {
+    label: string;
+    options: TextStyleOption[];
 }
 
 export default function TextBox({ handleText, canvas }: TextBoxProps) {
@@ -22,6 +49,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
     const [fontSize, setFontSize] = useState(16);
     const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
     const [selectedFont, setSelectedFont] = useState('');
+    const [textAlign, setTextAlign] = useState<'center' | 'left' | 'right'>('center');
     const [textStyle, setTextStyle] = useState<TextStyle>({
         bold: false,
         italic: false,
@@ -61,6 +89,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             canvas.on('selection:cleared', () => {
                 setSelectedObject(null);
                 clearSettings();
+
             });
 
             canvas.on('object:modified', (event) => {
@@ -74,6 +103,67 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
         }
     }, [canvas]);
 
+    const textAlignOptions: TextAlignConfig = {
+        label: "Text Alignment",
+        options: [
+            {
+                value: 'left',
+                icon: AlignLeft,
+                label: 'Left',
+                styles: (textAlign: string) =>
+                    textAlign === 'left' ? 'bg-slate-600 text-white' : 'bg-white text-black',
+            },
+            {
+                value: 'center',
+                icon: AlignCenter,
+                label: 'Center',
+                styles: (textAlign: string) =>
+                    textAlign === 'center' ? 'bg-slate-600 text-white' : 'bg-white text-black',
+            },
+            {
+                value: 'right',
+                icon: AlignRight,
+                label: 'Right',
+                styles: (textAlign: string) =>
+                    textAlign === 'right' ? 'bg-slate-600 text-white' : 'bg-white text-black',
+            },
+        ]
+    };
+
+    const textStyleConfig: TextStyleConfig = {
+        label: "Font Style",
+        options: [
+            {
+                value: "underline",
+                icon: Underline,
+                label: "Underline",
+                styles: (textStyle) =>
+                    textStyle.underline ? "bg-slate-600 text-white" : "bg-white text-black",
+            },
+            {
+                value: "strikethrough",
+                icon: Strikethrough,
+                label: "Strikethrough",
+                styles: (textStyle) =>
+                    textStyle.strikethrough ? "bg-slate-600 text-white border-transparent" : "bg-white text-black",
+            },
+            {
+                value: "bold",
+                icon: Bold,
+                label: "Bold",
+                styles: (textStyle) =>
+                    textStyle.bold ? "bg-slate-600 text-white border-transparent" : "bg-white text-black",
+            },
+            {
+                value: "italic",
+                icon: Italic,
+                label: "Italic",
+                styles: (textStyle) =>
+                    textStyle.italic ? "bg-slate-600 text-white border-transparent" : "bg-white text-black",
+            },
+        ],
+    };
+
     const handleObjectSelection = (object: fabric.Object) => {
         if (!object) return;
         if (object.type === "i-text") {
@@ -86,6 +176,8 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 underline: (object as fabric.IText).underline || false,
                 strikethrough: (object as fabric.IText).linethrough || false,
             });
+            console.log("object", (object as fabric.IText).textAlign);
+            setTextAlign(((object as fabric.IText).textAlign as 'left' | 'center' | 'right'));
         }
     };
 
@@ -131,6 +223,28 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 linethrough: updatedStyle.strikethrough ? 'line-through' : '',
             });
             canvas.renderAll();
+            selectedObject.set({ width: 300 });
+            canvas.renderAll();
+            canvas.discardActiveObject();
+            canvas.renderAll();
+            canvas.setActiveObject(selectedObject);
+            canvas.renderAll();
+        }
+    };
+
+    const handleTextAlign = (align: 'center' | 'left' | 'right') => {
+        setTextAlign(align);
+
+        if (selectedObject && canvas) {
+            if (selectedObject instanceof fabric.Text || selectedObject instanceof fabric.IText) {
+                selectedObject.set({ textAlign: align });
+                selectedObject.set({ width: 300 });
+                canvas.renderAll();
+                canvas.discardActiveObject();
+                canvas.renderAll();
+                canvas.setActiveObject(selectedObject);
+                canvas.renderAll();
+            }
         }
     };
 
@@ -143,28 +257,8 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             underline: false,
             strikethrough: false,
         });
+        setTextAlign('center');
     };
-
-    const handleTextPng = useCallback(() => {
-        const set1 = new fabric.IText('Life is an', {
-            left: 100,
-            top: 100,
-            fontSize: 22,
-            fill: 'black',
-            selectable: true
-        });
-        const set2 = new fabric.IText('ADVENTURE', {
-            left: 80,
-            top: 140,
-            fontSize: 38,
-            fill: 'black',
-            selectable: true
-        });
-
-        set2.fontFamily = 'Rock Salt';
-        canvas?.add(set1, set2);
-        canvas?.renderAll();
-    }, [canvas]);
 
     return (
         <div>
@@ -211,32 +305,35 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-2">Font Style</label>
-                        <div className="flex justify-evenly">
-                            <div
-                                className={`cursor-pointer border rounded-md p-1  ${textStyle.underline ? 'bg-slate-600 text-white' : 'bg-white text-black'}`}
-                                onClick={() => handleTextStyleToggle('underline')}
-                            >
-                                <Underline size={24} />
-                            </div>
-                            <div
-                                className={`cursor-pointer border rounded-md p-1 ${textStyle.strikethrough ? 'bg-slate-600 text-white border-transparent' : 'bg-white text-black'}`}
-                                onClick={() => handleTextStyleToggle('strikethrough')}
-                            >
-                                <Strikethrough size={24} />
-                            </div>
-                            <div
-                                className={`cursor-pointer border rounded-md p-1 ${textStyle.bold ? 'bg-slate-600 text-white border-transparent' : 'bg-white text-black'}`}
-                                onClick={() => handleTextStyleToggle('bold')}
-                            >
-                                <Bold size={24} />
-                            </div>
-                            <div
-                                className={`cursor-pointer border rounded-md p-1 ${textStyle.italic ? 'bg-slate-600 text-white border-transparent' : 'bg-white text-black'}`}
-                                onClick={() => handleTextStyleToggle('italic')}
-                            >
-                                <Italic size={24} />
-                            </div>
+                        <label className="block text-sm font-medium text-gray-500 mb-2">
+                            {textAlignOptions.label}
+                        </label>
+                        <div className="flex gap-5">
+                            {textStyleConfig.options.map((option) => (
+                                <div
+                                    key={option.value}
+                                    className={`cursor-pointer border rounded-md p-1 ${option.styles(textStyle)}`}
+                                    onClick={() => handleTextStyleToggle(option.value)}
+                                >
+                                    <option.icon size={24} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-2">
+                            {textAlignOptions.label}
+                        </label>
+                        <div className="flex gap-5">
+                            {textAlignOptions.options.map((option) => (
+                                <div
+                                    key={option.value}
+                                    className={`cursor-pointer border rounded-md p-1 ${option.styles(textAlign)}`}
+                                    onClick={() => handleTextAlign(option.value)}
+                                >
+                                    <option.icon size={24} />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -262,8 +359,11 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                             Add a body
                         </button>
                     </div>
-                    <div className='mt-5 grid grid-cols-3 gap-2'>
-                        <div onClick={() => handleTextPng()} className='border bg-white rounded-md cursor-pointer'>
+                    <div className='mt-5 grid grid-cols-3 gap-2 justify-items-center'>
+                        <div onClick={() => TextGroup1(canvas)} className='border bg-white rounded-md cursor-pointer'>
+                            <Image src={textBox1} alt="Text Box" height={100} width={100} />
+                        </div>
+                        <div onClick={() => TextGroup2(canvas)} className='border bg-white rounded-md cursor-pointer'>
                             <Image src={textBox1} alt="Text Box" height={100} width={100} />
                         </div>
                     </div>

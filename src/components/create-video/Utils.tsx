@@ -59,6 +59,7 @@ export const fontFamilies = [
     "Bilbo Swash Caps",
     "Verdana",
     "Georgia",
+    "Redressed",
     "Permanent Marker",
     "Palatino",
     "Garamond",

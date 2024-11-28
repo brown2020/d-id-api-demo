@@ -775,12 +775,12 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             let fontWeight = 'bold';
 
             if (textType === 'headline') {
-                textContent = 'Heading';
+                textContent = 'Header';
                 fontSize = 42;
                 fontWeight = '500';
             } else if (textType === 'subTitle') {
-                textContent = 'SubTitle';
-                fontSize = 34;
+                textContent = 'Sub Header';
+                fontSize = 32;
                 fontWeight = '500';
             } else if (textType === 'body') {
                 textContent = 'Body text';
@@ -795,9 +795,11 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 fontSize,
                 fontWeight,
                 zIndex: 9999,
-                selectable: true
+                selectable: true,
             });
 
+            text.width = 300;
+            text.textAlign = 'center';
             canvas.add(text);
             canvas.renderAll();
         }

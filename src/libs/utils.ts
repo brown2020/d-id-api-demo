@@ -14,6 +14,8 @@ export function randomString(n: number) {
     return token;
 }
 
+
+
 export const getApiBaseUrl = () => process.env.NEXT_PUBLIC_API_BASE_URL ? process.env.NEXT_PUBLIC_API_BASE_URL : window.location.origin;
 export const imageProxyUrl = (baseUrl: string, image: string) => `${baseUrl}/api/imageproxy/${image}`;
 export const videoImageProxyUrl = (baseUrl: string, image: string) => `${baseUrl}/api/video-image-proxy/${encodeURIComponent(image)}`;
