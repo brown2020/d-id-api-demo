@@ -1,6 +1,6 @@
 import * as fabric from 'fabric';
 
-function fabricText(text: string, style: any) {
+function fabricText(text: string, style: object ) {
     return new fabric.IText(text, style);
 }
 
@@ -19,9 +19,6 @@ function fabricGroup(canvas: fabric.Canvas | null, group: fabric.Group) {
 
         canvas.remove(group);
         canvas.renderAll();
-        canvas.on('object:selected' as any, (e) => {
-            canvas.renderAll();
-        });
     });
 }
 

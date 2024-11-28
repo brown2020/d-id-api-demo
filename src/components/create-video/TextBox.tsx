@@ -1,5 +1,4 @@
 import * as fabric from 'fabric';
-import { useCallback, useEffect, useState } from 'react';
 import { fontFamilies } from './Utils';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, LucideIcon, Strikethrough, Underline } from 'lucide-react';
 import textBox1 from "@/assets/images/text-box-1.png";
@@ -8,7 +7,7 @@ import textBox3 from "@/assets/images/text-box-3.png";
 import textBox4 from "@/assets/images/text-box-4.png";
 import Image from 'next/image';
 import { TextGroup1, TextGroup2, TextGroup3, TextGroup4 } from './TextGroupStyle';
-import { set } from 'react-hook-form';
+import { useEffect, useState } from 'react';
 
 interface TextBoxProps {
     handleText: (textType: string) => void;
