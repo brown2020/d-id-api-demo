@@ -3,6 +3,7 @@
 import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
+import { addErrorReport } from "./addErrorReport";
 
 export type GenerateVideoSuccessResponse = {
   id: string;
@@ -25,15 +26,6 @@ export async function generateDIDVideo(
   movement: Movement = "neutral",
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
   auth().protect();
-
-  console.log("Starting generateDIDVideo function with parameters:", {
-    apiKey: apiKey ? "provided" : "not provided",
-    imageUrl,
-    inputText,
-    voiceId,
-    audioUrl,
-    elevenlabsApiKey: elevenlabsApiKey ? "provided" : "not provided",
-  });
 
   if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
     apiKey = process.env.D_ID_API_KEY
@@ -144,16 +136,37 @@ export async function generateDIDVideo(
     console.log("Video generation successful. Video ID:", id);
     return { id, status };
   } catch (error: unknown) {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    let errorDetails: Record<string, any> = {};
 
+    // Handle known types of error
+    if (error instanceof Error) {
+      errorDetails = {
+        name: error.name,
+        message: error.message,
+        stack: error.stack || null,
+      };
+    } else {
+      // For unknown errors
+      errorDetails = {
+        message: "Unknown error occurred",
+        raw: JSON.stringify(error), // Serialize the raw error
+      };
+    }
+
+    
+  
+    
     if (axios.isAxiosError(error)) {
       console.error("Error during video generation:", error.message);
 
       if (error.response) {
-        console.error("Error response from API:", {
+        const responseError = {
           status: error.response.status,
           data: JSON.stringify(error.response.data, null, 2),
-        });
-
+        }
+        console.error("Error response from API:", responseError);
+        errorDetails['responseError'] = responseError;
 
         if (error.response.status === 429) {
           return {
@@ -190,7 +203,7 @@ export async function generateDIDVideo(
     } else {
       console.error("An unknown error occurred.");
     }
-
+    await addErrorReport('generateDIDVideo', errorDetails);
     return {
       error:
         "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
