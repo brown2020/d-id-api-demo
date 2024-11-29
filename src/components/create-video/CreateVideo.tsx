@@ -191,7 +191,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     }, [uid]);
 
     useEffect(() => {
-        const handleBeforeUnload = (event) => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
             const message = "Are you sure you want to leave? Changes may not be saved.";
             event.preventDefault();
             event.returnValue = message;
