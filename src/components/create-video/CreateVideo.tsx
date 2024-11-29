@@ -11,12 +11,12 @@ import Image from "next/image";
 import { checkCanvasObjectImageDomain, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import SurprisedIcon from "@/assets/icons/suprised-emoji.svg";
-import { generateVideo } from "@/actions/generateVideo";
+// import { generateVideo } from "@/actions/generateVideo";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import useProfileStore from "@/zustand/useProfileStore";
+// import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
@@ -118,7 +118,7 @@ const schema = Yup.object().shape({
 
 export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const uid = useAuthStore((state) => state.uid);
-    const profile = useProfileStore((state) => state.profile);
+    // const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
@@ -207,7 +207,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
-    }, [totalProcessesRef.current, completedProcessesRef.current]);
+    }, [completedProcessesRef.current, totalProcessesRef.current]);
 
     const [videoCanvasDetail, setVideoCanvasDetail] = useState<{
         canvas_json: CanvasObject;
@@ -587,7 +587,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         }
     }, [selectedAvatar, selectAvatarForm, canvas])
 
-    const handleObjectChange = async () => {
+    const handleObjectChange = useCallback(async () => {
         try {
             totalProcessesRef.current += 1;
             // Simulate async operation (e.g., save, fetch, or process data)
@@ -637,7 +637,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         } catch (error) {
             console.error('Error processing canvas change:', error);
         }
-    };
+    }, [canvas, selectedAvatar]);
+
     useEffect(() => {
         if (canvas) {
             // Attach the event listeners
@@ -652,7 +653,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 canvas.off('object:removed', handleObjectChange);
             };
         }
-    }, [canvas]);
+    }, [canvas, handleObjectChange]);
 
     useEffect(() => {
         if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
@@ -733,27 +734,28 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             }
 
             toast.promise(
-                new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
+                // new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
+                new Promise<{ status: boolean, data: string }>(async () => {
                     setProcessing(true);
                     try {
-                        const width = canvas.getWidth();
-                        const height = canvas.getHeight();
+                        // const width = canvas.getWidth();
+                        // const height = canvas.getHeight();
 
                         // Minimum required resolution (1024px)
-                        const minSize = 1024;
+                        // const minSize = 1024;
 
                         // Calculate the multiplier based on width and height
-                        const widthMultiplier = width < minSize ? minSize / width : 1;
-                        const heightMultiplier = height < minSize ? minSize / height : 1;
+                        // const widthMultiplier = width < minSize ? minSize / width : 1;
+                        // const heightMultiplier = height < minSize ? minSize / height : 1;
 
                         // Get the larger multiplier to ensure the image is at least 1024px in width or height
-                        const multiplier = Math.min(widthMultiplier, heightMultiplier);
+                        // const multiplier = Math.min(widthMultiplier, heightMultiplier);
 
-                        const thumbnailUrl = canvas.toDataURL({
-                            multiplier,
-                        });
+                        // const thumbnailUrl = canvas.toDataURL({
+                        //     multiplier,
+                        // });
 
-                        const baseUrl = getApiBaseUrl() ?? window.location.origin;
+                        // const baseUrl = getApiBaseUrl() ?? window.location.origin;
                         // const response = await generateVideo(
                         //     videoId,
                         //     profile.did_api_key, baseUrl,

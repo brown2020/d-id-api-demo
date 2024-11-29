@@ -28,7 +28,7 @@ export async function generateVideo(video_id: string | null,
     elevenlabsApiKey?: string,
     emotion: Emotion = "neutral",
     movement: Movement = "neutral",
-    onlySave: boolean = false
+    // onlySave: boolean = false
 ) {
     auth().protect();
     const { userId } = auth();
