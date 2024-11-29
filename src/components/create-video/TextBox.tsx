@@ -1,11 +1,12 @@
 import * as fabric from 'fabric';
-import { fontFamilies } from './Utils';
+import { fontFamilies } from './utils';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, LucideIcon, Strikethrough, Underline } from 'lucide-react';
 import textBox1 from "@/assets/images/text-box-1.png";
 import textBox2 from "@/assets/images/text-box-2.png";
 import textBox3 from "@/assets/images/text-box-3.png";
 import textBox4 from "@/assets/images/text-box-4.png";
 import Image from 'next/image';
+import { StaticImageData } from 'next/image';
 import { TextGroup1, TextGroup2, TextGroup3, TextGroup4 } from './TextGroupStyle';
 import { useEffect, useState } from 'react';
 
@@ -46,6 +47,13 @@ interface TextStyleConfig {
     options: TextStyleOption[];
 }
 
+interface TextBox {
+    id: number;
+    onClick: (canvas: fabric.Canvas | null) => void;
+    src: StaticImageData;
+    alt: string;
+  }
+
 export default function TextBox({ handleText, canvas }: TextBoxProps) {
     const [color, setColor] = useState("#000000");
     const [fontSize, setFontSize] = useState(16);
@@ -63,7 +71,6 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
         if (canvas) {
             canvas.on('selection:created', (event) => {
                 setSelectedObject(event.selected[0]);
-                console.log("event.selected[0]", event.selected[0]);
                 setFontSize((event.selected[0] as fabric.IText).fontSize ? (event.selected[0] as fabric.IText).fontSize : 16);
                 setColor((event.selected[0] as fabric.IText).fill?.toString() || "#000000");
                 setSelectedFont((event.selected[0] as fabric.IText).fontFamily || '');
@@ -91,52 +98,10 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             canvas.on('selection:cleared', () => {
                 setSelectedObject(null);
                 clearSettings();
-
             });
 
-            document.addEventListener('keydown', function (event) {
-                if (event.ctrlKey && event.key === 'a') {
-                    event.preventDefault();
-
-                    const iTextObjects = canvas.getObjects().filter(obj => obj && obj.type === 'i-text');
-
-                    if (iTextObjects.length > 0) {
-                        canvas.discardActiveObject();
-                        const selection = new fabric.ActiveSelection(iTextObjects, {
-                            canvas: canvas,
-                        });
-                        canvas.setActiveObject(selection);
-                        canvas.renderAll();
-                    } else {
-                        console.error("No i-text objects found");
-                    }
-                }
-                if (event.key === 'Delete') {
-                    const selectedObject = canvas.getActiveObject();
-
-                    if (selectedObject) {
-                        if (selectedObject.type === 'activeSelection') {
-                            (selectedObject as fabric.ActiveSelection).forEachObject((obj: fabric.Object) => {
-                                canvas.remove(obj);
-                            });
-                            canvas.discardActiveObject();
-                        } else {
-                            canvas.remove(selectedObject);
-                        }
-                        canvas.renderAll();
-                    } else {
-                        console.log("No active selection to delete");
-                    }
-                }
-            });
-
-            canvas.on('object:modified', (event) => {
-                setSelectedObject(event.target);
-            });
-
-            canvas.on('object:scaling', (event) => {
-                handleObjectSelection(event.target);
-            });
+            canvas.on('object:modified', (event) => { setSelectedObject(event.target) });
+            canvas.on('object:scaling', (event) => { handleObjectSelection(event.target) });
             canvas.renderAll();
         }
     }, [canvas]);
@@ -202,6 +167,33 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
         ],
     };
 
+    const textBoxes : TextBox[] = [
+        {
+          id: 1,
+          onClick: (canvas) => TextGroup1(canvas),
+          src: textBox1,
+          alt: "Text Box 1"
+        },
+        {
+          id: 2,
+          onClick: (canvas) => TextGroup2(canvas),
+          src: textBox2,
+          alt: "Text Box 2"
+        },
+        {
+          id: 3,
+          onClick: (canvas) => TextGroup3(canvas),
+          src: textBox3,
+          alt: "Text Box 3"
+        },
+        {
+          id: 4,
+          onClick: (canvas) => TextGroup4(canvas),
+          src: textBox4,
+          alt: "Text Box 4"
+        },
+      ];
+
     const handleObjectSelection = (object: fabric.Object) => {
         if (!object) return;
         if (object.type === "i-text") {
@@ -214,7 +206,6 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 underline: (object as fabric.IText).underline || false,
                 strikethrough: (object as fabric.IText).linethrough || false,
             });
-            console.log("object", (object as fabric.IText).textAlign);
             setTextAlign(((object as fabric.IText).textAlign as 'left' | 'center' | 'right'));
         }
     };
@@ -398,18 +389,15 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                         </button>
                     </div>
                     <div className='mt-5 grid grid-cols-3 gap-2 justify-items-center'>
-                        <div onClick={() => TextGroup1(canvas)} className='border bg-white rounded-md cursor-pointer'>
-                            <Image src={textBox1} alt="Text Box" height={100} width={100} />
-                        </div>
-                        <div onClick={() => TextGroup2(canvas)} className='border bg-white rounded-md cursor-pointer'>
-                            <Image src={textBox2} alt="Text Box" height={100} width={100} />
-                        </div>
-                        <div onClick={() => TextGroup3(canvas)} className='border bg-white rounded-md cursor-pointer'>
-                            <Image src={textBox3} alt="Text Box" height={100} width={100} />
-                        </div>
-                        <div onClick={() => TextGroup4(canvas)} className='border bg-white rounded-md cursor-pointer'>
-                            <Image src={textBox4} alt="Text Box" height={100} width={100} />
-                        </div>
+                        {textBoxes.map((textBox) => (
+                            <div
+                                key={textBox.id}
+                                onClick={() => textBox.onClick(canvas)}
+                                className='border bg-white rounded-md cursor-pointer'
+                            >
+                                <Image src={textBox.src} alt={textBox.alt} height={100} width={100}/>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}

@@ -11,7 +11,7 @@ import Image from "next/image";
 import { checkCanvasObjectImageDomain, cleanObject, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import SurprisedIcon from "@/assets/icons/suprised-emoji.svg";
-import { generateVideo } from "@/actions/generateVideo";
+// import { generateVideo } from "@/actions/generateVideo";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
@@ -22,7 +22,7 @@ import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
 import * as fabric from 'fabric';
-import { Background_Images } from "./Utils";
+import { Background_Images } from "./utils";
 import AvatarGallery from "./AvatarGallery";
 import TextBox from "./TextBox";
 import { addDraftVideo } from "@/actions/addDraftVideo";
@@ -119,7 +119,7 @@ const schema = Yup.object().shape({
 
 export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const uid = useAuthStore((state) => state.uid);
-    const profile = useProfileStore((state) => state.profile);
+    // const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
     // const routerSecond = useRouterSecond();
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
@@ -194,6 +194,25 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             unsubscribeTalkingPhotos();
         };
     }, [uid]);
+
+    useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            const message = "Are you sure you want to leave? Changes may not be saved.";
+            event.preventDefault();
+            event.returnValue = message;
+            return message;
+        };
+    
+        if (totalProcessesRef.current > completedProcessesRef.current) {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        } else {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        }
+    
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [completedProcessesRef.current, totalProcessesRef.current]);
 
     const [videoCanvasDetail, setVideoCanvasDetail] = useState<{
         canvas_json: CanvasObject;
@@ -517,14 +536,38 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         updateCanvasAsPerVariable(updatedFields[0])
     }, [updatedFields, updateCanvasAsPerVariable])
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
         if (canvas !== null) {
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                const activeObject = canvas.getActiveObject();
-                if (activeObject) {
-                    canvas.remove(activeObject);
+            if (event.ctrlKey && event.key === 'a') {
+                event.preventDefault();
+                const iTextObjects = canvas.getObjects().filter((obj: fabric.Object) => obj && obj.type === 'i-text');
+                if (iTextObjects.length > 0) {
+                    canvas.discardActiveObject();
+                    const selection = new fabric.ActiveSelection(iTextObjects, {
+                        canvas: canvas,
+                    });
+                    canvas.setActiveObject(selection);
                     canvas.renderAll();
+                } else {
+                    console.error("No i-text objects found");
                 }
+            }
+            if (event.key === 'Delete') {
+                const selectedObject = canvas.getActiveObject();
+                if (selectedObject) {
+                    const objects = (selectedObject as fabric.ActiveSelection)._objects;
+                    if (objects && objects.length > 0) {
+                        (selectedObject as fabric.ActiveSelection).forEachObject(obj => {
+                            canvas.remove(obj);
+                        });
+                    } else {
+                        canvas.remove(selectedObject);
+                    }
+                }
+                canvas.discardActiveObject();
+                canvas.renderAll();
+            } else {
+                console.log("No active selection to delete");
             }
         }
     };
@@ -543,9 +586,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         }
     }, [selectedAvatar, selectAvatarForm, canvas])
 
-    const handleObjectChange = async () => {
-        console.log("Handle change object");
-        
+    const handleObjectChange = useCallback(async () => {
         try {
             totalProcessesRef.current += 1;
             // Simulate async operation (e.g., save, fetch, or process data)
@@ -593,7 +634,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         } catch (error) {
             console.error('Error processing canvas change:', error);
         }
-    };
+    }, [canvas, selectedAvatar]);
 
     useEffect(() => {
         // Canvas should the rendered
@@ -696,50 +737,57 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             }
 
             toast.promise(
-                new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
+                // new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
+                new Promise<{ status: boolean, data: string }>(async () => {
                     setProcessing(true);
                     try {
-                        const width = canvas.getWidth();
-                        const height = canvas.getHeight();
+                        // const width = canvas.getWidth();
+                        // const height = canvas.getHeight();
 
                         // Minimum required resolution (1024px)
-                        const minSize = 1024;
+                        // const minSize = 1024;
 
                         // Calculate the multiplier based on width and height
-                        const widthMultiplier = width < minSize ? minSize / width : 1;
-                        const heightMultiplier = height < minSize ? minSize / height : 1;
+                        // const widthMultiplier = width < minSize ? minSize / width : 1;
+                        // const heightMultiplier = height < minSize ? minSize / height : 1;
 
                         // Get the larger multiplier to ensure the image is at least 1024px in width or height
-                        const multiplier = Math.min(widthMultiplier, heightMultiplier);
+                        // const multiplier = Math.min(widthMultiplier, heightMultiplier);
 
-                        const thumbnailUrl = canvas.toDataURL({
-                            multiplier,
-                        });
+                        // const thumbnailUrl = canvas.toDataURL({
+                        //     multiplier,
+                        // });
 
-                        const baseUrl = getApiBaseUrl() ?? window.location.origin;
-                        const response = await generateVideo(
-                            videoIdRef.current,
-                            profile.did_api_key,
-                            baseUrl,
-                            thumbnailUrl,
-                            selectedAvatar.talking_photo_id,
-                            writeScriptForm.getValues('script'),
-                            selectedAvatar.voiceId,
-                            undefined,
-                            profile.elevenlabs_api_key,
-                            selectAvatarForm.getValues('emotion'),
-                            selectAvatarForm.getValues('movement'),
-                        )
+                        // const baseUrl = getApiBaseUrl() ?? window.location.origin;
+                        // const response = await generateVideo(
+                        //     videoId,
+                        //     profile.did_api_key, baseUrl,
+                        //     {
+                        //         'thumbnail_url': thumbnailUrl,
+                        //         canvas_object: canvas.toJSON(),
+                        //         canvas_detail: {
+                        //             width: width,
+                        //             height: height,
+                        //             aspectRatio: width / height,
+                        //         }
+                        //     },
+                        //     selectedAvatar.talking_photo_id,
+                        //     writeScriptForm.getValues('script'),
+                        //     selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
+                        // )
+                        // if ("id" in response) {
+                        //     setVideoId(response.id);
+                        // }
 
                         /**
                          * TODO: If status is false and id is provided then redirect it to video detail page
                          */
 
-                        if (response.status && response.id != undefined) {
-                            resolve({ status: true, data: response.id });
-                        } else {
-                            reject({ status: false, data: response.message });
-                        }
+                        // if (response.status && response.id != undefined) {
+                        //     resolve({ status: true, data: response.id });
+                        // } else {
+                        //     reject({ status: false, data: response.message });
+                        // }
                     } catch (error) {
                         console.log("Error", error);
                         /**
