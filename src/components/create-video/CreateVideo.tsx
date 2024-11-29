@@ -191,15 +191,23 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     }, [uid]);
 
     useEffect(() => {
-        if (totalProcessesRef > completedProcessesRef) {
-            window.onbeforeunload = function (event) {
-                const message = "Are you sure you want to leave? Changes may not be saved.";
-                event.preventDefault();
-                event.returnValue = message;
-                return message;
-            };
+        const handleBeforeUnload = (event) => {
+            const message = "Are you sure you want to leave? Changes may not be saved.";
+            event.preventDefault();
+            event.returnValue = message;
+            return message;
+        };
+    
+        if (totalProcessesRef.current > completedProcessesRef.current) {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        } else {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
         }
-    });
+    
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [totalProcessesRef.current, completedProcessesRef.current]);
 
     const [videoCanvasDetail, setVideoCanvasDetail] = useState<{
         canvas_json: CanvasObject;
