@@ -113,20 +113,22 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 }
                 if (event.key === 'Delete') {
                     const selectedObject = canvas.getActiveObject();
-
+                    
                     if (selectedObject) {
-                        if (selectedObject.type === 'activeSelection') {
-                            (selectedObject as fabric.ActiveSelection).forEachObject((obj: fabric.Object) => {
+                        const objects = (selectedObject as fabric.ActiveSelection)._objects;
+                        if (objects && objects.length > 0) {
+                            (selectedObject as fabric.ActiveSelection).forEachObject(obj => {
                                 canvas.remove(obj);
                             });
-                            canvas.discardActiveObject();
                         } else {
                             canvas.remove(selectedObject);
                         }
-                        canvas.renderAll();
-                    } else {
-                        console.log("No active selection to delete");
                     }
+
+                    canvas.discardActiveObject();
+                    canvas.renderAll();
+                } else {
+                    console.log("No active selection to delete");
                 }
             });
 
