@@ -98,11 +98,14 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 if (event.ctrlKey && event.key === 'a') {
                     event.preventDefault();
 
-                    const iTextObjects = canvas.getObjects().filter(obj => obj.type === 'i-text');
+                    const iTextObjects = canvas.getObjects().filter(obj => obj && obj.type === 'i-text');
 
                     if (iTextObjects.length > 0) {
-                        const group = new fabric.Group(iTextObjects);
-                        canvas.setActiveObject(group);
+                        canvas.discardActiveObject();
+                        const selection = new fabric.ActiveSelection(iTextObjects, {
+                            canvas: canvas,
+                        });
+                        canvas.setActiveObject(selection);
                         canvas.renderAll();
                     } else {
                         console.error("No i-text objects found");
@@ -110,19 +113,19 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 }
                 if (event.key === 'Delete') {
                     const selectedObject = canvas.getActiveObject();
+
                     if (selectedObject) {
-                        if (selectedObject.type === 'group') {
-                            (selectedObject as fabric.Group).forEachObject(function (obj: fabric.Object) {
-                                if (obj.type === 'i-text') {
-                                    canvas.remove(obj);
-                                }
+                        if (selectedObject.type === 'activeSelection') {
+                            (selectedObject as fabric.ActiveSelection).forEachObject((obj: fabric.Object) => {
+                                canvas.remove(obj);
                             });
-                        } else if (selectedObject.type === 'i-text') {
+                            canvas.discardActiveObject();
+                        } else {
                             canvas.remove(selectedObject);
                         }
-                        canvas.discardActiveObject();
                         canvas.renderAll();
-                        console.log("Selected i-text items deleted");
+                    } else {
+                        console.log("No active selection to delete");
                     }
                 }
             });
@@ -402,9 +405,6 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                             <Image src={textBox2} alt="Text Box" height={100} width={100} />
                         </div>
                         <div onClick={() => TextGroup3(canvas)} className='border bg-white rounded-md cursor-pointer'>
-                            <Image src={textBox3} alt="Text Box" height={100} width={100} />
-                        </div>
-                        <div onClick={() => TextGroup4(canvas)} className='border bg-white rounded-md cursor-pointer'>
                             <Image src={textBox3} alt="Text Box" height={100} width={100} />
                         </div>
                         <div onClick={() => TextGroup4(canvas)} className='border bg-white rounded-md cursor-pointer'>
