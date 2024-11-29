@@ -110,13 +110,13 @@ export default function Avatars() {
 
 
   return (
-    <div className="relative">
-      <div className="sticky h-0 top-0 bg-transparent z-10 right-0 float-end">
+    <div className="relative p-2">
+      <div className="sticky xs:h-0 max-xs:w-full top-0 bg-transparent z-10 right-0 float-end">
         <div className="flex justify-between items-center">
-          <div className="flex gap-2">
+          <div className="flex gap-2 max-xs:justify-between w-full">
             <button
               onClick={() => setShowFavorites(!showFavorites)}
-              className="bg-gray-200 text-gray-700 px-3 py-2 rounded-md"
+              className="bg-gray-200 text-gray-700 max-xs:text-sm px-3 py-2 rounded-md"
             >
               {showFavorites ? "Show All" : "Show Favorites"}
             </button>
@@ -133,10 +133,10 @@ export default function Avatars() {
         <div>
           <h3 className="mb-3 text-lg font-semibold text-gray-600">My Avatars</h3>
           <ul className="grid min-[450px]:grid-cols-2 grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <article className="group/avatar relative border-2 border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
+          <article onClick={createNewTalkingPhoto} className="group/avatar cursor-pointer relative border-2 border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
             <div className="absolute w-full h-full right-0 top-0 px-4 flex justify-center items-center">
               <div>
-                <div onClick={createNewTalkingPhoto} className="border mx-auto w-fit rounded-full cursor-pointer p-2 bg-gray-300">
+                <div className="border mx-auto w-fit rounded-full cursor-pointer p-2 bg-gray-300">
                   <Plus size={24} className="text-gray-600" />
                 </div>
                 <p className="w-full mt-2 font-semibold text-center text-gray-600">Create Avatar</p>

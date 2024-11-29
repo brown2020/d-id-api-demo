@@ -7,6 +7,7 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import useProfileStore from "@/zustand/useProfileStore";
 import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover';
+import Image from "next/image";
 import {
   SignedIn,
   SignedOut,
@@ -21,11 +22,12 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, Timestamp, where } from "firebase/firestore";
-import { Bell } from "lucide-react";
+import { AlignJustify, ArrowDown, Bell } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import moment from "moment";
 import { useRouter } from "next/navigation";
+import logo from "@/assets/images/logo.png"
 
 export default function Header() {
   const { getToken, isSignedIn } = useAuth();
@@ -36,6 +38,8 @@ export default function Header() {
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
   const profile = useProfileStore((state) => state.profile);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   useInitializeStores();
 
   useEffect(() => {
@@ -69,7 +73,7 @@ export default function Header() {
   useEffect(() => {
     console.log("notifications", notifications);
     console.log("profile", profile);
-  }, [notifications])
+  }, [notifications, profile])
 
   useEffect(() => {
     const syncAuthState = async () => {
@@ -145,57 +149,110 @@ export default function Header() {
   }, [notifications, notificationMessage, openNotification]);
 
   return (
-    <div className="flex h-14 items-center justify-end px-4 py-2">
+    <>
       {/* <Link href="/" className="font-medium text-xl">
-        D-ID API Demo
-      </Link> */}
+          D-ID API Demo
+        </Link> */}
 
       <SignedOut>
-        <SignInButton>
-          <button className="text-white bg-blue-500 h-full px-3 rounded-lg ">
-            Sign In
-          </button>
-        </SignInButton>
+        <div className="flex items-center justify-end px-4 py-3 border-b shadow-md z-30">
+          <SignInButton>
+            <button className="text-white bg-blue-500 h-full px-4 py-2 rounded-lg ">
+              Sign In
+            </button>
+          </SignInButton>
+        </div>
       </SignedOut>
       <SignedIn>
-        <div className="flex gap-2 items-center">
-          {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
-            <Link href="/generate">Generate</Link>
-          )} */}
-          <div className="relative group inline-block">
-            <button className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-300 ease-in-out transform ">Create</button>
-            <div
-              className="opacity-0 z-20 invisible group-hover:opacity-100 group-hover:visible absolute w-48 mt-0 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-lg py-2 z-10">
-              <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
+        <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-[999]">
+          <Image src={logo} alt="logo" className="w-[80.28px] h-[50px]" />
+          <div className="max-xs:hidden flex items-center">
+            {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
+              <Link href="/generate">Generate</Link>
+            )} */}
+            <Popover placement="bottom-end" showArrow={true}>
+              <PopoverTrigger>
+                <button className="px-2 py-1 bg-white relative">
+                  <Bell />
+                  {
+                    notifications.length > 0 ?
+                      <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">{notifications.length}</span> :
+                      <></>
+                  }
+                </button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <div className="px-1 py-2">
+                  {
+                    processing ? "Processing..." : (
+                      notifications.length > 0 ? notificationList : "Not found any notification."
+                    )
+                  }
+                </div>
+              </PopoverContent>
+            </Popover>
+            <div className="group">
+              <button className="hover:text-blue-500 px-4 py-2 rounded-lg transition duration-300 ease-in-out transform ">Create</button>
+              <div
+                className="opacity-0 z-20 invisible group-hover:opacity-100 group-hover:visible absolute mt-0 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-lg py-2 z-10">
+                <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
+              </div>
+            </div>
+            <Link href="/videos" className="hover:text-blue-500 px-4 py-2 rounded-lg transition">Videos</Link>
+            <Link href="/avatars" className="hover:text-blue-500 px-4 py-2 rounded-lg transition">Avatars</Link>
+            <Link href="/profile" className="hover:text-blue-500 px-4 py-2 rounded-lg transition">Profile</Link>
+            <UserButton />
+          </div>
+          <div className="xs:hidden">
+            <div className="flex justify-end">
+              <div className="flex gap-3 items-center">
+                <Popover placement="bottom-end" showArrow={true}>
+                  <PopoverTrigger>
+                    <button className="px-2 py-1 bg-white relative">
+                      <Bell />
+                      {
+                        notifications.length > 0 ?
+                          <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">{notifications.length}</span> :
+                          <></>
+                      }
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <div className="px-1 py-2">
+                      {
+                        processing ? "Processing..." : (
+                          notifications.length > 0 ? notificationList : "Not found any notification."
+                        )
+                      }
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <AlignJustify className="cursor-pointer" onClick={() => setIsMenuOpen(!isMenuOpen)} />
+                <UserButton />
+              </div>
             </div>
           </div>
-          <Link href="/videos">Videos</Link>
-          <Link href="/avatars">Avatars</Link>
-          <Popover placement="bottom-end" showArrow={true}>
-            <PopoverTrigger>
-              <button className="px-2 py-1 bg-white relative">
-                <Bell />
-                {
-                  notifications.length > 0 ?
-                    <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">{notifications.length}</span> :
-                    <></>
-                }
-              </button>
-            </PopoverTrigger>
-            <PopoverContent>
-              <div className="px-1 py-2">
-                {
-                  processing ? "Processing..." : (
-                    notifications.length > 0 ? notificationList : "Not found any notification."
-                  )
-                }
+        </div>
+        <div className="relative">
+          <div className={`absolute shadow-md z-[9998] bg-white rounded-b-lg ${isMenuOpen ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-all duration-300  w-full left-0`}>
+            <div className="flex flex-col p-2">
+              <div className="group w-full relative">
+                <button onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)} className={`hover:text-white flex justify-between text-start px-4 w-full py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform`}>
+                  <p>Create</p>
+                  <ArrowDown className={`${isCreateMenuOpen ? 'rotate-0' : 'rotate-90'} `} />
+                </button>
+                <div
+                  className={` ${isCreateMenuOpen ? 'visible' : 'hidden'} top-10 right-0 w-full z-20 absolute mt-0 bg-white text-gray-800 border border-gray-300 rounded-b-lg shadow-lg py-2`}>
+                  <Link href="/videos/create" className="px-4 py-2">Create Videos</Link>
+                </div>
               </div>
-            </PopoverContent>
-          </Popover>
-          <Link href="/profile">Profile</Link>
-          <UserButton />
+              <Link onClick={() => setIsMenuOpen(false)} href="/videos" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Videos</Link>
+              <Link onClick={() => setIsMenuOpen(false)} href="/avatars" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Avatars</Link>
+              <Link onClick={() => setIsMenuOpen(false)} href="/profile" className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition">Profile</Link>
+            </div>
+          </div>
         </div>
       </SignedIn>
-    </div>
+    </>
   );
 }

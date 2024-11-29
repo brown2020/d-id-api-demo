@@ -3,6 +3,7 @@
 import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import axios from "axios";
+import { addErrorReport } from "./addErrorReport";
 
 export type GenerateVideoSuccessResponse = {
   id: string;
@@ -24,16 +25,7 @@ export async function generateDIDVideo(
   emotion: Emotion = "neutral",
   movement: Movement = "neutral"
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
-  await auth.protect();
-
-  console.log("Starting generateDIDVideo function with parameters:", {
-    apiKey: apiKey ? "provided" : "not provided",
-    imageUrl,
-    inputText,
-    voiceId,
-    audioUrl,
-    elevenlabsApiKey: elevenlabsApiKey ? "provided" : "not provided",
-  });
+  auth().protect();
 
   if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
     apiKey = process.env.D_ID_API_KEY;
@@ -144,33 +136,49 @@ export async function generateDIDVideo(
     console.log("Video generation successful. Video ID:", id);
     return { id, status };
   } catch (error: unknown) {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    let errorDetails: Record<string, any> = {};
+
+    // Handle known types of error
+    if (error instanceof Error) {
+      errorDetails = {
+        name: error.name,
+        message: error.message,
+        stack: error.stack || null,
+      };
+    } else {
+      // For unknown errors
+      errorDetails = {
+        message: "Unknown error occurred",
+        raw: JSON.stringify(error), // Serialize the raw error
+      };
+    }
+
+    let errorMessage: string = "";
+
     if (axios.isAxiosError(error)) {
       console.error("Error during video generation:", error.message);
 
       if (error.response) {
-        console.error("Error response from API:", {
+        const responseError = {
           status: error.response.status,
           data: JSON.stringify(error.response.data, null, 2),
-        });
+        };
+        console.error("Error response from API:", responseError);
+        errorDetails["responseError"] = responseError;
 
         if (error.response.status === 429) {
-          return {
-            error: "Rate limit exceeded. Please try again later.",
-          };
+          errorMessage = "Rate limit exceeded. Please try again later.";
         } else if (error.response.status === 402) {
-          return {
-            error:
-              "Your account is out of credits. Please add more credits to generate video.",
-          };
+          errorMessage =
+            "Your account is out of credits. Please add more credits to generate video.";
         } else if (
           typeof error.response.data === "object" &&
           "kind" in error.response.data &&
           error.response.data.kind == "TextToSpeechProviderError"
         ) {
-          return {
-            error:
-              "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.",
-          };
+          errorMessage =
+            "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.";
         } else if (
           typeof error.response.data === "object" &&
           "kind" in error.response.data &&
@@ -181,10 +189,8 @@ export async function generateDIDVideo(
            * Message: Issue with validation of the request
            * Data: JSON.stringify(error.response.data, null, 2)
            */
-          return {
-            error:
-              "Something went wrong, while requesting your generate video.",
-          };
+          errorMessage =
+            "Something went wrong, while requesting your generate video.";
         }
       } else if (error.request) {
         console.error(
@@ -199,9 +205,11 @@ export async function generateDIDVideo(
     } else {
       console.error("An unknown error occurred.");
     }
+    await addErrorReport("generateDIDVideo", errorDetails);
 
     return {
       error:
+        errorMessage ||
         "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
     };
   }

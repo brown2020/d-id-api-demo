@@ -1,3 +1,6 @@
+import { FabricImage } from "fabric";
+import * as fabric from 'fabric';
+
 export interface DIDTalkingPhoto {
   talking_photo_id: string;
   talking_photo_name: string;
@@ -11,6 +14,7 @@ export interface DIDTalkingPhoto {
 
 export type Emotion = 'neutral' | 'happy' | 'surprise' | 'serious';
 export type Movement = 'neutral' | 'lively';
+export type Frame = 'landscape' | 'square' | 'portrait' | 'fit';
 
 export interface CreateVideoForm {
   talking_photo_id: string;
@@ -115,3 +119,16 @@ export type NotificationDetail = {
   video_id: string,
   user_id: string,
 }
+
+interface CustomFabricImage
+    extends FabricImage<Partial<fabric.ImageProps>, fabric.SerializedImageProps, fabric.ObjectEvents> {
+    is_avatar?: boolean; // Add a custom `id` property
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type CanvasObjects = any[];
+type CanvasObject = {
+  objects: CanvasObjects;
+  background?: string;
+  version: string;
+};

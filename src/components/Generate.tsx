@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import useProfileStore from "@/zustand/useProfileStore";
-import { retrieveDIDVideo } from "@/actions/retrieveDIDVideo";
+// import { retrieveDIDVideo } from "@/actions/retrieveDIDVideo";
 import AvatarCard from "@/components/AvatarCard";
 import { PulseLoader } from "react-spinners";
 import PreviousVideos from "@/components/PreviousVideos";
 import TextareaAutosize from "react-textarea-autosize";
-import { getApiBaseUrl } from "@/libs/utils";
-import { generateVideo } from "@/actions/generateVideo";
+// import { getApiBaseUrl } from "@/libs/utils";
+// import { generateVideo } from "@/actions/generateVideo";
 import { DIDTalkingPhoto } from "@/types/did";
 
 export default function Generate() {
@@ -20,8 +20,14 @@ export default function Generate() {
   const [itemDetails, setItemDetails] = useState<DIDTalkingPhoto | null>(null);
   const [loading, setLoading] = useState(true);
   const [script, setScript] = useState<string>("");
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [
+    videoUrl, 
+    // setVideoUrl
+  ] = useState<string | null>(null);
+  const [
+    isGenerating, 
+    // setIsGenerating
+  ] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,55 +75,65 @@ export default function Generate() {
     }
 
     // const imageUrl = itemDetails?.preview_image_url || "";
-    const baseUrl = getApiBaseUrl() ?? window.location.origin;
+    // const baseUrl = getApiBaseUrl() ?? window.location.origin;
 
     console.log("Starting video generation...");
-    setIsGenerating(true);
+    // setIsGenerating(true);
     setError(null);
 
-    try {
-      const result  = await generateVideo(
-        profile.did_api_key || "",
-        baseUrl,
-        {
-          'thumbnail_url': itemDetails.preview_image_url ?? '',
-        },
-        itemDetails.talking_photo_id,
-        script,
-        itemDetails.voiceId,
-        "",
-        profile.elevenlabs_api_key // Pass the ElevenLabs API key
-      );
+    // try {
+    //   const result  = await generateVideo(
+    //     null,
+    //     profile.did_api_key || "",
+    //     baseUrl,
+    //     {
+    //       'thumbnail_url': itemDetails.preview_image_url ?? '',
+    //       canvas_object: {
+    //         objects: [],
+    //         version: "",
+    //       },
+    //       canvas_detail: {
+    //         height: 0,
+    //         width: 0,
+    //         aspectRatio: 0
+    //       },
+    //     },
+    //     itemDetails.talking_photo_id,
+    //     script,
+    //     itemDetails.voiceId,
+    //     "",
+    //     profile.elevenlabs_api_key // Pass the ElevenLabs API key
+    //   );
 
-      if (result.status && result && "id" in result && result.id) {
-        console.log("Video generation initiated. Video ID:", result.id);
-        const statusResponse = await retrieveDIDVideo(
-          profile.did_api_key || "",
-          result.id,
-          profile.selectedTalkingPhoto || "noTalkingPhotoId"
-        );
+    //   if (result.status && result && "id" in result && result.id) {
+    //     console.log("Video generation initiated. Video ID:", result.id);
+    //     const statusResponse = await retrieveDIDVideo(
+    //       profile.did_api_key || "",
+    //       result.id,
+    //       profile.selectedTalkingPhoto || "noTalkingPhotoId"
+    //     );
 
-        if (statusResponse && statusResponse.status === "completed") {
-          console.log(
-            "Video generation completed. Video URL:",
-            statusResponse.video_url
-          );
-          setVideoUrl(statusResponse.video_url!);
-        } else if (statusResponse && statusResponse.status === "failed") {
-          console.error("Video generation failed:", statusResponse.error);
-          setError(statusResponse.error || "Video generation failed.");
-        }
-      } else if(!result.status) {
-        console.error("Failed to generate video:", result.message);
-        setError(result.message || "Failed to generate video.");
-      }
-    } catch (error) {
-      console.error("Error during video generation:", error);
-      setError("An error occurred while generating the video.");
-    } finally {
-      setIsGenerating(false);
-      console.log("Video generation process completed.");
-    }
+    //     if (statusResponse && statusResponse.status === "completed") {
+    //       console.log(
+    //         "Video generation completed. Video URL:",
+    //         statusResponse.video_url
+    //       );
+    //       setVideoUrl(statusResponse.video_url!);
+    //     } else if (statusResponse && statusResponse.status === "failed") {
+    //       console.error("Video generation failed:", statusResponse.error);
+    //       setError(statusResponse.error || "Video generation failed.");
+    //     }
+    //   } else if(!result.status) {
+    //     console.error("Failed to generate video:", result.message);
+    //     setError(result.message || "Failed to generate video.");
+    //   }
+    // } catch (error) {
+    //   console.error("Error during video generation:", error);
+    //   setError("An error occurred while generating the video.");
+    // } finally {
+    //   setIsGenerating(false);
+    //   console.log("Video generation process completed.");
+    // }
   };
 
   if (loading || !itemDetails) {
@@ -130,7 +146,7 @@ export default function Generate() {
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="mr-auto mb-4">
-          <AvatarCard id={profile.selectedTalkingPhoto}/>
+          <AvatarCard id={profile.selectedTalkingPhoto} />
         </div>
 
         <div className="flex flex-col gap-4 w-full">

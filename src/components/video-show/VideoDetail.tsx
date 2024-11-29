@@ -66,7 +66,6 @@ export default function VideoDetail() {
             },
             error: (error) => {
                 console.log("Error", error);
-
                 setLoading(false);
             }
         });
@@ -78,7 +77,7 @@ export default function VideoDetail() {
 
 
 
-    return <div className="p-4 bg-white h-full rounded shadow-md">
+    return <div className="p-4 bg-white h-screen overflow-hidden">
         {videoData ?
             <div className="h-full">
                 <h2 className="text-2xl font-bold">{videoData.title ?? "Untitled Video"}</h2>
@@ -94,7 +93,7 @@ export default function VideoDetail() {
                 }
                 {
                     videoData.d_id_status == 'done' && videoData.video_url ?
-                        <div className="h-full flex items-center justify-center">
+                        <div className="flex-grow h-full flex items-center justify-center">
                             <video controls src={videoData.video_url} className="h-4/5"></video>
                         </div> : <></>
                 }

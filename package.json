@@ -18,6 +18,8 @@
     "@stripe/react-stripe-js": "^2.8.0",
     "axios": "^1.7.7",
     "elevenlabs": "^0.18.0",
+    "fabric": "^6.5.0",
+    "fabricjs-react": "^2.0.0",
     "firebase": "^11.0.1",
     "firebase-admin": "^12.5.0",
     "framer-motion": "^11.11.9",
@@ -33,6 +35,7 @@
     "react-textarea-autosize": "^8.5.3",
     "sharp": "^0.33.5",
     "stripe": "^17.2.0",
+    "styled-components": "^6.1.13",
     "uuid": "^11.0.1",
     "yup": "^1.4.0",
     "zustand": "^5.0.1"
