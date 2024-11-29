@@ -21,7 +21,7 @@ import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
 import * as fabric from 'fabric';
-import { Background_Images } from "./Utils";
+import { Background_Images } from "./utils";
 import AvatarGallery from "./AvatarGallery";
 import TextBox from "./TextBox";
 import { addDraftVideo } from "@/actions/addDraftVideo";
@@ -189,6 +189,17 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             unsubscribeTalkingPhotos();
         };
     }, [uid]);
+
+    useEffect(() => {
+        if (totalProcessesRef > completedProcessesRef) {
+            window.onbeforeunload = function (event) {
+                const message = "Are you sure you want to leave? Changes may not be saved.";
+                event.preventDefault();
+                event.returnValue = message;
+                return message;
+            };
+        }
+    });
 
     const [videoCanvasDetail, setVideoCanvasDetail] = useState<{
         canvas_json: CanvasObject;
@@ -518,14 +529,38 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         updateCanvasAsPerVariable(updatedFields[0])
     }, [updatedFields, updateCanvasAsPerVariable])
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
         if (canvas !== null) {
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                const activeObject = canvas.getActiveObject();
-                if (activeObject) {
-                    canvas.remove(activeObject);
+            if (event.ctrlKey && event.key === 'a') {
+                event.preventDefault();
+                const iTextObjects = canvas.getObjects().filter((obj: fabric.Object) => obj && obj.type === 'i-text');
+                if (iTextObjects.length > 0) {
+                    canvas.discardActiveObject();
+                    const selection = new fabric.ActiveSelection(iTextObjects, {
+                        canvas: canvas,
+                    });
+                    canvas.setActiveObject(selection);
                     canvas.renderAll();
+                } else {
+                    console.error("No i-text objects found");
                 }
+            }
+            if (event.key === 'Delete') {
+                const selectedObject = canvas.getActiveObject();
+                if (selectedObject) {
+                    const objects = (selectedObject as fabric.ActiveSelection)._objects;
+                    if (objects && objects.length > 0) {
+                        (selectedObject as fabric.ActiveSelection).forEachObject(obj => {
+                            canvas.remove(obj);
+                        });
+                    } else {
+                        canvas.remove(selectedObject);
+                    }
+                }
+                canvas.discardActiveObject();
+                canvas.renderAll();
+            } else {
+                console.log("No active selection to delete");
             }
         }
     };
@@ -548,7 +583,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         try {
             totalProcessesRef.current += 1;
             // Simulate async operation (e.g., save, fetch, or process data)
-         
+
             if (!canvas || !selectedAvatar) {
                 return;
             }
