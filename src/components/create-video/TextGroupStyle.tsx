@@ -7,8 +7,8 @@ function fabricText(text: string, style: object ) {
 function fabricGroup(canvas: fabric.Canvas | null, group: fabric.Group) {
     if (!canvas) return;
     canvas.add(group);
+    canvas.setActiveObject(group);
     canvas.renderAll();
-
     canvas.on('selection:cleared', () => {
         const items = group.getObjects();
         group.remove(...items);

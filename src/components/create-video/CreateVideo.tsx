@@ -873,6 +873,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             text.width = 300;
             text.textAlign = 'center';
             canvas.add(text);
+            canvas.setActiveObject(text);
             canvas.renderAll();
         }
     }, [canvas]);
