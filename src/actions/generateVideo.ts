@@ -13,14 +13,6 @@ export async function generateVideo(video_id: string | null,
     apiKey: string | null,
     baseUrl: string,
     thumbnail_url: string, 
-    extraDetail: { 
-        canvas_object: CanvasObject,
-        canvas_detail: {
-            height: number;
-            width: number;
-            aspectRatio: number;
-        }
-    },
     avatar_id: string,
     inputText?: string,
     voiceId?: string,
@@ -28,14 +20,14 @@ export async function generateVideo(video_id: string | null,
     elevenlabsApiKey?: string,
     emotion: Emotion = "neutral",
     movement: Movement = "neutral",
-    onlySave: boolean = false
 ) {
     auth().protect();
     const { userId } = auth();
 
     // TODO: If video id provided
     // TODO: check exist
-    // TODO: status should be draft
+    // TODO: d_id_status should be draft or blank 
+    // TODO: owner of video should be current user
     
     const id = video_id ? video_id : `new-video-${Date.now()}`;
 
@@ -47,7 +39,6 @@ export async function generateVideo(video_id: string | null,
     // Add that thumbnail to firebase storage
     const bucket = admin.storage().bucket();
     const file = bucket.file(filePath);
-    const { canvas_object, canvas_detail } = extraDetail;
     const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
     try {
         
@@ -74,16 +65,7 @@ export async function generateVideo(video_id: string | null,
         // add that thumbnail id to video object
         const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
         await videoRef.set({
-            id,
-            title: "Untitled Video",
-            did_id: '',
-            d_id_status: '',
-            avatar_id: avatar_id,
-            owner: userId,
-            type: 'personal',
             thumbnail_url: thumbnailUrl,
-            canvas_json: canvas_object,
-            canvas_detail: canvas_detail,
         }, { merge: true });
     
         // Create proxy link

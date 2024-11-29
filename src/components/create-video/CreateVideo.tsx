@@ -4,11 +4,11 @@ import { db } from "@/firebase/firebaseClient";
 import { AVATAR_TYPE_TEMPLATE, DOCUMENT_COLLECTION, VIDEO_COLLECTION } from "@/libs/constants";
 import { CanvasObject, CustomFabricImage, DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { collection, doc, onSnapshot, or, query, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, or, query, setDoc, where } from "firebase/firestore";
 import { Captions, icons, Meh, Plus, Repeat2, Scaling, Smile, UserRound, Video } from "lucide-react";
 import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { checkCanvasObjectImageDomain, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
+import { checkCanvasObjectImageDomain, cleanObject, getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import SurprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import { generateVideo } from "@/actions/generateVideo";
@@ -16,6 +16,7 @@ import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+// import { useRouter } from "next/router";
 import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
@@ -120,6 +121,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const uid = useAuthStore((state) => state.uid);
     const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
+    // const routerSecond = useRouterSecond();
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
     const [processing, setProcessing] = useState(false);
@@ -166,6 +168,9 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             window.removeEventListener('keydown', handleKeyDown);
         }
     })
+    useEffect(() => {
+        videoIdRef.current = video_id;
+    }, [video_id])
 
     useEffect(() => {
         const personalTalkingPhotosCollection = query(
@@ -200,6 +205,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     } | null>(null);
 
     const handleChangeAvatar = useCallback(async (avatar: DIDTalkingPhoto) => {
+        console.log("Avatar Changed", avatar);
+
         setProcessing(true);
         setSelectedAvatar(avatar);
         setReplaceAvatarModel(false);
@@ -212,68 +219,55 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         }
         setAudioDetail(_audio);
         setProcessing(false);
-    }, [findVoice])
+    }, [])
 
     useEffect(() => {
         // If video id is exist then fetch video details
         // Check personal talking photo should exist
-        videoIdRef.current = video_id;
         if (video_id && uid && personalTalkingPhotos.length > 0) {
-
             const docRef = doc(collection(db, VIDEO_COLLECTION), video_id);
             setProcessing(true);
 
-            const unsubscribe = onSnapshot(docRef, {
-                next: (snapshot) => {
-                    setProcessing(false);
+            getDoc(docRef).then((snapshot) => {
+                setProcessing(false);
 
-                    if (!snapshot.exists()) {
-                        toast.error('Video not found');
+                if (!snapshot.exists()) {
+                    toast.error('Video not found');
+                    // TODO: Send back to video list
+                } else {
+                    // Set avatar selected
+                    const videoDetail = snapshot.data();
+                    const avatar_id = videoDetail.avatar_id;
+                    const avatar = personalTalkingPhotos.find((avatar) => avatar.talking_photo_id == avatar_id);
+                    if (!avatar) {
+                        toast.error('Selected avatar not found');
                         // TODO: Send back to video list
                     } else {
-                        console.log("snapshot.data()", snapshot.data());
-                        // Set avatar selected
-                        const videoDetail = snapshot.data();
-                        const avatar_id = videoDetail.avatar_id;
-                        const avatar = personalTalkingPhotos.find((avatar) => avatar.talking_photo_id == avatar_id);
-                        if (!avatar) {
-                            toast.error('Selected avatar not found');
-                            // TODO: Send back to video list
-                        } else {
-                            handleChangeAvatar(avatar);
-                            if (
-                                typeof videoDetail == 'object' && "canvas_json" in videoDetail &&
-                                typeof videoDetail.canvas_json == 'object' && "objects" in videoDetail.canvas_json &&
-                                Array.isArray(videoDetail.canvas_json.objects)
-                            ) {
-                                videoDetail.canvas_json.objects = checkCanvasObjectImageDomain(videoDetail.canvas_json.objects)
-                                setVideoCanvasDetail({
-                                    canvas_json: videoDetail.canvas_json,
-                                    canvas_detail: {
-                                        height: videoDetail.canvas_detail.height,
-                                        width: videoDetail.canvas_detail.width,
-                                        aspectRatio: videoDetail.canvas_detail.aspectRatio,
-                                    }
-                                });
-                            }
-
+                        handleChangeAvatar(avatar);
+                        if (
+                            typeof videoDetail == 'object' && "canvas_json" in videoDetail &&
+                            typeof videoDetail.canvas_json == 'object' && "objects" in videoDetail.canvas_json &&
+                            Array.isArray(videoDetail.canvas_json.objects)
+                        ) {
+                            videoDetail.canvas_json.objects = checkCanvasObjectImageDomain(videoDetail.canvas_json.objects)
+                            setVideoCanvasDetail({
+                                canvas_json: videoDetail.canvas_json,
+                                canvas_detail: {
+                                    height: videoDetail.canvas_detail?.height,
+                                    width: videoDetail.canvas_detail?.width,
+                                    aspectRatio: videoDetail.canvas_detail?.aspectRatio,
+                                }
+                            });
                         }
 
                     }
-                },
-                error: (error) => {
-                    console.log("Error", error);
 
-                    setProcessing(false);
                 }
             });
 
-            return () => {
-                unsubscribe();
-            };
-
         }
-    }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar])
+    }, [video_id, uid, personalTalkingPhotos])
+
 
     const canvasMainImage = useCallback(() => {
         if (canvas) {
@@ -285,6 +279,11 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
     const changeAvatarImageOnFrame = useCallback(async () => {
         if (fetchingImage) return;
+
+        // If video id is exist then it should already have canvas detail
+        if (video_id && !loadFirstTime) return;
+
+        // If selected avatar is same then remove it
 
         if (!selectedAvatar) {
             console.log("No avatar selected");
@@ -361,7 +360,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
 
         }
-    }, [canvas, selectedAvatar, fetchingImage, canvasElements, canvasMainImage])
+    }, [canvas, selectedAvatar, fetchingImage, canvasElements, canvasMainImage, loadFirstTime, video_id])
 
     const getContainerHeightWidth = () => {
         const container = canvasContainerRef.current;
@@ -545,10 +544,12 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     }, [selectedAvatar, selectAvatarForm, canvas])
 
     const handleObjectChange = async () => {
+        console.log("Handle change object");
+        
         try {
             totalProcessesRef.current += 1;
             // Simulate async operation (e.g., save, fetch, or process data)
-         
+
             if (!canvas || !selectedAvatar) {
                 return;
             }
@@ -569,9 +570,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         aspectRatio: width / height,
                     }
                 }
-
                 const docRef = doc(collection(db, VIDEO_COLLECTION), videoIdRef.current);
-                await setDoc(docRef, videoDetail, { merge: true });
+                await setDoc(docRef, cleanObject(videoDetail), { merge: true });
             } else {
                 const response = await addDraftVideo(
                     canvas_json,
@@ -585,9 +585,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 console.log("response", response);
 
                 if (response.status) {
-                    console.log("response id", response.id);
-
                     videoIdRef.current = response.id;
+                    // router.replace(`/videos/${videoIdRef.current}/edit`, undefined, {});
                 }
             }
             completedProcessesRef.current += 1;
@@ -595,8 +594,11 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             console.error('Error processing canvas change:', error);
         }
     };
+
     useEffect(() => {
-        if (canvas) {
+        // Canvas should the rendered
+        // And if video id is exist then load canvas for first time, only after that register event
+        if (canvas && (video_id ? loadFirstTime : true)) {
             // Attach the event listeners
             canvas.on('object:added', handleObjectChange);
             canvas.on('object:modified', handleObjectChange);
@@ -609,15 +611,19 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 canvas.off('object:removed', handleObjectChange);
             };
         }
-    }, [canvas]);
+    }, [canvas, loadFirstTime, video_id]);
 
     useEffect(() => {
-        if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
-            loadCanvasForFirstTime()
-        } else {
-            changeAvatarImageOnFrame()
+        if (uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
+            if (!loadFirstTime && videoCanvasDetail && video_id) {
+                console.log("Load canvas for first time");
+                loadCanvasForFirstTime()
+            } else {
+                console.log("Load canvas for other time else");
+                changeAvatarImageOnFrame()
+            }
         }
-    }, [selectedAvatar, canvas, videoCanvasDetail, loadFirstTime, video_id, uid, personalTalkingPhotos, canvasContainerRef])
+    }, [selectedAvatar, canvas, videoCanvasDetail, video_id, uid, personalTalkingPhotos, canvasContainerRef]);
 
     const loadCanvasForFirstTime = async () => {
         if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
@@ -681,7 +687,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             toast.error('Please write script');
             return;
         }
-        if (selectedAvatar) {
+        if (selectedAvatar && videoIdRef.current) {
 
             // Check thumbnail url is generates if not then display message
             if (!canvas) {
@@ -711,35 +717,29 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         });
 
                         const baseUrl = getApiBaseUrl() ?? window.location.origin;
-                        // const response = await generateVideo(
-                        //     videoId,
-                        //     profile.did_api_key, baseUrl,
-                        //     {
-                        //         'thumbnail_url': thumbnailUrl,
-                        //         canvas_object: canvas.toJSON(),
-                        //         canvas_detail: {
-                        //             width: width,
-                        //             height: height,
-                        //             aspectRatio: width / height,
-                        //         }
-                        //     },
-                        //     selectedAvatar.talking_photo_id,
-                        //     writeScriptForm.getValues('script'),
-                        //     selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
-                        // )
-                        // if ("id" in response) {
-                        //     setVideoId(response.id);
-                        // }
+                        const response = await generateVideo(
+                            videoIdRef.current,
+                            profile.did_api_key,
+                            baseUrl,
+                            thumbnailUrl,
+                            selectedAvatar.talking_photo_id,
+                            writeScriptForm.getValues('script'),
+                            selectedAvatar.voiceId,
+                            undefined,
+                            profile.elevenlabs_api_key,
+                            selectAvatarForm.getValues('emotion'),
+                            selectAvatarForm.getValues('movement'),
+                        )
 
                         /**
                          * TODO: If status is false and id is provided then redirect it to video detail page
                          */
 
-                        // if (response.status && response.id != undefined) {
-                        //     resolve({ status: true, data: response.id });
-                        // } else {
-                        //     reject({ status: false, data: response.message });
-                        // }
+                        if (response.status && response.id != undefined) {
+                            resolve({ status: true, data: response.id });
+                        } else {
+                            reject({ status: false, data: response.message });
+                        }
                     } catch (error) {
                         console.log("Error", error);
                         /**
@@ -1086,7 +1086,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                             </div>
                         </div>
                         <div>
-                            <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script') }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
+                            <button disabled={!stepOneCompeted} onClick={() => { setActiveStep('write-script'); }} className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4">
                                 Next
                             </button>
                         </div>

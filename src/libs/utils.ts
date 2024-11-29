@@ -41,3 +41,28 @@ export const checkCanvasObjectImageDomain = (fabricJSON: CanvasObjects) => {
         return obj;
     });
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const cleanObject = (obj: Record<string, any>) => {
+    // Iterate over each key in the object
+    Object.keys(obj).forEach(key => {
+        // If the value is null or undefined, delete the key
+        if (obj[key] === null || obj[key] === undefined) {
+            delete obj[key];
+        } else if (typeof obj[key] === 'object' && Array.isArray(obj[key])) {
+            // If the value is an array, remove any null or undefined values from it
+            obj[key] = obj[key].map((item: any) => {
+                if (typeof item === 'object') {
+                    return cleanObject(item);
+                }
+                return item;
+            });
+        } else if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+            // If the value is an object, recursively clean it
+            cleanObject(obj[key]);
+        }
+    });
+
+    // Return the cleaned object
+    return obj;
+}
