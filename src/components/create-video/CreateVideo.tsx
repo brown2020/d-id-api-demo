@@ -4,7 +4,7 @@ import { db } from "@/firebase/firebaseClient";
 import { AVATAR_TYPE_TEMPLATE, DOCUMENT_COLLECTION, VIDEO_COLLECTION } from "@/libs/constants";
 import { CanvasObject, CustomFabricImage, DIDTalkingPhoto, Emotion, Frame, Movement } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { collection, doc, onSnapshot, or, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, or, query, setDoc, where } from "firebase/firestore";
 import { Captions, icons, Meh, Plus, Repeat2, Scaling, Smile, UserRound, Video } from "lucide-react";
 import { ComponentType, Fragment, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -24,6 +24,7 @@ import * as fabric from 'fabric';
 import { Background_Images } from "./Utils";
 import AvatarGallery from "./AvatarGallery";
 import TextBox from "./TextBox";
+import { addDraftVideo } from "@/actions/addDraftVideo";
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -126,7 +127,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const { findVoice } = useAudio();
 
     const [activeStep, setActiveStep] = useState('select-avatar')
-    const [videoId, setVideoId] = useState<string | null>(null);
+    const videoIdRef = useRef<string | null>(null);
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
@@ -136,6 +137,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const [replaceAvatarModel, setReplaceAvatarModel] = useState(false);
     const [fabricBackgroundImage, setFabricBackgroundImage] = useState<fabric.Image | null>(null);
     const [landscape, setLandscape] = useState('square');
+    const totalProcessesRef = useRef(0);
+    const completedProcessesRef = useRef(0);
     // If video id is exist then fetch video details
     // If exist then set selected avatar
     // update canvas variable
@@ -214,7 +217,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     useEffect(() => {
         // If video id is exist then fetch video details
         // Check personal talking photo should exist
-        setVideoId(video_id);
+        videoIdRef.current = video_id;
         if (video_id && uid && personalTalkingPhotos.length > 0) {
 
             const docRef = doc(collection(db, VIDEO_COLLECTION), video_id);
@@ -471,7 +474,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
         }
     }, [canvas, fabricBackgroundImage]);
-    
+
     const setBackgroundImageDimension = useCallback((fabricImage: fabric.Image) => {
         const canvasWidth = canvas ? canvas.width : 0;
         const canvasHeight = canvas ? canvas.height : 0;
@@ -509,7 +512,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             }
         }
     }, [canvas, canvasMainImage, setCanvasDimensions, fabricBackgroundImage, setBackgroundImageDimension])
-   
+
     const updatedFields = useWatch({ control: selectAvatarForm.control, name: ['frame'] })
     useEffect(() => {
         updateCanvasAsPerVariable(updatedFields[0])
@@ -532,13 +535,81 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     useEffect(() => {
         selectAvatarForm.setValue('talking_photo_id', selectedAvatar ? selectedAvatar.talking_photo_id : '')
         selectAvatarForm.setValue('voice_id', selectedAvatar && selectedAvatar.voiceId ? selectedAvatar.voiceId : '')
+        let _canvas: fabric.Canvas | null = null;
         if (!canvas && canvasRef.current) {
-            const _canvas = new fabric.Canvas(canvasRef.current, {
+            _canvas = new fabric.Canvas(canvasRef.current, {
                 width: canvasRef.current.width,
             });
             setCanvas(_canvas);
         }
     }, [selectedAvatar, selectAvatarForm, canvas])
+
+    const handleObjectChange = async () => {
+        try {
+            totalProcessesRef.current += 1;
+            // Simulate async operation (e.g., save, fetch, or process data)
+         
+            if (!canvas || !selectedAvatar) {
+                return;
+            }
+            const width = canvas.getWidth();
+            const height = canvas.getHeight();
+            const canvas_json = canvas.toJSON();
+            // If video id not exit then add video as draft
+            console.log("videoId", videoIdRef.current);
+
+            if (videoIdRef.current != null) {
+                // Save video detail to firebase collection
+                const videoDetail = {
+                    id: videoIdRef.current,
+                    canvas_json,
+                    canvas_detail: {
+                        width: width,
+                        height: height,
+                        aspectRatio: width / height,
+                    }
+                }
+
+                const docRef = doc(collection(db, VIDEO_COLLECTION), videoIdRef.current);
+                await setDoc(docRef, videoDetail, { merge: true });
+            } else {
+                const response = await addDraftVideo(
+                    canvas_json,
+                    {
+                        width: width,
+                        height: height,
+                        aspectRatio: width / height,
+                    },
+                    selectedAvatar.talking_photo_id
+                );
+                console.log("response", response);
+
+                if (response.status) {
+                    console.log("response id", response.id);
+
+                    videoIdRef.current = response.id;
+                }
+            }
+            completedProcessesRef.current += 1;
+        } catch (error) {
+            console.error('Error processing canvas change:', error);
+        }
+    };
+    useEffect(() => {
+        if (canvas) {
+            // Attach the event listeners
+            canvas.on('object:added', handleObjectChange);
+            canvas.on('object:modified', handleObjectChange);
+            canvas.on('object:removed', handleObjectChange);
+
+            // Cleanup: Remove event listeners when the component unmounts or canvas is reset
+            return () => {
+                canvas.off('object:added', handleObjectChange);
+                canvas.off('object:modified', handleObjectChange);
+                canvas.off('object:removed', handleObjectChange);
+            };
+        }
+    }, [canvas]);
 
     useEffect(() => {
         if (!loadFirstTime && videoCanvasDetail && video_id && uid && personalTalkingPhotos.length > 0 && canvas && canvasContainerRef.current) {
@@ -597,6 +668,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         }
     }
 
+
     useEffect(() => {
         selectAvatarForm.handleSubmit(() => { })
     }, [selectAvatarForm])
@@ -639,35 +711,35 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         });
 
                         const baseUrl = getApiBaseUrl() ?? window.location.origin;
-                        const response = await generateVideo(
-                            videoId,
-                            profile.did_api_key, baseUrl,
-                            {
-                                'thumbnail_url': thumbnailUrl,
-                                canvas_object: canvas.toJSON(),
-                                canvas_detail: {
-                                    width: width,
-                                    height: height,
-                                    aspectRatio: width / height,
-                                }
-                            },
-                            selectedAvatar.talking_photo_id,
-                            writeScriptForm.getValues('script'),
-                            selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
-                        )
-                        if ("id" in response) {
-                            setVideoId(response.id);
-                        }
+                        // const response = await generateVideo(
+                        //     videoId,
+                        //     profile.did_api_key, baseUrl,
+                        //     {
+                        //         'thumbnail_url': thumbnailUrl,
+                        //         canvas_object: canvas.toJSON(),
+                        //         canvas_detail: {
+                        //             width: width,
+                        //             height: height,
+                        //             aspectRatio: width / height,
+                        //         }
+                        //     },
+                        //     selectedAvatar.talking_photo_id,
+                        //     writeScriptForm.getValues('script'),
+                        //     selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
+                        // )
+                        // if ("id" in response) {
+                        //     setVideoId(response.id);
+                        // }
 
                         /**
                          * TODO: If status is false and id is provided then redirect it to video detail page
                          */
 
-                        if (response.status && response.id != undefined) {
-                            resolve({ status: true, data: response.id });
-                        } else {
-                            reject({ status: false, data: response.message });
-                        }
+                        // if (response.status && response.id != undefined) {
+                        //     resolve({ status: true, data: response.id });
+                        // } else {
+                        //     reject({ status: false, data: response.message });
+                        // }
                     } catch (error) {
                         console.log("Error", error);
                         /**
@@ -749,7 +821,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 }
             );
         }
-    }, [setBackgroundImage, setBackgroundImageDimension]);  
+    }, [setBackgroundImage, setBackgroundImageDimension]);
 
     const handleSetBackground = useCallback(
         (src: string) => {
@@ -765,7 +837,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 setBackgroundImage(fabricImage);
             };
         },
-        [   setBackgroundImage, setBackgroundImageDimension]
+        [setBackgroundImage, setBackgroundImageDimension]
     );
 
     const handleText = useCallback((textType: string) => {

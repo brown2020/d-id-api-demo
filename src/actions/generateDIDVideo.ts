@@ -154,7 +154,7 @@ export async function generateDIDVideo(
       };
     }
 
-    
+    let errorMessage : string = '';
   
     
     if (axios.isAxiosError(error)) {
@@ -169,26 +169,18 @@ export async function generateDIDVideo(
         errorDetails['responseError'] = responseError;
 
         if (error.response.status === 429) {
-          return {
-            error: "Rate limit exceeded. Please try again later.",
-          };
+            errorMessage = "Rate limit exceeded. Please try again later.";
         } else if (error.response.status === 402) {
-          return {
-            error: "Your account is out of credits. Please add more credits to generate video.",
-          };
+            errorMessage = "Your account is out of credits. Please add more credits to generate video.";
         } else if (typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data.kind == "TextToSpeechProviderError") {
-          return {
-            error: "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.",
-          };
+            errorMessage = "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.";
         } else if (typeof error.response.data === 'object' && "kind" in error.response.data && error.response.data.kind == "ValidationError") {
           /**
            * TODO: Send Error Report
            * Message: Issue with validation of the request
            * Data: JSON.stringify(error.response.data, null, 2)
            */
-          return {
-            error: "Something went wrong, while requesting your generate video.",
-          };
+            errorMessage = "Something went wrong, while requesting your generate video.";
         }
       } else if (error.request) {
         console.error(
@@ -204,9 +196,9 @@ export async function generateDIDVideo(
       console.error("An unknown error occurred.");
     }
     await addErrorReport('generateDIDVideo', errorDetails);
+
     return {
-      error:
-        "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
+      error: errorMessage || "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
     };
   }
 }

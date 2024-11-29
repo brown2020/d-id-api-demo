@@ -12,8 +12,9 @@ import { addErrorReport } from "./addErrorReport";
 export async function generateVideo(video_id: string | null, 
     apiKey: string | null,
     baseUrl: string,
+    thumbnail_url: string, 
     extraDetail: { 
-        thumbnail_url: string, canvas_object: CanvasObject,
+        canvas_object: CanvasObject,
         canvas_detail: {
             height: number;
             width: number;
@@ -27,6 +28,7 @@ export async function generateVideo(video_id: string | null,
     elevenlabsApiKey?: string,
     emotion: Emotion = "neutral",
     movement: Movement = "neutral",
+    onlySave: boolean = false
 ) {
     auth().protect();
     const { userId } = auth();
@@ -45,7 +47,7 @@ export async function generateVideo(video_id: string | null,
     // Add that thumbnail to firebase storage
     const bucket = admin.storage().bucket();
     const file = bucket.file(filePath);
-    const { thumbnail_url, canvas_object, canvas_detail } = extraDetail;
+    const { canvas_object, canvas_detail } = extraDetail;
     const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
     try {
         
