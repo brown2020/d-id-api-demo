@@ -26,6 +26,7 @@ import { Background_Images } from "./utils";
 import AvatarGallery from "./AvatarGallery";
 import TextBox from "./TextBox";
 import { addDraftVideo } from "@/actions/addDraftVideo";
+import { generateVideo } from "@/actions/generateVideo";
 
 type IconType = keyof typeof icons | ReactElement | ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -121,6 +122,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     const uid = useAuthStore((state) => state.uid);
     // const profile = useProfileStore((state) => state.profile);
     const router = useRouter();
+    const profile = useProfileStore((state) => state.profile);
     // const routerSecond = useRouterSecond();
     const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<DIDTalkingPhoto[]>([]);
     const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
@@ -738,56 +740,49 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
             toast.promise(
                 // new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
-                new Promise<{ status: boolean, data: string }>(async () => {
+                new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
                     setProcessing(true);
                     try {
-                        // const width = canvas.getWidth();
-                        // const height = canvas.getHeight();
+                        const width = canvas.getWidth();
+                        const height = canvas.getHeight();
 
                         // Minimum required resolution (1024px)
-                        // const minSize = 1024;
+                        const minSize = 1024;
 
                         // Calculate the multiplier based on width and height
-                        // const widthMultiplier = width < minSize ? minSize / width : 1;
-                        // const heightMultiplier = height < minSize ? minSize / height : 1;
+                        const widthMultiplier = width < minSize ? minSize / width : 1;
+                        const heightMultiplier = height < minSize ? minSize / height : 1;
 
                         // Get the larger multiplier to ensure the image is at least 1024px in width or height
-                        // const multiplier = Math.min(widthMultiplier, heightMultiplier);
+                        const multiplier = Math.min(widthMultiplier, heightMultiplier);
 
-                        // const thumbnailUrl = canvas.toDataURL({
-                        //     multiplier,
-                        // });
+                        const thumbnailUrl = canvas.toDataURL({
+                            multiplier,
+                        });
 
-                        // const baseUrl = getApiBaseUrl() ?? window.location.origin;
-                        // const response = await generateVideo(
-                        //     videoId,
-                        //     profile.did_api_key, baseUrl,
-                        //     {
-                        //         'thumbnail_url': thumbnailUrl,
-                        //         canvas_object: canvas.toJSON(),
-                        //         canvas_detail: {
-                        //             width: width,
-                        //             height: height,
-                        //             aspectRatio: width / height,
-                        //         }
-                        //     },
-                        //     selectedAvatar.talking_photo_id,
-                        //     writeScriptForm.getValues('script'),
-                        //     selectedAvatar.voiceId, undefined, profile.elevenlabs_api_key, selectAvatarForm.getValues('emotion'), selectAvatarForm.getValues('movement'),
-                        // )
-                        // if ("id" in response) {
-                        //     setVideoId(response.id);
-                        // }
+                        const baseUrl = getApiBaseUrl() ?? window.location.origin;
+                        const response = await generateVideo(
+                            videoIdRef.current,
+                            profile.did_api_key, 
+                            baseUrl,
+                            thumbnailUrl,
+                            writeScriptForm.getValues('script'),
+                            selectedAvatar.voiceId, 
+                            undefined, 
+                            profile.elevenlabs_api_key, 
+                            selectAvatarForm.getValues('emotion'), 
+                            selectAvatarForm.getValues('movement'),
+                        )
 
                         /**
                          * TODO: If status is false and id is provided then redirect it to video detail page
                          */
 
-                        // if (response.status && response.id != undefined) {
-                        //     resolve({ status: true, data: response.id });
-                        // } else {
-                        //     reject({ status: false, data: response.message });
-                        // }
+                        if (response.status && response.id != undefined) {
+                            resolve({ status: true, data: response.id });
+                        } else {
+                            reject({ status: false, data: response.message });
+                        }
                     } catch (error) {
                         console.log("Error", error);
                         /**

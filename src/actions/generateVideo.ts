@@ -1,6 +1,6 @@
 "use server";
 
-import { CanvasObject, Emotion, Movement } from "@/types/did";
+import { Emotion, Movement } from "@/types/did";
 import { auth } from "@clerk/nextjs/server";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "@/libs/constants";
@@ -9,11 +9,11 @@ import { getWebhookUrl, randomString, videoImageProxyUrl } from "@/libs/utils";
 import { getFileUrl } from "./getFileUrl";
 import { addErrorReport } from "./addErrorReport";
 
-export async function generateVideo(video_id: string | null, 
+export async function generateVideo(
+    video_id: string | null, 
     apiKey: string | null,
     baseUrl: string,
     thumbnail_url: string, 
-    avatar_id: string,
     inputText?: string,
     voiceId?: string,
     audioUrl?: string,
@@ -22,7 +22,7 @@ export async function generateVideo(video_id: string | null,
     movement: Movement = "neutral",
 ) {
     auth().protect();
-    const { userId } = auth();
+    // const { userId } = auth();
 
     // TODO: If video id provided
     // TODO: check exist
