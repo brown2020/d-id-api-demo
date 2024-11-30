@@ -15,13 +15,13 @@ interface AvatarCardProps {
 }
 
 export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
-  const [favorite] = useState(false);
-  const [talkingPhotoName, setTalkingPhotoName] = useState("");
-  const [project, setProject] = useState("");
-  const [voiceId, setVoiceId] = useState("");
-  const [previewImageUrl, setPreviewImageUrl] = useState("");
-  const [isDirty, setIsDirty] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // const [favorite] = useState(false);
+  // const [talkingPhotoName, setTalkingPhotoName] = useState("");
+  // const [project, setProject] = useState("");
+  // const [voiceId, setVoiceId] = useState("");
+  // const [previewImageUrl, setPreviewImageUrl] = useState("");
+  // const [isDirty, setIsDirty] = useState(false);
+  // const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uid = useAuthStore((state) => state.uid);
 
   const toggleFavorite = async () => {

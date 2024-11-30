@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "@/firebase/firebaseClient";
 import { Timestamp, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { create } from "zustand";
@@ -63,10 +64,14 @@ async function updateUserDetailsInFirestore(
   if (uid) {
     const userRef = doc(db, `users/${uid}`);
     console.log("Updating auth details in Firestore:", details);
+
+    // Sanitize details to remove invalid data
+    const sanitizedDetails = sanitizeFirestoreData(details);
+
     try {
       await setDoc(
         userRef,
-        { ...details, lastSignIn: serverTimestamp() },
+        { ...sanitizedDetails, lastSignIn: serverTimestamp() },
         { merge: true }
       );
       console.log("Auth details updated successfully in Firestore.");
@@ -74,4 +79,17 @@ async function updateUserDetailsInFirestore(
       console.error("Error updating auth details in Firestore:", error);
     }
   }
+}
+
+// Helper function to sanitize Firestore data
+function sanitizeFirestoreData(data: Partial<AuthState>): Record<string, any> {
+  const sanitizedData: Record<string, any> = {};
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (typeof value !== "function" && value !== undefined) {
+      sanitizedData[key] = value;
+    }
+  });
+
+  return sanitizedData;
 }

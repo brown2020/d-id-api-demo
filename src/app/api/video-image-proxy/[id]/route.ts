@@ -4,9 +4,9 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // Correctly handle params as a Promise
 ) {
-  const { id } = params;
+  const { id } = await params; // Await the resolved params object
 
   // Extract the Firestore document ID (remove .png extension)
   const docId = id.replace(".png", "");
@@ -21,11 +21,11 @@ export async function GET(
 
   const data = docSnap.data();
 
-  if (!data || !data?.thumbnail_url) {
+  if (!data || !data.thumbnail_url) {
     return NextResponse.json({ error: "Image URL not found" }, { status: 404 });
   }
 
-  const imageUrl = data?.thumbnail_url;
+  const imageUrl = data.thumbnail_url;
 
   try {
     const response = await fetch(imageUrl);

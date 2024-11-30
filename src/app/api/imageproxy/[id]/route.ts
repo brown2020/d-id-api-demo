@@ -4,9 +4,9 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // Note the change to Promise<{ id: string }>
 ) {
-  const { id } = params;
+  const { id } = await params; // Await the params Promise
 
   // Extract the Firestore document ID (remove .png extension)
   const docId = id.replace(".png", "");

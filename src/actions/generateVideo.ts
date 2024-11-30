@@ -21,7 +21,7 @@ export async function generateVideo(
   emotion: Emotion = "neutral",
   movement: Movement = "neutral"
 ) {
-  auth().protect();
+  await auth.protect();
   // const { userId } = auth();
 
   // TODO: If video id provided

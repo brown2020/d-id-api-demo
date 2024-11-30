@@ -25,7 +25,7 @@ export async function generateDIDVideo(
   emotion: Emotion = "neutral",
   movement: Movement = "neutral"
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
-  auth().protect();
+  await auth.protect();
 
   if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
     apiKey = process.env.D_ID_API_KEY;
