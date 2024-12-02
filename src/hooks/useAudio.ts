@@ -2,14 +2,17 @@ import { findAudio } from "@/actions/findAudio";
 import { getAudioList } from "@/actions/getAudioList";
 import useProfileStore from "@/zustand/useProfileStore";
 import { Voice } from "elevenlabs/api";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 export const useAudio = () => {
-    const profile = useProfileStore((state) => state.profile);
+    const {profile, voices, fetchVoices } = useProfileStore();
 
-    const [voiceList, setVoiceList] = useState<Voice[]>([]);
     const [isFetching, setIsFetching] = useState(false);
+
+    const voiceList = useMemo(() => {
+        return voices == null ? [] : voices;
+    }, [voices])
 
     const findVoice = async (voiceId: string) => {
         // Check voice list already have voice
@@ -37,20 +40,8 @@ export const useAudio = () => {
     const loadAudioList = useCallback(async () => {
         if (profile.elevenlabs_api_key !== null) {
             setIsFetching(true);
-            const audioList = await getAudioList(profile.elevenlabs_api_key);
+            await fetchVoices();
             setIsFetching(false);
-            if ("error" in audioList && audioList.error) {
-                console.error("Error fetching audio list: ", audioList.error);
-                toast.error(audioList.error);
-                return;
-            }
-
-            if (audioList.status && Array.isArray(audioList.voices)) {
-                setVoiceList(audioList.voices);
-            } else {
-                setVoiceList([]);
-            }
-
         }
     }, [profile.elevenlabs_api_key])
 
