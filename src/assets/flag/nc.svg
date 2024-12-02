@@ -2,8 +2,8 @@
   <path fill="#009543" d="M0 0h640v480H0z"/>
   <path fill="#ed4135" d="M0 0h640v320H0z"/>
   <path fill="#0035ad" d="M0 0h640v160H0z"/>
-  <circle cx="240" cy="240" r="157.3" fill="#fae600" stroke="#000" stroke-width="5.3"/>
-  <path stroke="#000" stroke-width="6.4" d="M213.3 263.5h53.3M213.3 224h53.3M240 83.2V352"/>
+  <circle cx="240" cy="240" r="157.3" fill="#fae600" stroke="#000" strokeWidth="5.3"/>
+  <path stroke="#000" strokeWidth="6.4" d="M213.3 263.5h53.3M213.3 224h53.3M240 83.2V352"/>
   <path fill="#000001" d="M176.6 384.4c64.2 26.3 124.4 1.7 124.4 1.7s-22.7-24.6-34.3-34.2c-11.4-9.4-44.8-9-56.2 0a488.7 488.7 0 0 0-33.9 32.5"/>
   <ellipse cx="240" cy="312.5" fill="#000001" rx="17.6" ry="25.6"/>
   <ellipse cx="240" cy="243.7" fill="#000001" rx="21.3" ry="13.5"/>

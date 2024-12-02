@@ -182,13 +182,13 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                             onDrop={handleDrop}
                         >
                             {/* {previewImageUrl} */}
-                            <Image
+                            {previewImageUrl && <Image
                                 src={previewImageUrl}
                                 alt="Avatar Image"
                                 width={512}
                                 height={512}
                                 className="absolute inset-0 h-full w-full object-cover"
-                            />
+                            />}
                             <button onClick={() => { if (fileInputRef.current) fileInputRef.current.click() }} className="absolute bg-white text-gray-500 p-2 rounded-full bottom-3 right-3 shadow-lg">
                                 <ImageIcon size={20} />
                             </button>
@@ -232,7 +232,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                                 maxLength: { value: 50, message: "Too long name." }
                                             }}
                                             render={({ field }) => (
-                                                <input {...field} className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow" placeholder="Type name..." />
+                                                <input className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow" placeholder="Type name..." />
                                             )}
                                         />
                                         <p className="text-red-500 text-sm"><ErrorMessage errors={formState.errors} name="name" /></p>
@@ -247,7 +247,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                             name="voiceId"
                                             render={({ field }) => (
                                                 !fetchingAudio ?
-                                                    <Select value={voiceValue} onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur(); }} options={options}
+                                                    <Select value={voiceValue} onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur();  }} options={options}
                                                         components={{
                                                             Option: CustomAudioOption, Control: ({ children, ...props }: ControlProps<Voice, false>) => {
                                                                 return (

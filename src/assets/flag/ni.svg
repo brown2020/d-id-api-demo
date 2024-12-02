@@ -43,7 +43,7 @@
     <path fill="#fff" d="m500 226.4-31.5 54.5-15.4 26.7h93.8l-14.7-25.4z"/>
     <g id="ni-e">
       <g id="ni-d">
-        <path fill="#17c0eb" stroke="#17c0eb" stroke-width=".1" d="m500 226.4-2.4 4 2.4 55 2.4-55z" opacity=".6"/>
+        <path fill="#17c0eb" stroke="#17c0eb" strokeWidth=".1" d="m500 226.4-2.4 4 2.4 55 2.4-55z" opacity=".6"/>
         <path fill="#fff" d="M500 277.5h-.1l.1 3 .1-3z"/>
       </g>
       <use xlink:href="#ni-d" width="100%" height="100%" transform="rotate(72 500 285.5)"/>

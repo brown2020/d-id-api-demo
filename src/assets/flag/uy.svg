@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="flag-icons-uy" viewBox="0 0 640 480">
   <path fill="#fff" d="M0 0h640v480H0z"/>
   <path fill="#0038a8" d="M266 53.3h374v53.4H266zm0 106.7h374v53.3H266zM0 266.7h640V320H0zm0 106.6h640v53.4H0z"/>
-  <g fill="#fcd116" stroke="#000" stroke-miterlimit="20" stroke-width=".6" transform="translate(133.3 133.3)scale(2.93333)">
+  <g fill="#fcd116" stroke="#000" stroke-miterlimit="20" strokeWidth=".6" transform="translate(133.3 133.3)scale(2.93333)">
     <g id="uy-c">
       <g id="uy-b">
         <g id="uy-a">
-          <path stroke-linecap="square" d="m-2 8.9 3 4.5c-12.4 9-4.9 14.2-13.6 17 5.4-5.2-.9-5.7 3.7-16.8"/>
+          <path strokeLinecap="square" d="m-2 8.9 3 4.5c-12.4 9-4.9 14.2-13.6 17 5.4-5.2-.9-5.7 3.7-16.8"/>
           <path fill="none" d="M-4.2 10.2c-6.8 11.2-2.4 17.4-8.4 20.3"/>
           <path d="M0 0h6L0 33-6 0h6v33"/>
         </g>

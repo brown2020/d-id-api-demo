@@ -6,10 +6,10 @@
     <path d="M0 0v120h373.3v120H320zm320 0H160v280H0v-40z"/>
   </clipPath>
   <path fill="#012169" d="M0 0h640v480H0z"/>
-  <path stroke="#fff" stroke-width="50" d="m0 0 320 240m0-240L0 240"/>
-  <path stroke="#c8102e" stroke-width="30" d="m0 0 320 240m0-240L0 240" clip-path="url(#ai-a)"/>
-  <path stroke="#fff" stroke-width="75" d="M160 0v280M0 120h373.3"/>
-  <path stroke="#c8102e" stroke-width="50" d="M160 0v280M0 120h373.3"/>
+  <path stroke="#fff" strokeWidth="50" d="m0 0 320 240m0-240L0 240"/>
+  <path stroke="#c8102e" strokeWidth="30" d="m0 0 320 240m0-240L0 240" clip-path="url(#ai-a)"/>
+  <path stroke="#fff" strokeWidth="75" d="M160 0v280M0 120h373.3"/>
+  <path stroke="#c8102e" strokeWidth="50" d="M160 0v280M0 120h373.3"/>
   <path fill="#012169" d="M0 240h320V0h106.7v320H0z"/>
   <path fill="#fff" d="M424 191.8c0 90.4 9.7 121.5 29.3 142.5a179.4 179.4 0 0 0 35 30 179.7 179.7 0 0 0 35-30c19.5-21 29.3-52.1 29.3-142.5-14.2 6.5-22.3 9.7-34 9.5a78.4 78.4 0 0 1-30.3-9.5 78.4 78.4 0 0 1-30.3 9.5c-11.7.2-19.8-3-34-9.5"/>
   <g transform="matrix(1.96 0 0 2.002 -40.8 62.9)">
