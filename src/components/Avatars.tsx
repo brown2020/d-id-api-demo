@@ -57,6 +57,7 @@ export default function Avatars() {
   };
 
   useEffect(() => {
+    if(!uid) return;
     const personalTalkingPhotosCollection = query(
       collection(db, "didTalkingPhotos"),
       where('type', '==', AVATAR_TYPE_PERSONAL),

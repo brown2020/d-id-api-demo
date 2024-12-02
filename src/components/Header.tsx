@@ -37,12 +37,13 @@ export default function Header() {
   const [processing, setProcessing] = useState(true);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
-  const profile = useProfileStore((state) => state.profile);
+  // const profile = useProfileStore((state) => state.profile);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   useInitializeStores();
 
   useEffect(() => {
+    if(!uid) return;
     setProcessing(true);
     const notificationCollection = query(
       collection(db, NOTIFICATION_COLLECTION),
@@ -71,12 +72,8 @@ export default function Header() {
   }, [uid]);
 
   useEffect(() => {
-    console.log("notifications", notifications);
-    console.log("profile", profile);
-  }, [notifications, profile])
-
-  useEffect(() => {
     const syncAuthState = async () => {
+      if(user === undefined) return;
       if (isSignedIn && user) {
         try {
           const token = await getToken({ template: "integration_firebase" });
