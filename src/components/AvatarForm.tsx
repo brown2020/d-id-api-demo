@@ -44,19 +44,12 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     });
     const [processing, setProcessing] = useState<boolean>(false);
     const [avatarId, setAvatarId] = useState<string>('');
-    const [searchAudioValue, setSearchAudioValue] = useState<string>('');
-    const [audioOptions, setAudioOptions] = useState<Voice[]>(options);
-
     const uid = useAuthStore((state) => state.uid);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setDragging(true);
     };
-
-    useEffect(() => {
-        setAudioOptions(options);
-    }, [options])
 
     const handleDragLeave = () => {
         setDragging(false);
@@ -115,7 +108,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
         return options.find((audio) => audio.voice_id === voiceId);
     }, [voiceId, options]);
     const voiceValue = useMemo(() => {
-        return audioOptions.find((option) => option.voice_id === voiceId);
+        return options.find((option) => option.voice_id === voiceId);
     }, [voiceId, options]);
 
     const createNewTalkingPhoto = async () => {
@@ -175,15 +168,9 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             console.log(e);
         }
     }
-    
-    const getSearchAudioValue = (value: string) => {
-        console.log(value);
-        setSearchAudioValue(value);
-        const filteredOptions = options.filter((option) =>
-            option.name?.toLowerCase().includes(searchAudioValue.toLowerCase())
-        );
-        setAudioOptions(filteredOptions);
-        console.log(filteredOptions);
+
+    const customFilterOption = (option: any, input: string) => {
+        return option.data.name.toLowerCase().includes(input.toLowerCase());
     };
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -263,13 +250,8 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                             control={control}
                                             name="voiceId"
                                             render={({ field }) => (
-                                                !fetchingAudio ?
-                                                    <Select
-                                                        // inputValue={searchAudioValue}
-                                                        onInputChange={(e) => {getSearchAudioValue(e)}}
-                                                        value={voiceValue}
-                                                        onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur(); }} 
-                                                        options={audioOptions}
+                                                !fetchingAudio ?    
+                                                    <Select value={voiceValue} onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur();  }} options={options} filterOption={customFilterOption}
                                                         components={{
                                                             Option: CustomAudioOption, Control: ({ children, ...props }: ControlProps<Voice, false>) => {
                                                                 return (
@@ -302,7 +284,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                             <button disabled={processing} onClick={cancelEdit} type="button" className="disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
                                 Cancel
                             </button>
-                            {!create &&
+                            { !create &&
                                 <button disabled={processing} onClick={deleteAvatar} type="button" className="sm:mr-3 disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex bg-red-600 w-full justify-center rounded-md  px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-white hover:bg-red-400 sm:mt-0 sm:w-auto">
                                     Delete
                                 </button>
