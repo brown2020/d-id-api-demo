@@ -186,6 +186,21 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
         console.log(filteredOptions);
     };
 
+    const customFilterOption = (option: any, input: string) => {
+
+        if(input === '') return true;
+        else{
+            if(option.data.name?.toLowerCase().includes(input.toLowerCase())){
+                return true;
+            }else if(option.data.labels?.accent?.toLowerCase().includes(input.toLowerCase())){
+                return true;
+            }else if(option.data.fine_tuning?.language?.toLowerCase().includes(input.toLowerCase())){
+                return true;
+            }
+        }
+        return false;
+    };
+
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     return <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
@@ -265,11 +280,10 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                             render={({ field }) => (
                                                 !fetchingAudio ?
                                                     <Select
-                                                        // inputValue={searchAudioValue}
-                                                        onInputChange={(e) => {getSearchAudioValue(e)}}
                                                         value={voiceValue}
                                                         onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur(); }} 
                                                         options={audioOptions}
+                                                        filterOption={customFilterOption}
                                                         components={{
                                                             Option: CustomAudioOption, Control: ({ children, ...props }: ControlProps<Voice, false>) => {
                                                                 return (
