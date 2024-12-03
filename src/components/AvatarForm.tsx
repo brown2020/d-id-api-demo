@@ -173,7 +173,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             console.log(e);
         }
     }
-    const customFilterOption = (option: any, input: string) => {
+    const customFilterOption = (option: {data: Voice}, input: string) => {
 
         if(input === '') return true;
         else{
@@ -250,7 +250,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                                 minLength: { value: 3, message: "Too short name." },
                                                 maxLength: { value: 50, message: "Too long name." }
                                             }}
-                                            render={({ field }) => (
+                                            render={() => (
                                                 <input className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow" placeholder="Type name..." />
                                             )}
                                         />

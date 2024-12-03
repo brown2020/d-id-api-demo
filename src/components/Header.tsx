@@ -5,7 +5,7 @@ import { NOTIFICATION_COLLECTION, NOTIFICATION_STATUS } from "@/libs/constants";
 import { NotificationDetail } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
-import useProfileStore from "@/zustand/useProfileStore";
+// import useProfileStore from "@/zustand/useProfileStore";
 import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover';
 import Image from "next/image";
 import {

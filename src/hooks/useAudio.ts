@@ -1,7 +1,5 @@
 import { findAudio } from "@/actions/findAudio";
-import { getAudioList } from "@/actions/getAudioList";
 import useProfileStore from "@/zustand/useProfileStore";
-import { Voice } from "elevenlabs/api";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
