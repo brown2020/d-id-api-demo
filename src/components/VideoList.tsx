@@ -25,6 +25,7 @@ export default function VideosPage() {
     console.log("uid", uid);
 
     useEffect(() => {
+        if(!uid) return;
         setFetching(true);
         const videoCollection = query(
             collection(db, "generated-videos"),
@@ -93,7 +94,7 @@ export default function VideosPage() {
                                                             }
 
                                                             <div className="z-10 relative text-white">
-                                                                <h1 className="font-bold text-xl">{video.title}</h1>
+                                                                <h1 className="font-bold text-xl text-shadow-lg">{video.title}</h1>
                                                                 <div>
                                                                     {
                                                                         video.d_id_status == 'done' ?

@@ -29,3 +29,7 @@ html, body{
       @apply block mb-1 text-sm text-gray-600 dark:text-white;
     }
 }
+
+.text-shadow-lg{
+    text-shadow: 0 0 10px rgba(0,0,0,1);
+}
