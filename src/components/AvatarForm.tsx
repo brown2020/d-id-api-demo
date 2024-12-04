@@ -11,7 +11,7 @@ import { ref, uploadBytes } from "firebase/storage";
 import { Image as ImageIcon } from "lucide-react"
 import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, set, useForm } from "react-hook-form";
 import Select, { components, ControlProps } from 'react-select';
 import CustomAudioOption from "./CustomAudioOption";
 import { useAudio } from "@/hooks/useAudio";
@@ -48,7 +48,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const [avatarId, setAvatarId] = useState<string>('');
     const uid = useAuthStore((state) => state.uid);
     const [selectedGender, setSelectedGender] = useState<{ value: string, label: string }>({ value: 'all', label: 'All Voice' });
-    const [selectedCountry, setSelectedCountry] = useState<{ value: string, label: string }>({ value: "aa", label: "Afar" });
+    const [selectedCountry, setSelectedCountry] = useState<{ value: string, label: string }>({ value: "all", label: "All Country" });
 
     useEffect(() => {
         setAudioOptions(options);
@@ -200,10 +200,12 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const customGenderFilterOption = (e: { value: string, label: string }) => {
         setSelectedGender(e as { value: string, label: string });
         if (e.value !== 'all') {
+
             const filtered = options.filter((audio) =>
                 audio.labels?.gender?.toLowerCase() === e.value.toLowerCase()
             );
             setAudioOptions(filtered);
+            setSelectedCountry({ value: "all", label: "All Country" });
         } else {
             setAudioOptions(options);
         }
@@ -216,6 +218,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                 audio.labels?.accent?.toLowerCase() === e.value.toLowerCase()
             );
             setAudioOptions(filtered);
+            setSelectedGender({ value: "all", label: "All Voice" });
         } else {
             setAudioOptions(options);
         }
@@ -291,12 +294,12 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                     </div>
 
                                     <div className="w-full mt-4 mb-5">
-                                        <div className="flex flex-col gap-4">
+                                        <div className="flex flex-col gap-2">
                                             <label className="block text-sm font-medium text-slate-600">
                                                 Audio
                                             </label>
                                             <div className="flex gap-4">
-                                                <div className="flex-1">
+                                                <div className="flex-1 mb-2">
                                                     <Select
                                                         value={selectedGender}
                                                         onChange={(e) => customGenderFilterOption(e as { value: string; label: string })}
@@ -307,8 +310,9 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                                 <div className="flex-1">
                                                     <Select
                                                         value={selectedCountry}
-                                                        onChange={(e) => setSelectedCountry(e as { value: string; label: string })}
+                                                        onChange={(e) => customCountryFilterOption(e as { value: string; label: string })}
                                                         options={[
+                                                            { value: "all", label: "All Country" },
                                                             ...new Map(
                                                                 options.map((audio) => [
                                                                     audio.labels?.accent.toLowerCase(),
