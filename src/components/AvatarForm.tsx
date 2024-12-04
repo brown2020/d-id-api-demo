@@ -17,6 +17,7 @@ import CustomAudioOption from "./CustomAudioOption";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
 import CustomAudioOption2 from "./CustomAudioOption2";
+import { Languages } from "@/utils/Languages";
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
     create: boolean,
@@ -46,11 +47,19 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
     const [processing, setProcessing] = useState<boolean>(false);
     const [avatarId, setAvatarId] = useState<string>('');
     const uid = useAuthStore((state) => state.uid);
+    const [selectedGender, setSelectedGender] = useState<{ value: string, label: string }>({ value: 'all', label: 'All Voice' });
+    const [selectedCountry, setSelectedCountry] = useState<{ value: string, label: string }>({ value: "aa", label: "Afar" });
 
     useEffect(() => {
         setAudioOptions(options);
     }, [options])
-    
+
+    const GenderOptions = [
+        { value: 'all', label: 'All Voice' },
+        { value: 'male', label: 'Male Voice' },
+        { value: 'female', label: 'Female Voice' },
+    ]
+
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setDragging(true);
@@ -173,20 +182,44 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
             console.log(e);
         }
     }
-    const customFilterOption = (option: {data: Voice}, input: string) => {
+    const customFilterOption = (option: { data: Voice }, input: string) => {
 
-        if(input === '') return true;
-        else{
-            if(option.data.name?.toLowerCase().includes(input.toLowerCase())){
+        if (input === '') return true;
+        else {
+            if (option.data.name?.toLowerCase().includes(input.toLowerCase())) {
                 return true;
-            }else if(option.data.labels?.accent?.toLowerCase().includes(input.toLowerCase())){
+            } else if (option.data.labels?.accent?.toLowerCase().includes(input.toLowerCase())) {
                 return true;
-            }else if(option.data.fine_tuning?.language?.toLowerCase().includes(input.toLowerCase())){
+            } else if (option.data.fine_tuning?.language?.toLowerCase().includes(input.toLowerCase())) {
                 return true;
             }
         }
         return false;
     };
+
+    const customGenderFilterOption = (e: { value: string, label: string }) => {
+        setSelectedGender(e as { value: string, label: string });
+        if (e.value !== 'all') {
+            const filtered = options.filter((audio) =>
+                audio.labels?.gender?.toLowerCase() === e.value.toLowerCase()
+            );
+            setAudioOptions(filtered);
+        } else {
+            setAudioOptions(options);
+        }
+    }
+
+    const customCountryFilterOption = (e: { value: string, label: string }) => {
+        setSelectedCountry(e as { value: string, label: string });
+        if (e.value !== 'all') {
+            const filtered = options.filter((audio) =>
+                audio.labels?.accent?.toLowerCase() === e.value.toLowerCase()
+            );
+            setAudioOptions(filtered);
+        } else {
+            setAudioOptions(options);
+        }
+    }
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -258,9 +291,40 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                     </div>
 
                                     <div className="w-full mt-4 mb-5">
-                                        <label className="block mb-2 text-sm text-slate-600">
-                                            Audio
-                                        </label>
+                                        <div className="flex flex-col gap-4">
+                                            <label className="block text-sm font-medium text-slate-600">
+                                                Audio
+                                            </label>
+                                            <div className="flex gap-4">
+                                                <div className="flex-1">
+                                                    <Select
+                                                        value={selectedGender}
+                                                        onChange={(e) => customGenderFilterOption(e as { value: string; label: string })}
+                                                        options={GenderOptions}
+                                                        placeholder="Select Gender"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <Select
+                                                        value={selectedCountry}
+                                                        onChange={(e) => setSelectedCountry(e as { value: string; label: string })}
+                                                        options={[
+                                                            ...new Map(
+                                                                options.map((audio) => [
+                                                                    audio.labels?.accent.toLowerCase(),
+                                                                    {
+                                                                        value: audio.labels?.accent.toLowerCase() || '',
+                                                                        label: audio.labels?.accent || '',
+                                                                    },
+                                                                ]),
+                                                            ).values(),
+                                                        ]}
+                                                        placeholder="Select Language"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <Controller
                                             control={control}
                                             name="voiceId"
@@ -268,7 +332,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                                 !fetchingAudio ?
                                                     <Select
                                                         value={voiceValue}
-                                                        onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur(); }} 
+                                                        onChange={(e) => { setValue('voiceId', (e as Voice)?.voice_id); field.onBlur(); }}
                                                         options={audioOptions}
                                                         filterOption={customFilterOption}
                                                         components={{
@@ -303,7 +367,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                             <button disabled={processing} onClick={cancelEdit} type="button" className="disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
                                 Cancel
                             </button>
-                            { !create &&
+                            {!create &&
                                 <button disabled={processing} onClick={deleteAvatar} type="button" className="sm:mr-3 disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex bg-red-600 w-full justify-center rounded-md  px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-white hover:bg-red-400 sm:mt-0 sm:w-auto">
                                     Delete
                                 </button>
