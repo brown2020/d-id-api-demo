@@ -53,11 +53,24 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
         setAudioOptions(options);
     }, [options])
 
-    const GenderOptions = [
+    const genderOptions = [
         { value: 'all', label: 'All Voice' },
         { value: 'male', label: 'Male Voice' },
         { value: 'female', label: 'Female Voice' },
     ]
+
+    const countryOptions = [
+        { value: "all", label: "All Country" },
+        ...new Map(
+            options.map((audio) => [
+                audio.labels?.accent.toLowerCase(),
+                {
+                    value: audio.labels?.accent.toLowerCase() || '',
+                    label: audio.labels?.accent || '',
+                },
+            ]),
+        ).values(),
+    ];
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -196,32 +209,35 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
         return false;
     };
 
-    const customGenderFilterOption = (e: { value: string, label: string }) => {
-        setSelectedGender(e as { value: string, label: string });
-        if (e.value !== 'all') {
+    const applyFilters = (gender: string, country: string) => {
+        let filteredOptions = options;
 
-            const filtered = options.filter((audio) =>
-                audio.labels?.gender?.toLowerCase() === e.value.toLowerCase()
+        if (gender !== 'all') {
+            filteredOptions = filteredOptions.filter(
+                (audio) => audio.labels?.gender?.toLowerCase() === gender.toLowerCase()
             );
-            setAudioOptions(filtered);
-            setSelectedCountry({ value: "all", label: "All Country" });
-        } else {
-            setAudioOptions(options);
         }
-    }
 
-    const customCountryFilterOption = (e: { value: string, label: string }) => {
-        setSelectedCountry(e as { value: string, label: string });
-        if (e.value !== 'all') {
-            const filtered = options.filter((audio) =>
-                audio.labels?.accent?.toLowerCase() === e.value.toLowerCase()
+        if (country !== 'all') {
+            filteredOptions = filteredOptions.filter(
+                (audio) => audio.labels?.accent?.toLowerCase() === country.toLowerCase()
             );
-            setAudioOptions(filtered);
-            setSelectedGender({ value: "all", label: "All Voice" });
-        } else {
-            setAudioOptions(options);
         }
-    }
+
+        setAudioOptions(filteredOptions);
+    };
+
+    const customGenderFilterOption = (e: { value: string; label: string }) => {
+        const gender = e.value;
+        setSelectedGender(e);
+        applyFilters(gender, selectedCountry.value);
+    };
+
+    const customCountryFilterOption = (e: { value: string; label: string }) => {
+        const country = e.value;
+        setSelectedCountry(e);
+        applyFilters(selectedGender.value, country);
+    };
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -302,7 +318,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                                     <Select
                                                         value={selectedGender}
                                                         onChange={(e) => customGenderFilterOption(e as { value: string; label: string })}
-                                                        options={GenderOptions}
+                                                        options={genderOptions}
                                                         placeholder="Select Gender"
                                                     />
                                                 </div>
@@ -310,18 +326,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
                                                     <Select
                                                         value={selectedCountry}
                                                         onChange={(e) => customCountryFilterOption(e as { value: string; label: string })}
-                                                        options={[
-                                                            { value: "all", label: "All Country" },
-                                                            ...new Map(
-                                                                options.map((audio) => [
-                                                                    audio.labels?.accent.toLowerCase(),
-                                                                    {
-                                                                        value: audio.labels?.accent.toLowerCase() || '',
-                                                                        label: audio.labels?.accent || '',
-                                                                    },
-                                                                ]),
-                                                            ).values(),
-                                                        ]}
+                                                        options={countryOptions}
                                                         placeholder="Select Language"
                                                     />
                                                 </div>
