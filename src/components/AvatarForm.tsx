@@ -11,13 +11,12 @@ import { ref, uploadBytes } from "firebase/storage";
 import { Image as ImageIcon } from "lucide-react"
 import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, set, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import Select, { components, ControlProps } from 'react-select';
 import CustomAudioOption from "./CustomAudioOption";
 import { useAudio } from "@/hooks/useAudio";
 import { Voice } from "elevenlabs/api";
 import CustomAudioOption2 from "./CustomAudioOption2";
-import { Languages } from "@/utils/Languages";
 
 export default function AvatarForm({ submit, create, avatarDetail }: {
     create: boolean,
