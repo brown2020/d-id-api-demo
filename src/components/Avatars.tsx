@@ -10,7 +10,7 @@ import {
   where,
 } from "firebase/firestore";
 import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
-import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
+import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE, DOCUMENT_COLLECTION } from "@/libs/constants";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import Model from "./Model";
 import AvatarForm from "./AvatarForm";
@@ -59,7 +59,7 @@ export default function Avatars() {
   useEffect(() => {
     if(!uid) return;
     const personalTalkingPhotosCollection = query(
-      collection(db, "didTalkingPhotos"),
+      collection(db, DOCUMENT_COLLECTION),
       where('type', '==', AVATAR_TYPE_PERSONAL),
       where('owner', '==', uid)
     );
@@ -74,7 +74,7 @@ export default function Avatars() {
     );
 
     const templateTalkingPhotosCollection = query(
-      collection(db, "didTalkingPhotos"),
+      collection(db, DOCUMENT_COLLECTION),
       where('type', '==', AVATAR_TYPE_TEMPLATE)
     );
     const unsubscribeTemplateTalkingPhotos = onSnapshot(

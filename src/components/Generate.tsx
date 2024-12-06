@@ -13,6 +13,7 @@ import TextareaAutosize from "react-textarea-autosize";
 // import { getApiBaseUrl } from "@/libs/utils";
 // import { generateVideo } from "@/actions/generateVideo";
 import { DIDTalkingPhoto } from "@/types/did";
+import { DOCUMENT_COLLECTION } from "@/libs/constants";
 
 export default function Generate() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function Generate() {
 
       try {
         console.log("Fetching details for selectedTalkingPhoto:", selectedId);
-        const docRef = doc(db, "didTalkingPhotos", selectedId);
+        const docRef = doc(db, DOCUMENT_COLLECTION, selectedId);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {

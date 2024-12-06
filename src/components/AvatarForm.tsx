@@ -152,7 +152,7 @@ export default function AvatarForm({ submit, create, avatarDetail }: {
         };
 
         // Save the new talking photo to Firestore
-        const docRef = doc(db, "didTalkingPhotos", newPhotoId);
+        const docRef = doc(db, DOCUMENT_COLLECTION, newPhotoId);
 
         // Ensure the document is created only if it doesn't exist already
         const docSnap = await getDoc(docRef);

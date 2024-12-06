@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
+import { DOCUMENT_COLLECTION } from "@/libs/constants";
 
 type PreviousVideosProps = {
   talkingPhotoId: string;
@@ -24,7 +25,7 @@ export default function PreviousVideos({
     // Correctly reference the subcollection under didTalkingPhotos
     const videosCollectionRef = collection(
       db,
-      `didTalkingPhotos/${talkingPhotoId}/videos`
+      `${DOCUMENT_COLLECTION}/${talkingPhotoId}/videos`
     );
     const videosQuery = query(videosCollectionRef);
 

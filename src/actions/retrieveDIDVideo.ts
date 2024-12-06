@@ -3,6 +3,7 @@
 import axios from "axios";
 import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
 import { auth } from "@clerk/nextjs/server";
+import { DOCUMENT_COLLECTION } from "@/libs/constants";
 
 interface RetrieveVideoResponse {
   status: "processing" | "completed" | "failed";
@@ -71,7 +72,7 @@ export async function retrieveDIDVideo(
 
         // Save the signed URL to Firestore
         const docRef = adminDb
-          .collection("didTalkingPhotos")
+          .collection(DOCUMENT_COLLECTION)
           .doc(talkingPhotoId)
           .collection("videos")
           .doc(talkId);

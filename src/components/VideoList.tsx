@@ -7,7 +7,7 @@ import { Loader } from "./Loader";
 import PlayVideoIcon from '@/assets/images/play-video-1.png'
 import Image from "next/image";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { AVATAR_TYPE_PERSONAL } from "@/libs/constants";
+import { AVATAR_TYPE_PERSONAL, VIDEO_COLLECTION } from "@/libs/constants";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
@@ -28,7 +28,7 @@ export default function VideosPage() {
         if(!uid) return;
         setFetching(true);
         const videoCollection = query(
-            collection(db, "generated-videos"),
+            collection(db, VIDEO_COLLECTION),
             where('type', '==', AVATAR_TYPE_PERSONAL),
             where('owner', '==', uid),
         );
@@ -54,7 +54,7 @@ export default function VideosPage() {
     }, [uid])
 
     function videoDeleteHandler(id: string) {
-        deleteDoc(doc(db, "generated-videos", id));
+        deleteDoc(doc(db, VIDEO_COLLECTION, id));
         setModalOpen(false);
     }
 
