@@ -19,7 +19,9 @@ export default function DiagnosticPage() {
     origin: "",
   });
 
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -156,8 +158,8 @@ export default function DiagnosticPage() {
               <div>
                 <h3 className="font-bold">Base URL mismatch</h3>
                 <p className="mb-2">
-                  Your stored base URL doesn't match your current URL. This may
-                  cause issues with image proxying.
+                  Your stored base URL doesn&apos;t match your current URL. This
+                  may cause issues with image proxying.
                 </p>
                 <button
                   onClick={() => {
@@ -244,7 +246,7 @@ export default function DiagnosticPage() {
               <h3 className="font-bold">Error Generating Video</h3>
               <p className="text-sm">
                 The most common cause is that D-ID API cannot access your images
-                because you're using localhost instead of ngrok.
+                because you&apos;re using localhost instead of ngrok.
               </p>
               <p className="text-sm mt-1 font-bold">
                 Solution: Access the app through your ngrok URL, not localhost.
@@ -254,7 +256,7 @@ export default function DiagnosticPage() {
             <div className="p-3 border rounded-lg">
               <h3 className="font-bold">Image Proxy Not Working</h3>
               <p className="text-sm">
-                If your images aren't loading through the proxy, check the
+                If your images aren&apos;t loading through the proxy, check the
                 browser console for errors.
               </p>
               <p className="text-sm mt-1 font-bold">
@@ -266,8 +268,8 @@ export default function DiagnosticPage() {
             <div className="p-3 border rounded-lg">
               <h3 className="font-bold">API Key Errors</h3>
               <p className="text-sm">
-                Make sure you've entered your D-ID and ElevenLabs API keys in
-                your profile.
+                Make sure you&apos;ve entered your D-ID and ElevenLabs API keys
+                in your profile.
               </p>
               <p className="text-sm mt-1 font-bold">
                 Solution: Go to your profile settings and add your API keys.

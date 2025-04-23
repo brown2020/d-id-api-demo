@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
+import Image from "next/image";
 
 export default function TestImageProxy() {
   const [avatarIds, setAvatarIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(
+    null
+  );
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [directFetchResult, setDirectFetchResult] = useState<string | null>(
     null
@@ -177,10 +180,13 @@ export default function TestImageProxy() {
 
                 <div className="mb-4">
                   <h3 className="font-medium mb-1">Via Image Proxy:</h3>
-                  <img
+                  <Image
                     src={imageProxyUrl(baseUrl, `${id}.png`)}
                     alt={`Avatar ${id} via proxy`}
                     className="max-w-full h-auto border"
+                    width={400}
+                    height={400}
+                    unoptimized={true}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src =

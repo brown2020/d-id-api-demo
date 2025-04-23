@@ -59,7 +59,7 @@ export default function NgrokReminder() {
         <div className="ml-3">
           <p className="text-sm text-amber-700">
             <strong>Important:</strong> The D-ID API requires a publicly
-            accessible URL, but you're currently using {ngrokInfo.origin}.
+            accessible URL, but you&apos;re currently using {ngrokInfo.origin}.
             <br />
             Please run ngrok with:{" "}
             <code className="bg-amber-50 px-1 rounded">ngrok http 3000</code>,

@@ -1,16 +1,45 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getApiBaseUrl, imageProxyUrl, videoImageProxyUrl } from "@/libs/utils";
+import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
 import { DIDTalkingPhoto } from "@/types/did";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import { DOCUMENT_COLLECTION } from "@/libs/constants";
+
+interface TestResult {
+  avatar: string;
+  id: string;
+  originalUrl?: {
+    url: string;
+    success: boolean;
+    status?: number;
+    statusText?: string;
+    contentType?: string | null;
+    timeMs?: number;
+    error?: string;
+  };
+  proxyUrl?: {
+    url: string;
+    success: boolean;
+    status?: number;
+    statusText?: string;
+    contentType?: string | null;
+    timeMs?: number;
+    error?: string;
+  };
+  serverTest?: {
+    success: boolean;
+    contentType?: string | null;
+    error?: string;
+  };
+  error?: string;
+}
 
 export default function TestImageAccess() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<any[]>([]);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [avatars, setAvatars] = useState<DIDTalkingPhoto[]>([]);
   const [testInProgress, setTestInProgress] = useState(false);
 
@@ -169,9 +198,9 @@ export default function TestImageAccess() {
                       <div className="bg-gray-50 p-3 rounded">
                         <h4 className="font-semibold">Original Image URL</h4>
                         <p className="text-xs mt-1 font-mono break-all">
-                          {result.originalUrl.url}
+                          {result.originalUrl?.url}
                         </p>
-                        {result.originalUrl.success ? (
+                        {result.originalUrl?.success ? (
                           <p className="mt-2 text-green-600">
                             ✓ Accessible ({result.originalUrl.timeMs}ms) -{" "}
                             {result.originalUrl.contentType}
@@ -179,8 +208,8 @@ export default function TestImageAccess() {
                         ) : (
                           <p className="mt-2 text-red-600">
                             ✗ Not accessible -{" "}
-                            {result.originalUrl.error ||
-                              `${result.originalUrl.status} ${result.originalUrl.statusText}`}
+                            {result.originalUrl?.error ||
+                              `${result.originalUrl?.status} ${result.originalUrl?.statusText}`}
                           </p>
                         )}
                       </div>
@@ -188,9 +217,9 @@ export default function TestImageAccess() {
                       <div className="bg-gray-50 p-3 rounded">
                         <h4 className="font-semibold">Proxy Image URL</h4>
                         <p className="text-xs mt-1 font-mono break-all">
-                          {result.proxyUrl.url}
+                          {result.proxyUrl?.url}
                         </p>
-                        {result.proxyUrl.success ? (
+                        {result.proxyUrl?.success ? (
                           <p className="mt-2 text-green-600">
                             ✓ Accessible from browser ({result.proxyUrl.timeMs}
                             ms) - {result.proxyUrl.contentType}
@@ -198,15 +227,15 @@ export default function TestImageAccess() {
                         ) : (
                           <p className="mt-2 text-red-600">
                             ✗ Not accessible from browser -{" "}
-                            {result.proxyUrl.error ||
-                              `${result.proxyUrl.status} ${result.proxyUrl.statusText}`}
+                            {result.proxyUrl?.error ||
+                              `${result.proxyUrl?.status} ${result.proxyUrl?.statusText}`}
                           </p>
                         )}
                       </div>
 
                       <div className="bg-gray-50 p-3 rounded">
                         <h4 className="font-semibold">Server-Side Test</h4>
-                        {result.serverTest.success ? (
+                        {result.serverTest?.success ? (
                           <p className="mt-2 text-green-600">
                             ✓ Accessible from server -{" "}
                             {result.serverTest.contentType}
@@ -214,7 +243,7 @@ export default function TestImageAccess() {
                         ) : (
                           <p className="mt-2 text-red-600">
                             ✗ Not accessible from server -{" "}
-                            {result.serverTest.error}
+                            {result.serverTest?.error}
                           </p>
                         )}
                       </div>
@@ -231,8 +260,8 @@ export default function TestImageAccess() {
                     server, you likely need to use ngrok.
                   </li>
                   <li>
-                    If proxy URLs aren't accessible at all, there's an issue
-                    with your proxy implementation.
+                    If proxy URLs aren&apos;t accessible at all, there&apos;s an
+                    issue with your proxy implementation.
                   </li>
                   <li>
                     For D-ID API to work, the images must be accessible from

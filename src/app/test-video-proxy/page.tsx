@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { getApiBaseUrl, videoImageProxyUrl } from "@/libs/utils";
+import Image from "next/image";
 
 export default function TestVideoImageProxy() {
   const [videoIds, setVideoIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(
+    null
+  );
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [directFetchResult, setDirectFetchResult] = useState<string | null>(
     null
@@ -182,11 +185,15 @@ export default function TestVideoImageProxy() {
 
                   <div className="mb-4">
                     <h3 className="font-medium mb-1">Via Video Image Proxy:</h3>
-                    <img
+                    <Image
                       src={videoImageProxyUrl(baseUrl, `${id}.png`)}
                       alt={`Video ${id} via proxy`}
                       className="max-w-full h-auto border"
+                      width={400}
+                      height={400}
+                      unoptimized={true}
                       onError={(e) => {
+                        // Type assertion for the error event target
                         const target = e.target as HTMLImageElement;
                         target.src =
                           "https://placehold.co/400x400?text=Error+Loading+Image";

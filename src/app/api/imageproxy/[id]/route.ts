@@ -4,9 +4,9 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   console.log(`Image proxy request for ID: ${id}`);
 

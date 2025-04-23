@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
-import "./../assets/GeneralSans/WEB/css/general-sans.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
@@ -20,28 +19,7 @@ export default function RootLayout({
   return (
     <ClerkProvider dynamic>
       <html lang="en" className="h-full">
-        <head>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Arial&family=Helvetica&family=Permanent+Marker&family=Bilbo+Swash+Caps&family=Pacifico&family=Times+New+Roman&family=Verdana&display=swap"
-            rel="stylesheet"
-          ></link>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Georgia&family=Palatino&family=Garamond&family=Comic+Sans+MS&family=Francois+One&family=Trebuchet+MS&family=Impact&family=Lucida+Sans&display=swap"
-            rel="stylesheet"
-          ></link>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Tahoma&family=Calibri&family=Cambria&family=Consolas&family=Monaco&family=Century+Gothic&family=Futura&family=Franklin+Gothic&family=Roboto&family=Redressed&display=swap"
-            rel="stylesheet"
-          ></link>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Lora&family=Open+Sans&family=Montserrat&family=Playfair+Display&family=Quicksand&family=Oswald&family=Anton&family=Poppins&family=Raleway&family=Nunito&display=swap"
-            rel="stylesheet"
-          ></link>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&family=Archivo&family=Inter&family=Zilla+Slab&family=Cabin&family=Rubik&family=Dancing+Script&family=Great+Vibes&family=Lobster&family=Pacifico&family=Sacramento&family=Rock+Salt&family=Monoton&family=Satisfy&family=Allura&family=Chewy&display=swap"
-            rel="stylesheet"
-          ></link>
-        </head>
+        <head />
         <body className="flex flex-col h-full">
           <Header />
           <div className="flex flex-col h-full flex-1 bg-white overflow-y-auto">

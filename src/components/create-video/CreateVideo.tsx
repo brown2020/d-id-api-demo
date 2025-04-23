@@ -278,14 +278,15 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      const message =
-        "Are you sure you want to leave? Changes may not be saved.";
-      event.preventDefault();
-      event.returnValue = message;
-      return message;
+      if (processing) {
+        event.preventDefault();
+        event.returnValue =
+          "You have unsaved changes. Are you sure you want to leave?";
+        return event.returnValue;
+      }
     };
 
-    if (totalProcessesRef.current > completedProcessesRef.current) {
+    if (processing) {
       window.addEventListener("beforeunload", handleBeforeUnload);
     } else {
       window.removeEventListener("beforeunload", handleBeforeUnload);
@@ -294,7 +295,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [completedProcessesRef.current, totalProcessesRef.current]);
+  }, [processing]);
 
   const [videoCanvasDetail, setVideoCanvasDetail] = useState<{
     canvas_json: CanvasObject;
@@ -305,22 +306,25 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     };
   } | null>(null);
 
-  const handleChangeAvatar = useCallback(async (avatar: DIDTalkingPhoto) => {
-    console.log("Avatar Changed", avatar);
+  const handleChangeAvatar = useCallback(
+    async (avatar: DIDTalkingPhoto) => {
+      console.log("Avatar Changed", avatar);
 
-    setProcessing(true);
-    setSelectedAvatar(avatar);
-    setReplaceAvatarModel(false);
-    let _audio = null;
-    if (avatar.voiceId) {
-      const audio = await findVoice(avatar.voiceId);
-      if (audio.status && audio.voice) {
-        _audio = audio.voice;
+      setProcessing(true);
+      setSelectedAvatar(avatar);
+      setReplaceAvatarModel(false);
+      let _audio = null;
+      if (avatar.voiceId) {
+        const audio = await findVoice(avatar.voiceId);
+        if (audio.status && audio.voice) {
+          _audio = audio.voice;
+        }
       }
-    }
-    setAudioDetail(_audio);
-    setProcessing(false);
-  }, []);
+      setAudioDetail(_audio);
+      setProcessing(false);
+    },
+    [findVoice]
+  );
 
   useEffect(() => {
     // If video id is exist then fetch video details
@@ -370,7 +374,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         }
       });
     }
-  }, [video_id, uid, personalTalkingPhotos]);
+  }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar]);
 
   const canvasMainImage = useCallback(() => {
     if (canvas) {
@@ -801,10 +805,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
   }, [canvas, selectedAvatar]);
 
   useEffect(() => {
-    // Canvas should the rendered
-    // And if video id is exist then load canvas for first time, only after that register event
-    if (canvas && (video_id ? loadFirstTime : true)) {
-      // Attach the event listeners
+    const canvas_change = canvas;
+    if (canvas_change && !loadFirstTime) {
       canvas.on("object:added", handleObjectChange);
       canvas.on("object:modified", handleObjectChange);
       canvas.on("object:removed", handleObjectChange);
@@ -816,34 +818,10 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         canvas.off("object:removed", handleObjectChange);
       };
     }
-  }, [canvas, loadFirstTime, video_id]);
+  }, [canvas, loadFirstTime, video_id, handleObjectChange]);
 
-  useEffect(() => {
-    if (
-      uid &&
-      personalTalkingPhotos.length > 0 &&
-      canvas &&
-      canvasContainerRef.current
-    ) {
-      if (!loadFirstTime && videoCanvasDetail && video_id) {
-        console.log("Load canvas for first time");
-        loadCanvasForFirstTime();
-      } else {
-        console.log("Load canvas for other time else");
-        changeAvatarImageOnFrame();
-      }
-    }
-  }, [
-    selectedAvatar,
-    canvas,
-    videoCanvasDetail,
-    video_id,
-    uid,
-    personalTalkingPhotos,
-    canvasContainerRef,
-  ]);
-
-  const loadCanvasForFirstTime = async () => {
+  // First declare the loadCanvasForFirstTime with useCallback
+  const loadCanvasForFirstTime = useCallback(async () => {
     if (
       !loadFirstTime &&
       videoCanvasDetail &&
@@ -897,7 +875,44 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
       canvas.renderAll();
       setLoadFirstTime(true);
     }
-  };
+  }, [
+    loadFirstTime,
+    videoCanvasDetail,
+    video_id,
+    uid,
+    personalTalkingPhotos.length,
+    canvas,
+    canvasContainerRef,
+  ]);
+
+  // Then use loadCanvasForFirstTime in useEffect
+  useEffect(() => {
+    if (
+      uid &&
+      personalTalkingPhotos.length > 0 &&
+      canvas &&
+      canvasContainerRef.current
+    ) {
+      if (!loadFirstTime && videoCanvasDetail && video_id) {
+        console.log("Load canvas for first time");
+        loadCanvasForFirstTime();
+      } else {
+        console.log("Load canvas for other time else");
+        changeAvatarImageOnFrame();
+      }
+    }
+  }, [
+    selectedAvatar,
+    canvas,
+    videoCanvasDetail,
+    video_id,
+    uid,
+    personalTalkingPhotos,
+    canvasContainerRef,
+    loadFirstTime,
+    changeAvatarImageOnFrame,
+    loadCanvasForFirstTime,
+  ]);
 
   useEffect(() => {
     selectAvatarForm.handleSubmit(() => {});

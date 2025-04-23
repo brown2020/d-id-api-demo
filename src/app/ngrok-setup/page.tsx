@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getApiBaseUrl, saveNgrokUrl } from "@/libs/utils";
+import Image from "next/image";
 
 export default function NgrokSetupGuide() {
   const [ngrokUrl, setNgrokUrl] = useState("");
@@ -19,7 +20,7 @@ export default function NgrokSetupGuide() {
       // Validate URL format
       const url = new URL(ngrokUrl);
       if (!url.hostname.includes("ngrok")) {
-        setError("This doesn't appear to be a valid ngrok URL");
+        setError("This doesn&apos;t appear to be a valid ngrok URL");
         return;
       }
 
@@ -31,7 +32,7 @@ export default function NgrokSetupGuide() {
 
       // Reset saved status after 3 seconds
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
+    } catch {
       setError(
         "Invalid URL format. Please enter a complete URL starting with https://"
       );
@@ -48,8 +49,8 @@ export default function NgrokSetupGuide() {
         <p className="text-blue-700">
           <strong>Why ngrok is required:</strong> The D-ID API needs to access
           your image files via publicly accessible URLs. When running locally,
-          your development server isn't accessible from the internet, which is
-          why ngrok is necessary.
+          your development server isn&apos;t accessible from the internet, which
+          is why ngrok is necessary.
         </p>
       </div>
 
@@ -69,7 +70,9 @@ export default function NgrokSetupGuide() {
               </a>{" "}
               and follow the installation instructions for your OS.
             </li>
-            <li>Sign up for a free ngrok account if you don't have one.</li>
+            <li>
+              Sign up for a free ngrok account if you don&apos;t have one.
+            </li>
             <li>
               Connect your account by running the command shown in your ngrok
               dashboard.
@@ -109,7 +112,7 @@ export default function NgrokSetupGuide() {
             </li>
             <li>
               You should see a screen showing the ngrok tunnel. Look for the
-              "Forwarding" line.
+              &quot;Forwarding&quot; line.
             </li>
             <li>
               Copy the https URL (e.g.,{" "}
@@ -120,10 +123,12 @@ export default function NgrokSetupGuide() {
             </li>
           </ol>
           <div className="border p-4 rounded-lg mt-4">
-            <img
+            <Image
               src="/ngrok-example.png"
               alt="ngrok terminal example"
               className="w-full rounded border"
+              width={800}
+              height={400}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src =
@@ -132,7 +137,7 @@ export default function NgrokSetupGuide() {
             />
             <p className="text-sm text-gray-600 mt-2">
               Example of ngrok terminal output. Copy the https URL marked as
-              "Forwarding".
+              &quot;Forwarding&quot;.
             </p>
           </div>
         </section>
@@ -214,7 +219,7 @@ export default function NgrokSetupGuide() {
               <strong>new URL each time</strong> you restart it.
             </li>
             <li>
-              You'll need to update the ngrok URL in this app each time you
+              You&apos;ll need to update the ngrok URL in this app each time you
               restart ngrok.
             </li>
             <li>
@@ -235,8 +240,8 @@ export default function NgrokSetupGuide() {
                 Images load in browser but not via D-ID API
               </h3>
               <p>
-                Make sure you're accessing the application through the ngrok
-                URL, not localhost.
+                Make sure you&apos;re accessing the application through the
+                ngrok URL, not localhost.
               </p>
             </div>
             <div>

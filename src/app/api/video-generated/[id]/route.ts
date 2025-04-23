@@ -12,9 +12,9 @@ import moment from "moment";
 
 export const POST = async (
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
-  const { id } = params;
+  const { id } = await params;
   console.log(`Webhook received for video ID: ${id}`);
 
   const { method, headers, url } = req;
