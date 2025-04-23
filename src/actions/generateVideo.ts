@@ -75,6 +75,32 @@ export async function generateVideo(
     const imageUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
     const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
 
+    // Check if baseUrl is localhost - this is likely to cause issues
+    if (baseUrl.includes("localhost")) {
+      console.warn(
+        "⚠️ WARNING: Using localhost URL for D-ID API! This will likely cause errors as D-ID cannot access localhost URLs."
+      );
+      console.warn(
+        "You should be accessing the application through ngrok URL, not localhost."
+      );
+    }
+
+    // Add this special diagnostic log
+    console.log("📋 DIAGNOSTIC INFO 📋");
+    console.log(`- Base URL: ${baseUrl}`);
+    console.log(`- Using ngrok: ${baseUrl.includes("ngrok") ? "Yes" : "No"}`);
+    console.log(`- Image URL for D-ID: ${imageUrl}`);
+    console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
+    console.log(
+      `- API Keys provided: D-ID (${apiKey ? "Yes" : "No"}), ElevenLabs (${
+        elevenlabsApiKey ? "Yes" : "No"
+      })`
+    );
+    console.log(
+      `- Script length: ${inputText ? inputText.length : 0} characters`
+    );
+    console.log("📋 END DIAGNOSTIC INFO 📋");
+
     const response = await generateDIDVideo(
       apiKey,
       imageUrl,
@@ -115,6 +141,7 @@ export async function generateVideo(
   } catch (error) {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     let errorDetails: Record<string, any> = {};
+    let errorMessage = "Unknown error occurred during video generation";
 
     // Handle known types of error
     if (error instanceof Error) {
@@ -123,15 +150,23 @@ export async function generateVideo(
         message: error.message,
         stack: error.stack || null,
       };
+      errorMessage = error.message || "Error during video generation";
     } else {
       // For unknown errors
       errorDetails = {
         message: "Unknown error occurred",
-        raw: JSON.stringify(error), // Serialize the raw error
+        raw: typeof error === "object" ? JSON.stringify(error) : String(error), // Safely serialize the error
       };
     }
 
+    console.error("Error in generateVideo:", errorMessage, errorDetails);
     await addErrorReport("generateDIDVideo", errorDetails);
+
+    return {
+      status: false,
+      message: errorMessage,
+      id,
+    };
   }
 
   return { status: false, message: "Error generating video", id };

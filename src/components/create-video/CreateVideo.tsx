@@ -35,6 +35,8 @@ import {
   Smile,
   UserRound,
   Video,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import {
   ComponentType,
@@ -71,6 +73,8 @@ import AvatarGallery from "./AvatarGallery";
 import TextBox from "./TextBox";
 import { addDraftVideo } from "@/actions/addDraftVideo";
 import { generateVideo } from "@/actions/generateVideo";
+import TextareaAutosize from "react-textarea-autosize";
+import { ErrorMessage } from "@hookform/error-message";
 
 type IconType =
   | keyof typeof icons
@@ -467,7 +471,31 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             return `Successfully fetched image`;
           },
           error: (err) => {
-            return `Error : ${err.data}`;
+            setProcessing(false);
+
+            // Ensure we have proper error data
+            console.error("Video generation error:", err);
+
+            // Parse error or provide a fallback message
+            let errorMsg = "An error occurred during video generation.";
+
+            // If we have error data in the object
+            if (err && typeof err === "object") {
+              if ("data" in err && err.data) {
+                errorMsg =
+                  typeof err.data === "string"
+                    ? err.data
+                    : JSON.stringify(err.data);
+              } else if ("message" in err && err.message) {
+                errorMsg = err.message;
+              }
+            }
+
+            // Add instructions for common issues
+            errorMsg +=
+              " Please check your ngrok setup at /ngrok-setup or test your images at /test-image-access.";
+
+            return `Error: ${errorMsg}`;
           },
         }
       );
@@ -875,89 +903,125 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     selectAvatarForm.handleSubmit(() => {});
   }, [selectAvatarForm]);
 
-  const onSubmit = writeScriptForm.handleSubmit(async () => {
-    if (!audioDetail) {
-      toast.error("Please select audio");
-      return;
-    } else if (writeScriptForm.getValues("script").length <= 3) {
-      toast.error("Please write script");
+  const handleGenerateVideo = writeScriptForm.handleSubmit(() => {
+    if (!profile.did_api_key) {
+      toast.error(
+        "D-ID API key is missing. Please add it in your profile settings."
+      );
       return;
     }
-    if (selectedAvatar && videoIdRef.current) {
-      // Check thumbnail url is generates if not then display message
-      if (!canvas) {
-        toast.error("Selected avatar is not able to generate video.");
-        return;
-      }
 
-      toast.promise(
-        // new Promise<{ status: boolean, data: string }>(async (resolve, reject) => {
-        new Promise<{ status: boolean; data: string }>(
-          async (resolve, reject) => {
-            setProcessing(true);
-            try {
-              const width = canvas.getWidth();
-              const height = canvas.getHeight();
+    if (!profile.elevenlabs_api_key && selectedAvatar?.voiceId) {
+      toast.error(
+        "ElevenLabs API key is missing, but is required for voice generation. Please add it in your profile settings."
+      );
+      return;
+    }
 
-              // Minimum required resolution (1024px)
-              const minSize = 1024;
+    if (!videoIdRef.current) {
+      toast.error("Video ID is missing. Please try again.");
+      return;
+    }
 
-              // Calculate the multiplier based on width and height
-              const widthMultiplier = width < minSize ? minSize / width : 1;
-              const heightMultiplier = height < minSize ? minSize / height : 1;
+    if (!canvas) {
+      toast.error("Canvas is not initialized. Please try again.");
+      return;
+    }
 
-              // Get the larger multiplier to ensure the image is at least 1024px in width or height
-              const multiplier = Math.min(widthMultiplier, heightMultiplier);
+    if (!selectedAvatar) {
+      toast.error("No avatar selected. Please select an avatar first.");
+      return;
+    }
 
-              const thumbnailUrl = canvas.toDataURL({
-                multiplier,
-              });
+    setProcessing(true);
+    toast.promise(
+      new Promise<{ status: boolean; data: string }>(
+        async (resolve, reject) => {
+          try {
+            const width = canvas.getWidth();
+            const height = canvas.getHeight();
 
-              const baseUrl = getApiBaseUrl() ?? window.location.origin;
-              const response = await generateVideo(
-                videoIdRef.current,
-                profile.did_api_key,
-                baseUrl,
-                thumbnailUrl,
-                writeScriptForm.getValues("script"),
-                selectedAvatar.voiceId,
-                undefined,
-                profile.elevenlabs_api_key,
-                selectAvatarForm.getValues("emotion"),
-                selectAvatarForm.getValues("movement")
-              );
+            // Minimum required resolution (1024px)
+            const minSize = 1024;
 
-              /**
-               * TODO: If status is false and id is provided then redirect it to video detail page
-               */
+            // Calculate the multiplier based on width and height
+            const widthMultiplier = width < minSize ? minSize / width : 1;
+            const heightMultiplier = height < minSize ? minSize / height : 1;
 
-              if (response.status && response.id != undefined) {
-                resolve({ status: true, data: response.id });
-              } else {
-                reject({ status: false, data: response.message });
-              }
-            } catch (error) {
-              console.log("Error", error);
-              /**
-               * TODO: Handle error
-               */
+            // Get the larger multiplier to ensure the image is at least 1024px in width or height
+            const multiplier = Math.min(widthMultiplier, heightMultiplier);
+
+            const thumbnailUrl = canvas.toDataURL({
+              multiplier,
+            });
+
+            const baseUrl = getApiBaseUrl() ?? window.location.origin;
+            const response = await generateVideo(
+              videoIdRef.current,
+              profile.did_api_key,
+              baseUrl,
+              thumbnailUrl,
+              writeScriptForm.getValues("script"),
+              selectedAvatar.voiceId,
+              undefined,
+              profile.elevenlabs_api_key,
+              selectAvatarForm.getValues("emotion"),
+              selectAvatarForm.getValues("movement")
+            );
+
+            /**
+             * TODO: If status is false and id is provided then redirect it to video detail page
+             */
+
+            if (response.status && response.id != undefined) {
+              resolve({ status: true, data: response.id });
+            } else {
+              reject({ status: false, data: response.message });
+            }
+          } catch (error) {
+            console.log("Error", error);
+            /**
+             * TODO: Handle error
+             */
+          }
+        }
+      ),
+      {
+        loading: "Requesting to generate your video...",
+        success: (result) => {
+          router.push(`/videos/${result.data}/show`);
+          // setProcessing(false);
+          return `Successfully requested, Processing your video.`;
+        },
+        error: (err) => {
+          setProcessing(false);
+
+          // Ensure we have proper error data
+          console.error("Video generation error:", err);
+
+          // Parse error or provide a fallback message
+          let errorMsg = "An error occurred during video generation.";
+
+          // If we have error data in the object
+          if (err && typeof err === "object") {
+            if ("data" in err && err.data) {
+              errorMsg =
+                typeof err.data === "string"
+                  ? err.data
+                  : JSON.stringify(err.data);
+            } else if ("message" in err && err.message) {
+              errorMsg = err.message;
             }
           }
-        ),
-        {
-          loading: "Requesting to generate your video...",
-          success: (result) => {
-            router.push(`/videos/${result.data}/show`);
-            // setProcessing(false);
-            return `Successfully requested, Processing your video.`;
-          },
-          error: (err) => {
-            setProcessing(false);
-            return `Error : ${err.data}`;
-          },
-        }
-      );
-    }
+
+          // Add instructions for common issues
+          errorMsg +=
+            " Please check your ngrok setup at /ngrok-setup or test your images at /test-image-access.";
+
+          return `Error: ${errorMsg}`;
+        },
+      }
+    );
   });
 
   const setBackgroundColor = useCallback(
@@ -1433,35 +1497,111 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
         {activeStep == "write-script" ? (
           <div className="grow bg-gray-50 rounded-lg px-4 pt-6 pb-4 h-full flex flex-col">
-            <form onSubmit={onSubmit}>
+            <form onSubmit={handleGenerateVideo}>
               <div>
                 <h3 className="text-2xl font-bold mb-2">Write Script</h3>
-              </div>
-              <div className="grow">
+                <p className="text-sm text-gray-500 mb-4">
+                  Write the script your avatar will speak. This will be
+                  converted to speech using the selected voice.
+                </p>
+
+                {/* API Key Warnings */}
+                {!profile.did_api_key && (
+                  <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
+                    <p className="text-amber-700 flex items-center gap-2">
+                      <AlertTriangle size={16} className="flex-shrink-0" />
+                      <span>
+                        <strong>Warning:</strong> D-ID API key is missing.
+                        Please add it in your{" "}
+                        <a href="/profile" className="text-blue-600 underline">
+                          profile settings
+                        </a>{" "}
+                        to generate videos.
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {!profile.elevenlabs_api_key && selectedAvatar?.voiceId && (
+                  <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
+                    <p className="text-amber-700 flex items-center gap-2">
+                      <AlertTriangle size={16} className="flex-shrink-0" />
+                      <span>
+                        <strong>Warning:</strong> ElevenLabs API key is missing.
+                        Please add it in your{" "}
+                        <a href="/profile" className="text-blue-600 underline">
+                          profile settings
+                        </a>{" "}
+                        to enable voice generation.
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {!audioDetail && (
+                  <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
+                    <p className="text-amber-700 flex items-center gap-2">
+                      <AlertTriangle size={16} className="flex-shrink-0" />
+                      <span>
+                        <strong>Warning:</strong> No voice selected. Please
+                        select an avatar with a valid voice to create a talking
+                        video.
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Script Field */}
                 <Controller
                   control={writeScriptForm.control}
                   name="script"
                   rules={{
-                    required: { message: "Required.", value: true },
+                    required: { message: "Please write a script", value: true },
+                    minLength: { value: 3, message: "Script is too short" },
                   }}
                   render={({ field }) => (
-                    <textarea
+                    <TextareaAutosize
                       {...field}
-                      id="message"
-                      rows={10}
-                      className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="Write Script..."
-                    ></textarea>
+                      minRows={5}
+                      maxRows={20}
+                      className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
+                      placeholder="Write your script here..."
+                    />
                   )}
                 />
+                <p className="text-red-500 text-sm mt-1">
+                  <ErrorMessage
+                    errors={writeScriptForm.formState.errors}
+                    name="script"
+                  />
+                </p>
               </div>
-              <div>
+
+              <div className="mt-4 flex justify-between items-center">
                 <button
-                  disabled={processing}
-                  type="submit"
-                  className="disabled:cursor-not-allowed float-end bg-gray-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center mt-4"
+                  type="button"
+                  onClick={() => {
+                    setActiveStep("select-avatar");
+                  }}
+                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-md"
                 >
-                  {processing ? "Processing..." : "Generate Video"}
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={processing || !stepOneCompeted}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:bg-gray-300 disabled:text-gray-500"
+                >
+                  {processing ? (
+                    <div className="flex items-center gap-2">
+                      <span className="animate-spin">
+                        <Loader2 size={16} />
+                      </span>
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    "Generate Video"
+                  )}
                 </button>
               </div>
             </form>

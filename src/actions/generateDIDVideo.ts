@@ -27,11 +27,87 @@ export async function generateDIDVideo(
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
   await auth.protect();
 
+  // Add these logs at the start of the function to help debug the issue
+  console.log("generateDIDVideo called with:");
+  console.log(`- Image URL: ${imageUrl}`);
+  console.log(`- Webhook URL: ${webhookUrl}`);
+  console.log(`- API Key present: ${!!apiKey}`);
+  console.log(`- ElevenLabs API Key present: ${!!elevenlabsApiKey}`);
+
   if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
     apiKey = process.env.D_ID_API_KEY;
   }
   if (!elevenlabsApiKey && process.env.ELEVENLABS_API_KEY !== undefined) {
     elevenlabsApiKey = process.env.ELEVENLABS_API_KEY;
+  }
+
+  // First, test if we can fetch the image - this helps diagnose if the issue is with image accessibility
+  try {
+    console.log("Testing if image is accessible...");
+
+    // Method 1: HEAD request (faster but less reliable)
+    try {
+      const headResponse = await fetch(imageUrl, {
+        method: "HEAD",
+        headers: { Accept: "image/*" },
+      });
+
+      if (headResponse.ok) {
+        console.log("Image URL is accessible via HEAD request ✓");
+      } else {
+        console.log(
+          `HEAD request failed with status ${headResponse.status}, trying GET request...`
+        );
+
+        // Method 2: GET request (more reliable, fallback)
+        const getResponse = await fetch(imageUrl, {
+          method: "GET",
+          headers: { Accept: "image/*" },
+        });
+
+        if (!getResponse.ok) {
+          console.error(
+            `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
+          );
+          return {
+            error: `The image URL is not accessible (status ${getResponse.status}). Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
+          };
+        } else {
+          console.log("Image URL is accessible via GET request ✓");
+        }
+      }
+    } catch (headError) {
+      console.error("HEAD request failed, trying GET request...", headError);
+
+      // Fallback to GET request
+      try {
+        const getResponse = await fetch(imageUrl);
+        if (!getResponse.ok) {
+          console.error(
+            `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
+          );
+          return {
+            error: `The image URL is not accessible. Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
+          };
+        } else {
+          console.log("Image URL is accessible via GET request ✓");
+        }
+      } catch (getError) {
+        console.error("Error testing image accessibility with GET:", getError);
+        return {
+          error: `Failed to access the image URL: ${
+            getError instanceof Error ? getError.message : String(getError)
+          }. The D-ID API will not be able to access it either.`,
+        };
+      }
+    }
+  } catch (imgError) {
+    console.error("Error testing image accessibility:", imgError);
+    return {
+      error: `Failed to verify image accessibility: ${
+        imgError instanceof Error ? imgError.message : String(imgError)
+      }. Make sure the image URL is publicly accessible.`,
+    };
   }
 
   try {
@@ -192,11 +268,34 @@ export async function generateDIDVideo(
           errorMessage =
             "Something went wrong, while requesting your generate video.";
         }
+
+        // Add additional checks for specific error patterns
+        if (error.response.data && typeof error.response.data === "object") {
+          if (
+            error.response.data.kind === "ValidationError" &&
+            error.response.data.message &&
+            error.response.data.message.includes("source_url")
+          ) {
+            console.error(
+              "Image URL validation error - the D-ID API can't access the image URL"
+            );
+            errorMessage =
+              "The D-ID API cannot access the image. Make sure you're using ngrok for local development.";
+          }
+
+          // Log more detailed error data
+          console.error(
+            "Detailed error data:",
+            JSON.stringify(error.response.data, null, 2)
+          );
+        }
       } else if (error.request) {
         console.error(
           "No response received from API. Error request data:",
           error.request
         );
+        errorMessage =
+          "Cannot connect to D-ID API. Please check your internet connection and firewall settings.";
       } else {
         console.error("Unexpected error during API call:", error.message);
       }
@@ -210,7 +309,7 @@ export async function generateDIDVideo(
     return {
       error:
         errorMessage ||
-        "An error occurred while generating the video. Make sure you have entered valid API keys in your profile and try again. If you are running on localhost, make sure you use ngrok to expose your local server to the internet.",
+        "An error occurred while generating the video. Please check your API keys in your profile settings and ensure you're using ngrok correctly. Visit /ngrok-setup for detailed instructions.",
     };
   }
 }
