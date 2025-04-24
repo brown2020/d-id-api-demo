@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
@@ -23,6 +23,15 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   // const [isDirty, setIsDirty] = useState(false);
   // const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uid = useAuthStore((state) => state.uid);
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  // Check if we're on localhost
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      setIsLocalhost(hostname === "localhost" || hostname === "127.0.0.1");
+    }
+  }, []);
 
   const toggleFavorite = async () => {
     toast.promise(
@@ -58,21 +67,59 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
     );
   };
 
-  return (
-    <article className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
-      {avatar?.preview_image_url && avatar.preview_image_url.trim() !== "" ? (
-        <Image
-          src={avatar.preview_image_url}
-          alt={avatar.talking_photo_name}
-          width={512}
-          height={512}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      ) : (
+  // Safe image rendering that handles localhost case
+  const renderAvatar = () => {
+    if (!avatar?.preview_image_url || avatar.preview_image_url.trim() === "") {
+      return (
         <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
           <span className="text-gray-400">No image</span>
         </div>
-      )}
+      );
+    }
+
+    // For localhost, show a placeholder to avoid image fetch errors
+    if (isLocalhost) {
+      return (
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-300 to-gray-400 flex flex-col items-center justify-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="64"
+            height="64"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-gray-600 mb-2"
+          >
+            <circle cx="12" cy="8" r="5" />
+            <path d="M20 21a8 8 0 0 0-16 0" />
+          </svg>
+          <span className="text-gray-600 text-center px-2">
+            Avatar Preview
+            <br />
+            (localhost mode)
+          </span>
+        </div>
+      );
+    }
+
+    // For non-localhost environments, show the actual image
+    return (
+      <Image
+        src={avatar.preview_image_url}
+        alt={avatar.talking_photo_name}
+        width={512}
+        height={512}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+    );
+  };
+
+  return (
+    <article className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
+      {renderAvatar()}
 
       <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>
       <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">

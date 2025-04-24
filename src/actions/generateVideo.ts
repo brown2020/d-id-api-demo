@@ -19,7 +19,8 @@ export async function generateVideo(
   audioUrl?: string,
   elevenlabsApiKey?: string,
   emotion: Emotion = "neutral",
-  movement: Movement = "neutral"
+  movement: Movement = "neutral",
+  useFallbackImage: boolean = false
 ) {
   await protect();
   // const { userId } = auth();
@@ -72,16 +73,31 @@ export async function generateVideo(
 
     // Create proxy link
     const secret_token = randomString(32);
-    const imageUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
+
+    // Determine if we should use the fallback image for localhost
+    const isLocalhost =
+      baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1");
+    let imageUrl;
+
+    // Force using fallback for localhost to prevent 404 errors
+    if (isLocalhost || useFallbackImage) {
+      // Use absolute URL to the fallback image
+      imageUrl = `${baseUrl}/assets/headshot_fallback.png`;
+      console.log("Using fallback image:", imageUrl);
+    } else {
+      // Use the normal proxy URL
+      imageUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
+    }
+
     const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
 
     // Check if baseUrl is localhost - this is likely to cause issues
-    if (baseUrl.includes("localhost")) {
+    if (isLocalhost) {
       console.warn(
-        "⚠️ WARNING: Using localhost URL for D-ID API! This will likely cause errors as D-ID cannot access localhost URLs."
+        "⚠️ WARNING: Using localhost URL for D-ID API with fallback image."
       );
       console.warn(
-        "You should be accessing the application through ngrok URL, not localhost."
+        "For production use, you should access the application through an ngrok URL, not localhost."
       );
     }
 
@@ -89,6 +105,7 @@ export async function generateVideo(
     console.log("📋 DIAGNOSTIC INFO 📋");
     console.log(`- Base URL: ${baseUrl}`);
     console.log(`- Using ngrok: ${baseUrl.includes("ngrok") ? "Yes" : "No"}`);
+    console.log(`- Using fallback image: ${useFallbackImage ? "Yes" : "No"}`);
     console.log(`- Image URL for D-ID: ${imageUrl}`);
     console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
     console.log(
@@ -128,6 +145,7 @@ export async function generateVideo(
             did_id: response.id,
             d_id_status: response.status,
             secret_token,
+            used_fallback_image: useFallbackImage,
           },
           { merge: true }
         );

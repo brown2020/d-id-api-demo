@@ -41,73 +41,84 @@ export async function generateDIDVideo(
     elevenlabsApiKey = process.env.ELEVENLABS_API_KEY;
   }
 
+  // Check if we're using the fallback image
+  const isFallbackImage = imageUrl.includes("/assets/headshot_fallback.png");
+
   // First, test if we can fetch the image - this helps diagnose if the issue is with image accessibility
-  try {
-    console.log("Testing if image is accessible...");
-
-    // Method 1: HEAD request (faster but less reliable)
+  // Skip this check if we're using the fallback image
+  if (!isFallbackImage) {
     try {
-      const headResponse = await fetch(imageUrl, {
-        method: "HEAD",
-        headers: { Accept: "image/*" },
-      });
+      console.log("Testing if image is accessible...");
 
-      if (headResponse.ok) {
-        console.log("Image URL is accessible via HEAD request ✓");
-      } else {
-        console.log(
-          `HEAD request failed with status ${headResponse.status}, trying GET request...`
-        );
-
-        // Method 2: GET request (more reliable, fallback)
-        const getResponse = await fetch(imageUrl, {
-          method: "GET",
+      // Method 1: HEAD request (faster but less reliable)
+      try {
+        const headResponse = await fetch(imageUrl, {
+          method: "HEAD",
           headers: { Accept: "image/*" },
         });
 
-        if (!getResponse.ok) {
-          console.error(
-            `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
-          );
-          return {
-            error: `The image URL is not accessible (status ${getResponse.status}). Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
-          };
+        if (headResponse.ok) {
+          console.log("Image URL is accessible via HEAD request ✓");
         } else {
-          console.log("Image URL is accessible via GET request ✓");
-        }
-      }
-    } catch (headError) {
-      console.error("HEAD request failed, trying GET request...", headError);
+          console.log(
+            `HEAD request failed with status ${headResponse.status}, trying GET request...`
+          );
 
-      // Fallback to GET request
-      try {
-        const getResponse = await fetch(imageUrl);
-        if (!getResponse.ok) {
+          // Method 2: GET request (more reliable, fallback)
+          const getResponse = await fetch(imageUrl, {
+            method: "GET",
+            headers: { Accept: "image/*" },
+          });
+
+          if (!getResponse.ok) {
+            console.error(
+              `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
+            );
+            return {
+              error: `The image URL is not accessible (status ${getResponse.status}). Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
+            };
+          } else {
+            console.log("Image URL is accessible via GET request ✓");
+          }
+        }
+      } catch (headError) {
+        console.error("HEAD request failed, trying GET request...", headError);
+
+        // Fallback to GET request
+        try {
+          const getResponse = await fetch(imageUrl);
+          if (!getResponse.ok) {
+            console.error(
+              `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
+            );
+            return {
+              error: `The image URL is not accessible. Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
+            };
+          } else {
+            console.log("Image URL is accessible via GET request ✓");
+          }
+        } catch (getError) {
           console.error(
-            `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
+            "Error testing image accessibility with GET:",
+            getError
           );
           return {
-            error: `The image URL is not accessible. Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
+            error: `Failed to access the image URL: ${
+              getError instanceof Error ? getError.message : String(getError)
+            }. The D-ID API will not be able to access it either.`,
           };
-        } else {
-          console.log("Image URL is accessible via GET request ✓");
         }
-      } catch (getError) {
-        console.error("Error testing image accessibility with GET:", getError);
-        return {
-          error: `Failed to access the image URL: ${
-            getError instanceof Error ? getError.message : String(getError)
-          }. The D-ID API will not be able to access it either.`,
-        };
       }
+    } catch (imgError) {
+      console.error("Error testing image accessibility:", imgError);
+      return {
+        error: `Failed to verify image accessibility: ${
+          imgError instanceof Error ? imgError.message : String(imgError)
+        }. Make sure the image URL is publicly accessible.`,
+      };
     }
-  } catch (imgError) {
-    console.error("Error testing image accessibility:", imgError);
-    return {
-      error: `Failed to verify image accessibility: ${
-        imgError instanceof Error ? imgError.message : String(imgError)
-      }. Make sure the image URL is publicly accessible.`,
-    };
+  } else {
+    console.log("Using fallback image - skipping accessibility check ✓");
   }
 
   try {

@@ -226,9 +226,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
   const [landscape, setLandscape] = useState("square");
   const totalProcessesRef = useRef(0);
   const completedProcessesRef = useRef(0);
-  // If video id is exist then fetch video details
-  // If exist then set selected avatar
-  // update canvas variable
+  const [avatarChangeProcessed, setAvatarChangeProcessed] = useState(false);
 
   const selectAvatarForm = useForm<{
     talking_photo_id: string;
@@ -389,20 +387,46 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
   const changeAvatarImageOnFrame = useCallback(async () => {
     if (fetchingImage) return;
 
-    // If video id is exist then it should already have canvas detail
-    if (video_id && !loadFirstTime) return;
-
     // If selected avatar is same then remove it
-
     if (!selectedAvatar) {
       console.log("No avatar selected");
+      return;
     }
 
+    // Add a check to prevent repeated processing
+    if (avatarChangeProcessed && loadFirstTime) return;
+
     if (canvas && selectedAvatar) {
-      const imageURL = imageProxyUrl(
-        getApiBaseUrl(),
-        `${selectedAvatar.talking_photo_id}.png`
-      );
+      // Check if we're on localhost
+      const isLocalhost =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1");
+
+      // Use fallback image if on localhost, otherwise use the normal proxy URL
+      const imageURL = isLocalhost
+        ? `${window.location.origin}/assets/headshot_fallback.png`
+        : imageProxyUrl(
+            getApiBaseUrl(),
+            `${selectedAvatar.talking_photo_id}.png`
+          );
+
+      // Show a warning toast when using localhost
+      if (isLocalhost) {
+        toast(
+          "Using fallback image for localhost. For production, use ngrok to expose your local server.",
+          {
+            duration: 5000,
+            icon: "⚠️",
+            style: {
+              backgroundColor: "#FFF4E5",
+              color: "#664D03",
+              border: "1px solid #FFE4B5",
+            },
+          }
+        );
+      }
+
       toast.promise(
         new Promise<{ status: boolean; data: string }>(
           async (resolve, reject) => {
@@ -461,6 +485,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 setCanvasElements([...canvasElements, img]);
               }
               resolve({ status: true, data: "Successfully fetched image" });
+              // Mark this avatar change as processed
+              setAvatarChangeProcessed(true);
             } catch (error) {
               console.log("Error on fetching image", error);
 
@@ -512,6 +538,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     canvasMainImage,
     loadFirstTime,
     video_id,
+    avatarChangeProcessed,
   ]);
 
   const getContainerHeightWidth = () => {
@@ -896,7 +923,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
       if (!loadFirstTime && videoCanvasDetail && video_id) {
         console.log("Load canvas for first time");
         loadCanvasForFirstTime();
-      } else {
+      } else if (!avatarChangeProcessed) {
         console.log("Load canvas for other time else");
         changeAvatarImageOnFrame();
       }
@@ -912,7 +939,13 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     loadFirstTime,
     changeAvatarImageOnFrame,
     loadCanvasForFirstTime,
+    avatarChangeProcessed,
   ]);
+
+  // Reset the processed flag when avatar changes
+  useEffect(() => {
+    setAvatarChangeProcessed(false);
+  }, [selectedAvatar]);
 
   useEffect(() => {
     selectAvatarForm.handleSubmit(() => {});
@@ -971,6 +1004,19 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             });
 
             const baseUrl = getApiBaseUrl() ?? window.location.origin;
+
+            // Check if we're on localhost
+            const isLocalhost =
+              typeof window !== "undefined" &&
+              (window.location.hostname === "localhost" ||
+                window.location.hostname === "127.0.0.1");
+
+            // Log diagnostic information
+            console.log("Video generation request details:");
+            console.log("- Base URL:", baseUrl);
+            console.log("- Is localhost:", isLocalhost);
+            console.log("- Selected avatar:", selectedAvatar.talking_photo_id);
+
             const response = await generateVideo(
               videoIdRef.current,
               profile.did_api_key,
@@ -981,7 +1027,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               undefined,
               profile.elevenlabs_api_key,
               selectAvatarForm.getValues("emotion"),
-              selectAvatarForm.getValues("movement")
+              selectAvatarForm.getValues("movement"),
+              true // Always use the fallback image to prevent 404 errors
             );
 
             /**
@@ -998,6 +1045,10 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             /**
              * TODO: Handle error
              */
+            reject({
+              status: false,
+              data: "An error occurred during video generation.",
+            });
           }
         }
       ),
