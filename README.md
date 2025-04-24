@@ -61,6 +61,13 @@ Ensure you have the following tools installed:
    NEXT_PUBLIC_STRIPE_KEY=your_stripe_key
    STRIPE_SECRET_KEY=your_stripe_secret_key
 
+   # D-ID API Authentication
+   D_ID_API_KEY=your_did_api_key
+   D_ID_BASIC_AUTH=your_did_basic_auth_string
+
+   # ElevenLabs API key
+   ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+
    # Firebase Client Config
    NEXT_PUBLIC_FIREBASE_APIKEY=your_firebase_apikey
    NEXT_PUBLIC_FIREBASE_AUTHDOMAIN=your_firebase_authdomain

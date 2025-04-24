@@ -23,16 +23,15 @@ export async function getDIDVideo(d_id_api_key: string, videoId: string) {
         : "API Key is null"
     );
 
-    // Use the exact header from the working curl command
-    console.log("Using exact authorization header from working curl command");
+    // Use the authorization from environment variable
+    console.log("Using authorization from environment variable");
 
     const videoResponse = await axios.get<GetVideoSuccessResponse>(
       `https://api.d-id.com/talks/${videoId}`,
       {
         headers: {
           accept: "application/json",
-          authorization:
-            "Basic WW5KdmQyNHlNREl3UUdkdFlXbHNMbU52YlE6emNjYm9IeXh4aHNxZm1lVjhibFVi",
+          authorization: process.env.D_ID_BASIC_AUTH || "",
         },
       }
     );
