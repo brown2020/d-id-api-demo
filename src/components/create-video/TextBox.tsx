@@ -321,7 +321,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                     <div className="w-full max-h-36">
                         <label className="block text-sm font-medium text-gray-500 mb-2">Select Font Family</label>
                         <select
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                             value={selectedFont}
                             onChange={handleFontFamilyChange}
                         >
@@ -370,19 +370,19 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 <div>
                     <div className="flex flex-col gap-2">
                         <button
-                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-2xl font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-2xl font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             onClick={() => handleText('headline')}
                         >
                             Add a headline
                         </button>
                         <button
-                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-lg font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-lg font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             onClick={() => handleText('subTitle')}
                         >
                             Add a subtitle
                         </button>
                         <button
-                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-sm hover:bg-neutral-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-sm hover:bg-neutral-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             onClick={() => handleText('body')}
                         >
                             Add a body

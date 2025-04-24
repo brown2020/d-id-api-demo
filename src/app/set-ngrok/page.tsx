@@ -47,7 +47,7 @@ export default function SetNgrokUrl() {
       <h1 className="text-2xl font-bold mb-6">Set ngrok URL</h1>
 
       {currentUrl && (
-        <div className="mb-6 p-4 bg-gray-100 rounded">
+        <div className="mb-6 p-4 bg-gray-100 rounded-sm">
           <h2 className="text-lg font-medium mb-2">Current ngrok URL:</h2>
           <div className="break-all font-mono">{currentUrl}</div>
         </div>
@@ -63,7 +63,7 @@ export default function SetNgrokUrl() {
           value={ngrokUrl}
           onChange={(e) => setNgrokUrl(e.target.value)}
           placeholder="e.g., https://a1b2c3d4.ngrok-free.app"
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 border border-gray-300 rounded-sm"
         />
       </div>
 
@@ -84,11 +84,11 @@ export default function SetNgrokUrl() {
         <ol className="list-decimal pl-5 space-y-2">
           <li>
             Start ngrok with{" "}
-            <code className="bg-gray-100 px-1 rounded">ngrok http 3000</code>
+            <code className="bg-gray-100 px-1 rounded-sm">ngrok http 3000</code>
           </li>
           <li>
             Copy the forwarding URL (e.g.,{" "}
-            <code className="bg-gray-100 px-1 rounded">
+            <code className="bg-gray-100 px-1 rounded-sm">
               https://a1b2c3d4.ngrok-free.app
             </code>
             )

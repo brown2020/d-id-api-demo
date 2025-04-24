@@ -42,7 +42,7 @@ export default function NgrokReminder() {
   return (
     <div className="bg-amber-100 border-l-4 border-amber-500 p-4 mb-4">
       <div className="flex items-start">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <svg
             className="h-5 w-5 text-amber-400"
             xmlns="http://www.w3.org/2000/svg"
@@ -62,7 +62,7 @@ export default function NgrokReminder() {
             accessible URL, but you&apos;re currently using {ngrokInfo.origin}.
             <br />
             Please run ngrok with:{" "}
-            <code className="bg-amber-50 px-1 rounded">ngrok http 3000</code>,
+            <code className="bg-amber-50 px-1 rounded-sm">ngrok http 3000</code>,
             then visit that ngrok URL.
             <br />
             <Link
@@ -77,7 +77,7 @@ export default function NgrokReminder() {
           <div className="-mx-1.5 -my-1.5">
             <button
               onClick={() => setShow(false)}
-              className="inline-flex rounded-md p-1.5 text-amber-500 hover:bg-amber-200 focus:outline-none"
+              className="inline-flex rounded-md p-1.5 text-amber-500 hover:bg-amber-200 focus:outline-hidden"
             >
               <span className="sr-only">Dismiss</span>
               <svg

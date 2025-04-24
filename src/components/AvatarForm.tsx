@@ -297,7 +297,7 @@ export default function AvatarForm({
                     <input
                       {...field}
                       value={field.value || ""}
-                      className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
+                      className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-hidden focus:border-slate-400 hover:border-slate-300 shadow-xs focus:shadow-sm"
                       placeholder="Type name..."
                     />
                   )}
@@ -306,7 +306,7 @@ export default function AvatarForm({
                   <ErrorMessage errors={formState.errors} name="name" />
                 </p>
                 {errorMessage && (
-                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-sm text-sm text-red-600">
                     {errorMessage}
                   </div>
                 )}
@@ -327,7 +327,7 @@ export default function AvatarForm({
                         <span>Loading voices...</span>
                       </div>
                     ) : !options.length ? (
-                      <div className="py-2 px-3 border border-amber-200 bg-amber-50 rounded text-sm text-amber-700">
+                      <div className="py-2 px-3 border border-amber-200 bg-amber-50 rounded-sm text-sm text-amber-700">
                         <p>
                           No voices found. Please ensure you have added your
                           ElevenLabs API key in your profile.
@@ -388,7 +388,7 @@ export default function AvatarForm({
           <button
             type="submit"
             disabled={processing}
-            className="disabled:cursor-not-allowed disabled:opacity-50 inline-flex w-full justify-center rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 sm:ml-3 sm:w-auto"
+            className="disabled:cursor-not-allowed disabled:opacity-50 inline-flex w-full justify-center rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-sky-500 sm:ml-3 sm:w-auto"
           >
             {create ? "Add" : "Update"}
           </button>
@@ -396,7 +396,7 @@ export default function AvatarForm({
             disabled={processing}
             onClick={cancelEdit}
             type="button"
-            className="disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+            className="disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
           >
             Cancel
           </button>
@@ -405,7 +405,7 @@ export default function AvatarForm({
               disabled={processing}
               onClick={deleteAvatar}
               type="button"
-              className="sm:mr-3 disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex bg-red-600 w-full justify-center rounded-md  px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-white hover:bg-red-400 sm:mt-0 sm:w-auto"
+              className="sm:mr-3 disabled:cursor-not-allowed disabled:opacity-50 mt-3 inline-flex bg-red-600 w-full justify-center rounded-md  px-3 py-2 text-sm font-semibold shadow-xs ring-1 ring-inset ring-gray-300 text-white hover:bg-red-400 sm:mt-0 sm:w-auto"
             >
               Delete
             </button>
@@ -484,7 +484,7 @@ export default function AvatarForm({
               </label>
             </div>
             {loading && (
-              <div className="backdrop-blur-sm absolute border top-0 h-full w-full rounded-md border-dashed border-gray-400 z-20 flex items-center justify-center">
+              <div className="backdrop-blur-xs absolute border top-0 h-full w-full rounded-md border-dashed border-gray-400 z-20 flex items-center justify-center">
                 <div
                   className="w-12 h-12 rounded-full animate-spin
                     border-2 border-white border-dashed border-t-transparent"

@@ -145,7 +145,7 @@ export default function Header() {
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-[999]">
+          <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-999">
             <Image src={logo} alt="logo" className="w-[80.28px] h-[50px]" />
             <div className="hidden sm:flex items-center">
               <div className="relative" ref={notificationRef}>
@@ -242,7 +242,7 @@ export default function Header() {
           </div>
           <div className="relative sm:hidden">
             <div
-              className={`absolute shadow-md z-[9998] bg-white rounded-b-lg ${
+              className={`absolute shadow-md z-9998 bg-white rounded-b-lg ${
                 isMenuOpen ? "max-h-96" : "max-h-0"
               } overflow-hidden transition-all duration-300 w-full left-0`}
             >

@@ -1443,17 +1443,17 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                                             ${
                                                               landscape ==
                                                                 "square" &&
-                                                              "!h-48"
+                                                              "h-48!"
                                                             }
                                                             ${
                                                               landscape ==
                                                                 "portrait" &&
-                                                              "!h-64"
+                                                              "h-64!"
                                                             }
                                                             ${
                                                               landscape ==
                                                                 "landscape" &&
-                                                              "!h-28"
+                                                              "h-28!"
                                                             }
                                                         `}
                               >
@@ -1524,7 +1524,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 {!profile.did_api_key && (
                   <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
                     <p className="text-amber-700 flex items-center gap-2">
-                      <AlertTriangle size={16} className="flex-shrink-0" />
+                      <AlertTriangle size={16} className="shrink-0" />
                       <span>
                         <strong>Warning:</strong> D-ID API key is missing.
                         Please add it in your{" "}
@@ -1540,7 +1540,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 {!profile.elevenlabs_api_key && selectedAvatar?.voiceId && (
                   <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
                     <p className="text-amber-700 flex items-center gap-2">
-                      <AlertTriangle size={16} className="flex-shrink-0" />
+                      <AlertTriangle size={16} className="shrink-0" />
                       <span>
                         <strong>Warning:</strong> ElevenLabs API key is missing.
                         Please add it in your{" "}
@@ -1556,7 +1556,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 {!audioDetail && (
                   <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
                     <p className="text-amber-700 flex items-center gap-2">
-                      <AlertTriangle size={16} className="flex-shrink-0" />
+                      <AlertTriangle size={16} className="shrink-0" />
                       <span>
                         <strong>Warning:</strong> No voice selected. Please
                         select an avatar with a valid voice to create a talking
@@ -1579,7 +1579,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                       {...field}
                       minRows={5}
                       maxRows={20}
-                      className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
+                      className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-hidden focus:border-slate-400 hover:border-slate-300 shadow-xs focus:shadow-sm"
                       placeholder="Write your script here..."
                     />
                   )}

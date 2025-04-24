@@ -199,7 +199,7 @@ export default function TestImageAccess() {
                     <p className="text-red-500 mt-2">{result.error}</p>
                   ) : (
                     <div className="mt-4 space-y-4">
-                      <div className="bg-gray-50 p-3 rounded">
+                      <div className="bg-gray-50 p-3 rounded-sm">
                         <h4 className="font-semibold">Original Image URL</h4>
                         <p className="text-xs mt-1 font-mono break-all">
                           {result.originalUrl?.url}
@@ -218,7 +218,7 @@ export default function TestImageAccess() {
                         )}
                       </div>
 
-                      <div className="bg-gray-50 p-3 rounded">
+                      <div className="bg-gray-50 p-3 rounded-sm">
                         <h4 className="font-semibold">Proxy Image URL</h4>
                         <p className="text-xs mt-1 font-mono break-all">
                           {result.proxyUrl?.url}
@@ -237,7 +237,7 @@ export default function TestImageAccess() {
                         )}
                       </div>
 
-                      <div className="bg-gray-50 p-3 rounded">
+                      <div className="bg-gray-50 p-3 rounded-sm">
                         <h4 className="font-semibold">Server-Side Test</h4>
                         {result.serverTest?.success ? (
                           <p className="mt-2 text-green-600">

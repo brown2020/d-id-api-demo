@@ -12,6 +12,7 @@
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^5.0.1",
     "@stripe/react-stripe-js": "^3.0.0",
+    "@stripe/stripe-js": "^7.2.0",
     "axios": "^1.7.7",
     "elevenlabs": "^1.51.0",
     "fabric": "^6.5.0",
@@ -37,14 +38,14 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.4",
     "@types/node": "^22.5.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
-    "autoprefixer": "^10.4.20",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.0.3",
     "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.12",
+    "tailwindcss": "^4.1.4",
     "typescript": "^5.6.2"
   },
   "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"

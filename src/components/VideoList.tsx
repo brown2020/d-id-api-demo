@@ -63,7 +63,7 @@ export default function VideosPage() {
                                                 videoList.map((video, index) => {
                                                     return (
                                                         <div onClick={() => router.push(video.d_id_status ? `/videos/${video.id}/show` : `/videos/${video.id}/edit`)} key={index} className="col-span-3 cursor-pointer group/video relative border-1 p-4 hover:bg-black border-gray-300 hover:drop-shadow-2xl rounded-xl overflow-hidden hover:-translate-y-2 transition-all duration-300">
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0 transition-all duration-300 hover:via-gray-900/1"></div>
+                                                            <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0 transition-all duration-300 hover:via-gray-900/1"></div>
                                                             <div className="h-36"></div>
                                                             {
                                                                 video.thumbnail_url ?

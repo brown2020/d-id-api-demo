@@ -1,49 +1,86 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Root CSS Variables - outside @layer for Tailwind v4 */
-:root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(0 0% 3.9%);
+@theme {
+  --font-sans: GeneralSans-Variable, ui-sans-serif, system-ui, sans-serif;
+
+  --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+  --background-image-gradient-conic: conic-gradient(
+    from 180deg at 50% 50%,
+    var(--tw-gradient-stops)
+  );
 }
-
-/* Theme variables with inline values for Tailwind v4 */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 }
 
-/* Add the root-fixes class to body for our compatibility plugin */
-.root-fixes {
-  /* This will receive styles that would have gone to :root */
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
 }
 
-/* Apply the root-fixes class to body */
-body {
-  @apply root-fixes;
-}
-
-@layer components {
-  .scrolls::-webkit-scrollbar-track {
+@utility scrolls {
+  &::-webkit-scrollbar-track {
     @apply rounded-lg bg-neutral-200;
   }
-  .scrolls::-webkit-scrollbar {
+  &::-webkit-scrollbar {
     @apply w-[3px] h-[3px];
   }
-  .scrolls::-webkit-scrollbar-thumb {
+  &::-webkit-scrollbar-thumb {
     @apply rounded-lg bg-neutral-500 transition-colors duration-1000;
   }
-  .scrolls::-webkit-scrollbar-thumb:hover {
+  &::-webkit-scrollbar-thumb:hover {
     @apply bg-neutral-500;
   }
-  .create-video-step {
-    @apply border border-transparent transition-all duration-300 hover:border-gray-300 rounded-lg cursor-pointer;
-  }
-  .create-video-step.active {
+}
+
+@utility create-video-step {
+  @apply border border-transparent transition-all duration-300 hover:border-gray-300 rounded-lg cursor-pointer;
+  &.active {
     @apply bg-gray-50;
   }
-  .video-create .label {
+}
+
+@utility active {
+  &.create-video-step {
+    @apply bg-gray-50;
+  }
+}
+
+@utility video-create {
+  & .label {
     @apply block mb-1 text-sm text-gray-600 dark:text-white;
   }
+}
+
+@utility label {
+  .video-create & {
+    @apply block mb-1 text-sm text-gray-600 dark:text-white;
+  }
+}
+
+@layer utilities {
+  /* Root CSS Variables - outside @layer for Tailwind v4 */
+  :root {
+    --background: hsl(0 0% 100%);
+    --foreground: hsl(0 0% 3.9%);
+  }
+}
+
+/* Apply base styles to body */
+body {
+  font-family: var(--font-sans);
 }

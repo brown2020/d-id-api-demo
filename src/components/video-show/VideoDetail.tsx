@@ -104,7 +104,7 @@ export default function VideoDetail() {
             </div>
           ) : null}
           {videoData.d_id_status === "done" && videoData.video_url ? (
-            <div className="flex-grow h-full flex items-center justify-center">
+            <div className="grow h-full flex items-center justify-center">
               <video
                 controls
                 src={videoData.video_url}

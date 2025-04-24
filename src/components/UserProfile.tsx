@@ -32,7 +32,7 @@ export const UserProfile = () => {
     <div className="relative">
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="flex items-center focus:outline-none"
+        className="flex items-center focus:outline-hidden"
       >
         {user.photoURL ? (
           <Image

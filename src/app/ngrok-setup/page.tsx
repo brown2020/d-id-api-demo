@@ -87,13 +87,13 @@ export default function NgrokSetupGuide() {
           <ol className="list-decimal pl-6 space-y-3">
             <li>
               Start your Next.js development server:
-              <pre className="bg-gray-100 p-3 mt-2 rounded font-mono">
+              <pre className="bg-gray-100 p-3 mt-2 rounded-sm font-mono">
                 npm run dev
               </pre>
             </li>
             <li>
               Confirm your app is running at{" "}
-              <code className="bg-gray-100 px-1 rounded">
+              <code className="bg-gray-100 px-1 rounded-sm">
                 http://localhost:3000
               </code>
             </li>
@@ -106,7 +106,7 @@ export default function NgrokSetupGuide() {
             <li>Open a new terminal window.</li>
             <li>
               Run ngrok to expose your local server:
-              <pre className="bg-gray-100 p-3 mt-2 rounded font-mono">
+              <pre className="bg-gray-100 p-3 mt-2 rounded-sm font-mono">
                 ngrok http 3000
               </pre>
             </li>
@@ -116,7 +116,7 @@ export default function NgrokSetupGuide() {
             </li>
             <li>
               Copy the https URL (e.g.,{" "}
-              <code className="bg-gray-100 px-1 rounded">
+              <code className="bg-gray-100 px-1 rounded-sm">
                 https://a1b2c3d4.ngrok-free.app
               </code>
               ).
@@ -126,7 +126,7 @@ export default function NgrokSetupGuide() {
             <Image
               src="/ngrok-example.png"
               alt="ngrok terminal example"
-              className="w-full rounded border"
+              className="w-full rounded-sm border"
               width={800}
               height={400}
               onError={(e) => {
@@ -160,7 +160,7 @@ export default function NgrokSetupGuide() {
 
           <div className="mt-4 p-4 border rounded-lg">
             <h3 className="font-semibold mb-2">Current API Base URL</h3>
-            <p className="font-mono bg-gray-100 p-2 rounded break-all">
+            <p className="font-mono bg-gray-100 p-2 rounded-sm break-all">
               {currentUrl}
             </p>
 
@@ -178,7 +178,7 @@ export default function NgrokSetupGuide() {
                   value={ngrokUrl}
                   onChange={(e) => setNgrokUrl(e.target.value)}
                   placeholder="https://your-tunnel.ngrok-free.app"
-                  className="flex-1 p-2 border rounded"
+                  className="flex-1 p-2 border rounded-sm"
                 />
                 <button
                   onClick={handleSaveNgrokUrl}
