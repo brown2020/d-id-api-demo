@@ -81,9 +81,10 @@ export async function generateVideo(
 
     // Force using fallback for localhost to prevent 404 errors
     if (isLocalhost || useFallbackImage) {
-      // Use absolute URL to the fallback image
-      imageUrl = `${baseUrl}/assets/headshot_fallback.png`;
-      console.log("Using fallback image:", imageUrl);
+      // In localhost or when fallback is needed, just use the hardcoded fallback path
+      // without any baseUrl - this is what the D-ID API needs in this special case
+      imageUrl = `/assets/headshot_fallback.png`;
+      console.log("Using hardcoded fallback image path:", imageUrl);
     } else {
       // Use the normal proxy URL
       imageUrl = videoImageProxyUrl(baseUrl, `${id}.png`);

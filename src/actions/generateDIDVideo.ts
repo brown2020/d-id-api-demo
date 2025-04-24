@@ -271,6 +271,13 @@ export async function generateDIDVideo(
         } else if (error.response.status === 402) {
           errorMessage =
             "Your account is out of credits. Please add more credits to generate video.";
+        } else if (error.response.status === 500) {
+          // Check if this might be an image issue
+          console.log(
+            "Received 500 error - checking if this might be an image issue"
+          );
+          errorMessage =
+            "D-ID server error. This may be due to an issue with the image URL or server load. Please try again or use a different image.";
         } else if (
           typeof error.response.data === "object" &&
           "kind" in error.response.data &&
@@ -303,7 +310,7 @@ export async function generateDIDVideo(
               "Image URL validation error - the D-ID API can't access the image URL"
             );
             errorMessage =
-              "The D-ID API cannot access the image. Make sure you're using ngrok for local development.";
+              "The D-ID API cannot access the image. Make sure you're using ngrok for local development or try with a different public image URL.";
           }
 
           // Log more detailed error data

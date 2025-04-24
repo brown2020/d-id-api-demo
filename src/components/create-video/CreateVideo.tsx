@@ -537,7 +537,6 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     canvasElements,
     canvasMainImage,
     loadFirstTime,
-    video_id,
     avatarChangeProcessed,
   ]);
 
@@ -1017,6 +1016,9 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             console.log("- Is localhost:", isLocalhost);
             console.log("- Selected avatar:", selectedAvatar.talking_photo_id);
 
+            // Always use fallback image when on localhost
+            const useFallbackImage = isLocalhost ? true : false;
+
             const response = await generateVideo(
               videoIdRef.current,
               profile.did_api_key,
@@ -1028,7 +1030,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               profile.elevenlabs_api_key,
               selectAvatarForm.getValues("emotion"),
               selectAvatarForm.getValues("movement"),
-              true // Always use the fallback image to prevent 404 errors
+              useFallbackImage
             );
 
             /**

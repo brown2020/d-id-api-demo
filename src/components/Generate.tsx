@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -17,7 +16,6 @@ import LocalhostWarning from "./LocalhostWarning";
 import Link from "next/link";
 
 export default function Generate() {
-  const router = useRouter();
   const profile = useProfileStore((state) => state.profile);
   const [itemDetails, setItemDetails] = useState<DIDTalkingPhoto | null>(null);
   const [loading, setLoading] = useState(true);
