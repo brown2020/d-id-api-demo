@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "../assets/GeneralSans/WEB/css/general-sans.css";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import { Toaster } from "react-hot-toast";
 import NgrokReminder from "../components/NgrokReminder";
 import { FirebaseAuthProvider } from "../components/FirebaseAuthProvider";
@@ -21,12 +22,13 @@ export default function RootLayout({
     <FirebaseAuthProvider>
       <html lang="en" className="h-full">
         <head />
-        <body className="flex flex-col h-full font-sans">
+        <body className="flex flex-col min-h-screen font-sans">
           <Header />
-          <div className="flex flex-col h-full flex-1 bg-white overflow-y-auto">
+          <main className="flex flex-col flex-grow bg-white">
             <NgrokReminder />
-            {children}
-          </div>
+            <div className="flex-grow">{children}</div>
+          </main>
+          <Footer />
           <Toaster
             position="top-right"
             toastOptions={{

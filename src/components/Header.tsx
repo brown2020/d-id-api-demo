@@ -146,7 +146,13 @@ export default function Header() {
       ) : (
         <>
           <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-999">
-            <Image src={logo} alt="logo" className="w-[80.28px] h-[50px]" />
+            <Link href="/">
+              <Image
+                src={logo}
+                alt="logo"
+                className="w-[80.28px] h-[50px] cursor-pointer"
+              />
+            </Link>
             <div className="hidden sm:flex items-center">
               <div className="relative" ref={notificationRef}>
                 <button
