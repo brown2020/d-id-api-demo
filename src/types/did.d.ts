@@ -1,5 +1,5 @@
 import { FabricImage } from "fabric";
-import * as fabric from 'fabric';
+import * as fabric from "fabric";
 
 export interface DIDTalkingPhoto {
   talking_photo_id: string;
@@ -10,11 +10,13 @@ export interface DIDTalkingPhoto {
   voiceId?: string;
   type?: string;
   owner?: string;
+  presenter_id?: string;
+  created_at?: number;
 }
 
-export type Emotion = 'neutral' | 'happy' | 'surprise' | 'serious';
-export type Movement = 'neutral' | 'lively';
-export type Frame = 'landscape' | 'square' | 'portrait' | 'fit';
+export type Emotion = "neutral" | "happy" | "surprise" | "serious";
+export type Movement = "neutral" | "lively";
+export type Frame = "landscape" | "square" | "portrait" | "fit";
 
 export interface CreateVideoForm {
   talking_photo_id: string;
@@ -31,7 +33,6 @@ export type AvatarValues = {
   talking_photo_id: string;
 };
 
-
 export type AudioDetails = {
   value: string;
   label: string;
@@ -47,7 +48,7 @@ export type AudioDetails = {
   language: string;
   preview_url: string;
   voice_id?: string;
-}
+};
 
 interface FineTuningState {
   eleven_multilingual_v2: string;
@@ -92,7 +93,12 @@ interface AudioFullDetails {
   accent: string;
 }
 
-export type DIDVideoStatus = 'created' | 'done' | 'error' | 'started' | 'rejected';
+export type DIDVideoStatus =
+  | "created"
+  | "done"
+  | "error"
+  | "started"
+  | "rejected";
 
 export type VideoDetail = {
   id: string;
@@ -106,23 +112,27 @@ export type VideoDetail = {
   created_at: number;
   errorMessage?: string;
   error?: Record<string, unknown>;
-}
+};
 
-export type NotificationType = 'video_generated'
-export type NotificationStatus = 'unread' | 'read';
+export type NotificationType = "video_generated";
+export type NotificationStatus = "unread" | "read";
 
 export type NotificationDetail = {
   id?: string;
   type: NotificationType;
   created_at: number;
-  status: NotificationStatus,
-  video_id: string,
-  user_id: string,
-}
+  status: NotificationStatus;
+  video_id: string;
+  user_id: string;
+};
 
 interface CustomFabricImage
-    extends FabricImage<Partial<fabric.ImageProps>, fabric.SerializedImageProps, fabric.ObjectEvents> {
-    is_avatar?: boolean; // Add a custom `id` property
+  extends FabricImage<
+    Partial<fabric.ImageProps>,
+    fabric.SerializedImageProps,
+    fabric.ObjectEvents
+  > {
+  is_avatar?: boolean; // Add a custom `id` property
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

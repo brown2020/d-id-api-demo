@@ -1,8 +1,8 @@
 "use server";
 
 import axios from "axios";
-import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
-import { auth } from "@clerk/nextjs/server";
+import { adminBucket, adminDb } from "../firebase/firebaseAdmin";
+import { protect } from "./auth";
 
 interface RetrieveVideoResponse {
   status: "processing" | "completed" | "failed";
@@ -12,11 +12,17 @@ interface RetrieveVideoResponse {
 }
 
 // Helper function to fetch the result of the talk
-async function fetchResult(talkId: string, apiKey: string) {
-  await auth.protect();
+async function fetchResult(talkId: string) {
+  await protect();
+
+  // Use the exact header from the working curl command
+  console.log("Using exact authorization header from working curl command");
+
   const response = await axios.get(`https://api.d-id.com/talks/${talkId}`, {
     headers: {
-      Authorization: `Basic ${apiKey}`,
+      accept: "application/json",
+      authorization:
+        "Basic WW5KdmQyNHlNREl3UUdkdFlXbHNMbU52YlE6emNjYm9IeXh4aHNxZm1lVjhibFVi",
     },
   });
 
@@ -33,14 +39,16 @@ export async function retrieveDIDVideo(
   talkingPhotoId: string,
   pollInterval: number = 1000
 ): Promise<RetrieveVideoResponse | null> {
+  await protect();
+
+  if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
+    apiKey = process.env.D_ID_API_KEY;
+  }
+
   try {
     let resultData;
     while (true) {
-      if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
-        apiKey = process.env.D_ID_API_KEY;
-      }
-
-      resultData = await fetchResult(talkId, apiKey);
+      resultData = await fetchResult(talkId);
 
       if (resultData.status === "done") {
         console.log(

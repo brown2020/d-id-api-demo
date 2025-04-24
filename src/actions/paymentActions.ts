@@ -1,13 +1,18 @@
 // paymentActions.ts
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getCurrentUser } from "./getCurrentUser";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 export async function createPaymentIntent(amount: number) {
-  await auth.protect();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
   const product = process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME;
 
   try {
@@ -16,7 +21,10 @@ export async function createPaymentIntent(amount: number) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: "usd",
-      metadata: { product },
+      metadata: {
+        product,
+        userId: user.uid,
+      },
       description: `Payment for product ${process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME}`,
     });
 
@@ -28,7 +36,12 @@ export async function createPaymentIntent(amount: number) {
 }
 
 export async function validatePaymentIntent(paymentIntentId: string) {
-  await auth.protect();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 

@@ -1,11 +1,11 @@
 "use server";
 
-import { Emotion, Movement } from "@/types/did";
-import { auth } from "@clerk/nextjs/server";
+import { Emotion, Movement } from "../types/did";
+import { protect } from "./auth";
 import { generateDIDVideo } from "./generateDIDVideo";
-import { VIDEO_COLLECTION } from "@/libs/constants";
-import { admin, adminDb } from "@/firebase/firebaseAdmin";
-import { getWebhookUrl, randomString, videoImageProxyUrl } from "@/libs/utils";
+import { VIDEO_COLLECTION } from "../libs/constants";
+import { adminDb, admin } from "../firebase/firebaseAdmin";
+import { getWebhookUrl, randomString, videoImageProxyUrl } from "../libs/utils";
 import { getFileUrl } from "./getFileUrl";
 import { addErrorReport } from "./addErrorReport";
 
@@ -21,7 +21,7 @@ export async function generateVideo(
   emotion: Emotion = "neutral",
   movement: Movement = "neutral"
 ) {
-  await auth.protect();
+  await protect();
   // const { userId } = auth();
 
   // TODO: If video id provided

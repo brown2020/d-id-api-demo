@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.3.0",
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^5.0.1",
     "@stripe/react-stripe-js": "^3.0.0",

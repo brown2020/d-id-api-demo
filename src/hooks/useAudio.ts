@@ -2,101 +2,175 @@ import { findAudio } from "@/actions/findAudio";
 import { getAudioList } from "@/actions/getAudioList";
 import useProfileStore from "@/zustand/useProfileStore";
 import { Voice } from "elevenlabs/api";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 export const useAudio = () => {
   const profile = useProfileStore((state) => state.profile);
-  const [voiceList, setVoiceList] = useState<Voice[]>([]);
-  const [isFetching, setIsFetching] = useState(false);
-  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(false);
 
-  const findVoice = async (voiceId: string) => {
-    // Check if we have a valid API key
-    if (!profile.elevenlabs_api_key) {
-      toast.error(
-        "ElevenLabs API key is missing. Please add it in your profile."
-      );
-      return { status: false };
-    }
+  // Use ref for loading state to avoid triggering re-renders
+  const loadingRef = useRef(false);
 
-    // Check if voice list already has the voice
-    const voice = voiceList.find((v) => v.voice_id === voiceId);
-    if (voice) {
-      return { status: true, voice };
-    } else {
-      setIsFetching(true);
-      try {
-        const voice = await findAudio(profile.elevenlabs_api_key, voiceId);
-        setIsFetching(false);
+  // Use a stable reference for an empty voice list to avoid triggering re-renders
+  const emptyVoiceList = useRef<Voice[]>([]);
 
-        if (voice.status) {
-          return { status: true, voice: voice.voice };
+  // Only use state for the final, loaded voice list
+  const [voiceList, setVoiceList] = useState<Voice[]>(emptyVoiceList.current);
+
+  // Track refs for API status
+  const hasAttemptedLoadRef = useRef(false);
+  const hasApiKeyRef = useRef(false);
+  const apiKeyRef = useRef(profile.elevenlabs_api_key);
+
+  // Add debug logging
+  useEffect(() => {
+    console.log(
+      "Profile in useAudio:",
+      JSON.stringify({
+        hasApiKey: !!profile.elevenlabs_api_key,
+        apiKeyLength: profile.elevenlabs_api_key?.length || 0,
+      })
+    );
+  }, [profile.elevenlabs_api_key]);
+
+  // Provide a stable isFetching value
+  const isFetching = useMemo(() => loadingRef.current, []);
+
+  const findVoice = useCallback(
+    async (voiceId: string) => {
+      // Check if we have a valid API key
+      if (!apiKeyRef.current) {
+        // Only show toast if we're not in initial loading
+        if (hasAttemptedLoadRef.current) {
+          toast.error(
+            "ElevenLabs API key is missing. Please add it in your profile."
+          );
         }
-
-        if ("error" in voice && voice.error) {
-          toast.error(voice.error);
-        }
-
-        return { status: false };
-      } catch (error) {
-        setIsFetching(false);
-        console.error("Error finding voice:", error);
-        toast.error("Failed to fetch voice details");
         return { status: false };
       }
-    }
-  };
+
+      // Check if voice list already has the voice
+      const voice = voiceList.find((v) => v.voice_id === voiceId);
+      if (voice) {
+        return { status: true, voice };
+      } else {
+        loadingRef.current = true;
+        try {
+          const voice = await findAudio(apiKeyRef.current, voiceId);
+          loadingRef.current = false;
+
+          if (voice.status) {
+            return { status: true, voice: voice.voice };
+          }
+
+          if ("error" in voice && voice.error) {
+            // Only show toast if we're not in initial loading
+            if (hasAttemptedLoadRef.current) {
+              toast.error(voice.error);
+            } else {
+              console.warn("Voice error during initial load:", voice.error);
+            }
+          }
+
+          return { status: false };
+        } catch (error) {
+          loadingRef.current = false;
+          console.error("Error finding voice:", error);
+          // Only show toast if we're not in initial loading
+          if (hasAttemptedLoadRef.current) {
+            toast.error("Failed to fetch voice details");
+          }
+          return { status: false };
+        }
+      }
+    },
+    [voiceList]
+  );
 
   const loadAudioList = useCallback(async () => {
-    // Only attempt if there's an API key and we're not already fetching
-    if (!profile.elevenlabs_api_key || isFetching) {
+    // Check if API key exists
+    if (!apiKeyRef.current) {
+      console.log("No ElevenLabs API key found, skipping voice load");
+      setVoiceList(emptyVoiceList.current);
+      return;
+    }
+
+    // Don't reload if already loading
+    if (loadingRef.current) {
+      console.log("Already loading voices, skipping duplicate load");
       return;
     }
 
     try {
-      setIsFetching(true);
-      setHasAttemptedLoad(true);
-      setHasApiKey(!!profile.elevenlabs_api_key);
+      console.log(
+        "Loading audio list with key:",
+        apiKeyRef.current ? "Key exists" : "No key"
+      );
+      loadingRef.current = true;
+      hasAttemptedLoadRef.current = true;
+      hasApiKeyRef.current = !!apiKeyRef.current;
 
-      const audioList = await getAudioList(profile.elevenlabs_api_key);
+      const audioList = await getAudioList(apiKeyRef.current);
 
       if ("error" in audioList && audioList.error) {
         console.error("Error fetching audio list:", audioList.error);
         // Only show toast error if this isn't the first load attempt
-        // This prevents showing errors on initial page load when API key might not be ready
-        if (hasAttemptedLoad && hasApiKey) {
+        if (hasAttemptedLoadRef.current && hasApiKeyRef.current) {
           toast.error(audioList.error);
         }
-        setVoiceList([]);
+        // Use the empty ref to avoid triggering re-renders
+        setVoiceList(emptyVoiceList.current);
       } else if (audioList.status && Array.isArray(audioList.voices)) {
+        console.log(`Successfully loaded ${audioList.voices.length} voices`);
+        // Only update state when we have actual voices
         setVoiceList(audioList.voices);
       } else {
-        setVoiceList([]);
+        console.warn("Unexpected response from getAudioList:", audioList);
+        // Use the empty ref to avoid triggering re-renders
+        setVoiceList(emptyVoiceList.current);
       }
     } catch (error) {
       console.error("Error in loadAudioList:", error);
-      setVoiceList([]);
+      // Use the empty ref to avoid triggering re-renders
+      setVoiceList(emptyVoiceList.current);
     } finally {
-      setIsFetching(false);
+      loadingRef.current = false;
     }
-  }, [profile.elevenlabs_api_key, isFetching, hasAttemptedLoad, hasApiKey]);
+  }, []);
 
   useEffect(() => {
-    // Only attempt to load voices if API key exists and has loaded
-    if (profile.elevenlabs_api_key) {
-      setHasApiKey(true);
+    // Update the ref when the API key changes
+    const newApiKey = profile.elevenlabs_api_key;
+    const apiKeyChanged = apiKeyRef.current !== newApiKey;
+
+    if (apiKeyChanged) {
+      console.log("API key changed, updating ref and reloading voices");
+      apiKeyRef.current = newApiKey;
+
+      // Only attempt to load voices if API key exists
+      if (newApiKey) {
+        hasApiKeyRef.current = true;
+        loadAudioList();
+      } else {
+        hasApiKeyRef.current = false;
+        // Clear voice list if API key is removed
+        setVoiceList(emptyVoiceList.current);
+      }
+    } else if (!hasAttemptedLoadRef.current && newApiKey) {
+      // Initial load with API key
+      console.log("Initial load with API key present");
       loadAudioList();
-    } else {
-      setHasApiKey(false);
     }
   }, [profile.elevenlabs_api_key, loadAudioList]);
 
-  return {
-    audioList: voiceList,
-    isFetching,
-    findVoice,
-    hasApiKey: hasApiKey,
-  };
+  // Memoize the return values to prevent unnecessary re-renders
+  return useMemo(
+    () => ({
+      audioList: voiceList,
+      isFetching,
+      findVoice,
+      hasApiKey: hasApiKeyRef.current,
+    }),
+    [voiceList, isFetching, findVoice]
+  );
 };

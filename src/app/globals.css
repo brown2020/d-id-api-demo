@@ -19,11 +19,6 @@
   /* This will receive styles that would have gone to :root */
 }
 
-html,
-body {
-  font-family: "GeneralSans-Variable";
-}
-
 /* Apply the root-fixes class to body */
 body {
   @apply root-fixes;

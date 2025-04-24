@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
-import Header from "@/components/Header";
+import "../assets/GeneralSans/WEB/css/general-sans.css";
+import Header from "../components/Header";
 import { Toaster } from "react-hot-toast";
-import NgrokReminder from "@/components/NgrokReminder";
+import NgrokReminder from "../components/NgrokReminder";
+import { FirebaseAuthProvider } from "../components/FirebaseAuthProvider";
 
 export const metadata: Metadata = {
   title: "D-ID API Demo",
@@ -17,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider dynamic>
+    <FirebaseAuthProvider>
       <html lang="en" className="h-full">
         <head />
         <body className="flex flex-col h-full">
@@ -69,6 +70,6 @@ export default function RootLayout({
           />
         </body>
       </html>
-    </ClerkProvider>
+    </FirebaseAuthProvider>
   );
 }

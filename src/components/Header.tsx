@@ -1,33 +1,17 @@
 "use client";
 
-import { auth, db } from "@/firebase/firebaseClient";
+import { db } from "@/firebase/firebaseClient";
 import { NOTIFICATION_COLLECTION, NOTIFICATION_STATUS } from "@/libs/constants";
 import { NotificationDetail } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
-import useProfileStore from "@/zustand/useProfileStore";
 import Image from "next/image";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  useAuth,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
-import {
-  signInWithCustomToken,
-  signOut as firebaseSignOut,
-  updateProfile,
-} from "firebase/auth";
 import {
   collection,
   doc,
   onSnapshot,
   query,
-  serverTimestamp,
   setDoc,
-  Timestamp,
   where,
 } from "firebase/firestore";
 import { AlignJustify, Bell } from "lucide-react";
@@ -36,16 +20,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import moment from "moment";
 import { useRouter } from "next/navigation";
 import logo from "@/assets/images/logo.png";
+import { useAuth } from "./FirebaseAuthProvider";
+import { FirebaseAuth } from "./FirebaseAuth";
+import { UserProfile } from "./UserProfile";
 
 export default function Header() {
-  const { getToken, isSignedIn } = useAuth();
+  const { user } = useAuth();
   const uid = useAuthStore((state) => state.uid);
-  const { user } = useUser();
   const [notifications, setNotifications] = useState<NotificationDetail[]>([]);
   const [processing, setProcessing] = useState(true);
-  const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
-  const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
-  const profile = useProfileStore((state) => state.profile);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -69,6 +52,12 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    if (!uid) {
+      setNotifications([]);
+      setProcessing(false);
+      return;
+    }
+
     setProcessing(true);
     const notificationCollection = query(
       collection(db, NOTIFICATION_COLLECTION),
@@ -90,50 +79,6 @@ export default function Header() {
       unsubscribe();
     };
   }, [uid]);
-
-  useEffect(() => {
-    console.log("notifications", notifications);
-    console.log("profile", profile);
-  }, [notifications, profile]);
-
-  useEffect(() => {
-    const syncAuthState = async () => {
-      if (isSignedIn && user) {
-        try {
-          const token = await getToken({ template: "integration_firebase" });
-          const userCredentials = await signInWithCustomToken(
-            auth,
-            token || ""
-          );
-          console.log("User signed in to Firebase:", userCredentials.user);
-
-          // Update Firebase user profile
-          await updateProfile(userCredentials.user, {
-            displayName: user.fullName,
-            photoURL: user.imageUrl,
-          });
-          setAuthDetails({
-            uid: user.id,
-            firebaseUid: userCredentials.user.uid,
-            authEmail: user.emailAddresses[0].emailAddress,
-            authDisplayName: user.fullName || "",
-            authPhotoUrl: user.imageUrl,
-            authReady: true,
-            lastSignIn: serverTimestamp() as Timestamp,
-          });
-        } catch (error) {
-          console.error("Error signing in with custom token:", error);
-          clearAuthDetails();
-        }
-      } else {
-        console.log("User is not signed in with Clerk");
-        await firebaseSignOut(auth);
-        clearAuthDetails();
-      }
-    };
-
-    syncAuthState();
-  }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
 
   const notificationMessage = useMemo(
     () => ({
@@ -194,157 +139,147 @@ export default function Header() {
 
   return (
     <>
-      {/* <Link href="/" className="font-medium text-xl">
-          D-ID API Demo
-        </Link> */}
-
-      <SignedOut>
+      {!user ? (
         <div className="flex items-center justify-end px-4 py-3 border-b shadow-md z-30">
-          <SignInButton>
-            <button className="text-white bg-blue-500 h-full px-4 py-2 rounded-lg ">
-              Sign In
-            </button>
-          </SignInButton>
+          <FirebaseAuth />
         </div>
-      </SignedOut>
-      <SignedIn>
-        <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-[999]">
-          <Image src={logo} alt="logo" className="w-[80.28px] h-[50px]" />
-          <div className="hidden sm:flex items-center">
-            {/* {(profile.selectedAvatar || profile.selectedTalkingPhoto) && (
-              <Link href="/generate">Generate</Link>
-            )} */}
-            <div className="relative" ref={notificationRef}>
-              <button
-                className="px-2 py-1 bg-white relative"
-                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-              >
-                <Bell />
-                {notifications.length > 0 ? (
-                  <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">
-                    {notifications.length}
-                  </span>
-                ) : (
-                  <></>
-                )}
-              </button>
-              {isNotificationOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
-                  <div className="after:content-[''] after:absolute after:-top-2 after:right-3 after:border-8 after:border-transparent after:border-b-white"></div>
-                  <div className="px-3 py-2">
-                    {processing
-                      ? "Processing..."
-                      : notifications.length > 0
-                      ? notificationList
-                      : "Not found any notification."}
-                  </div>
-                </div>
-              )}
-            </div>
-            <Link
-              href="/videos/create"
-              className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
-            >
-              Create
-            </Link>
-            <Link
-              href="/videos"
-              className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
-            >
-              Videos
-            </Link>
-            <Link
-              href="/avatars"
-              className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
-            >
-              Avatars
-            </Link>
-            <Link
-              href="/profile"
-              className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
-            >
-              Profile
-            </Link>
-            <UserButton />
-          </div>
-          <div className="sm:hidden flex items-center">
-            <div className="flex justify-end">
-              <div className="flex gap-3 items-center">
-                <div className="relative" ref={notificationRef}>
-                  <button
-                    className="px-2 py-1 bg-white relative"
-                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                  >
-                    <Bell />
-                    {notifications.length > 0 ? (
-                      <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">
-                        {notifications.length}
-                      </span>
-                    ) : (
-                      <></>
-                    )}
-                  </button>
-                  {isNotificationOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
-                      <div className="after:content-[''] after:absolute after:-top-2 after:right-3 after:border-8 after:border-transparent after:border-b-white"></div>
-                      <div className="px-3 py-2">
-                        {processing
-                          ? "Processing..."
-                          : notifications.length > 0
-                          ? notificationList
-                          : "Not found any notification."}
-                      </div>
-                    </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-[999]">
+            <Image src={logo} alt="logo" className="w-[80.28px] h-[50px]" />
+            <div className="hidden sm:flex items-center">
+              <div className="relative" ref={notificationRef}>
+                <button
+                  className="px-2 py-1 bg-white relative"
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                >
+                  <Bell />
+                  {notifications.length > 0 ? (
+                    <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">
+                      {notifications.length}
+                    </span>
+                  ) : (
+                    <></>
                   )}
-                </div>
-                <AlignJustify
-                  className="cursor-pointer"
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                />
-                <UserButton />
+                </button>
+                {isNotificationOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
+                    <div className="after:content-[''] after:absolute after:-top-2 after:right-3 after:border-8 after:border-transparent after:border-b-white"></div>
+                    <div className="px-3 py-2">
+                      {processing
+                        ? "Processing..."
+                        : notifications.length > 0
+                        ? notificationList
+                        : "Not found any notification."}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
-        </div>
-        <div className="relative sm:hidden">
-          <div
-            className={`absolute shadow-md z-[9998] bg-white rounded-b-lg ${
-              isMenuOpen ? "max-h-96" : "max-h-0"
-            } overflow-hidden transition-all duration-300 w-full left-0`}
-          >
-            <div className="flex flex-col p-2">
               <Link
-                onClick={() => setIsMenuOpen(false)}
                 href="/videos/create"
-                className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
               >
                 Create
               </Link>
               <Link
-                onClick={() => setIsMenuOpen(false)}
                 href="/videos"
-                className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
               >
                 Videos
               </Link>
               <Link
-                onClick={() => setIsMenuOpen(false)}
                 href="/avatars"
-                className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
               >
                 Avatars
               </Link>
               <Link
-                onClick={() => setIsMenuOpen(false)}
                 href="/profile"
-                className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
               >
                 Profile
               </Link>
+              <UserProfile />
+            </div>
+            <div className="sm:hidden flex items-center">
+              <div className="flex justify-end">
+                <div className="flex gap-3 items-center">
+                  <div className="relative" ref={notificationRef}>
+                    <button
+                      className="px-2 py-1 bg-white relative"
+                      onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                    >
+                      <Bell />
+                      {notifications.length > 0 ? (
+                        <span className="absolute top-0 right-0 bg-slate-900 text-white px-1 text-sm rounded-full shadow-lg">
+                          {notifications.length}
+                        </span>
+                      ) : (
+                        <></>
+                      )}
+                    </button>
+                    {isNotificationOpen && (
+                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2">
+                        <div className="after:content-[''] after:absolute after:-top-2 after:right-3 after:border-8 after:border-transparent after:border-b-white"></div>
+                        <div className="px-3 py-2">
+                          {processing
+                            ? "Processing..."
+                            : notifications.length > 0
+                            ? notificationList
+                            : "Not found any notification."}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <AlignJustify
+                    className="cursor-pointer"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  />
+                  <UserProfile />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </SignedIn>
+          <div className="relative sm:hidden">
+            <div
+              className={`absolute shadow-md z-[9998] bg-white rounded-b-lg ${
+                isMenuOpen ? "max-h-96" : "max-h-0"
+              } overflow-hidden transition-all duration-300 w-full left-0`}
+            >
+              <div className="flex flex-col p-2">
+                <Link
+                  onClick={() => setIsMenuOpen(false)}
+                  href="/videos/create"
+                  className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                >
+                  Create
+                </Link>
+                <Link
+                  onClick={() => setIsMenuOpen(false)}
+                  href="/videos"
+                  className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                >
+                  Videos
+                </Link>
+                <Link
+                  onClick={() => setIsMenuOpen(false)}
+                  href="/avatars"
+                  className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                >
+                  Avatars
+                </Link>
+                <Link
+                  onClick={() => setIsMenuOpen(false)}
+                  href="/profile"
+                  className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                >
+                  Profile
+                </Link>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

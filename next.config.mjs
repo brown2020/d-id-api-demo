@@ -29,12 +29,6 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "img.clerk.com",
-        port: "",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
         hostname: "files2.heygen.ai",
         port: "",
         pathname: "/**",
@@ -42,8 +36,8 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverActions: {bodySizeLimit: "3mb"},
-  }
+    serverActions: { bodySizeLimit: "3mb" },
+  },
 };
 
 export default nextConfig;

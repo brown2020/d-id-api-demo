@@ -1,12 +1,16 @@
 "use server";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { VIDEO_COLLECTION } from "@/libs/constants";
-import { auth } from "@clerk/nextjs/server";
+import { getCurrentUser } from "./getCurrentUser";
 import { getDIDVideo } from "./getDIDVideo";
 import { syncVideo } from "./syncVideo";
 
 export async function getVideo(d_id_api_key: string, video_id: string) {
-  const { userId } = await auth.protect();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
 
   // Get video data from firestore
   const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(video_id);
@@ -24,7 +28,7 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
   }
 
   // Check Video ownership
-  if (videoData.owner !== userId) {
+  if (videoData.owner !== user.uid) {
     return { error: "Unauthorized" };
   }
 
@@ -45,32 +49,19 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
     return { error: response.error };
   }
 
-  // Then sync video detail
-  if ("id" in response) {
-    if (response.status == "done") {
-      const syncResponse = await syncVideo(
-        video_id,
-        videoData.did_id,
-        response.status,
-        response.result_url
-      );
-      // Then send response
-      return { status: true, video_url: syncResponse.video_url };
-    } else if (response.status == "error") {
-      await syncVideo(
-        video_id,
-        videoData.did_id,
-        response.status,
-        response.result_url,
-        response.errorMessage,
-        response.errorDetails
-      );
-      // Then send response
-      return { error: response.errorMessage };
+  if (response.status === "done") {
+    // Get the video url
+    const video_url = response.result_url;
+    if (!videoData.video_url) {
+      await syncVideo({
+        video_id: video_id,
+        owner: videoData.owner,
+        video_url: video_url,
+      });
     }
-  } else {
-    return { error: "Error getting video" };
+    return { status: true, video_url };
   }
 
-  // return {status: true, video_url: videoData.video_url};
+  // Return processing
+  return { status: false, message: "Processing" };
 }

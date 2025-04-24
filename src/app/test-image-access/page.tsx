@@ -156,11 +156,15 @@ export default function TestImageAccess() {
         <h2 className="font-semibold">Environment Information</h2>
         <div className="mt-2 font-mono text-sm">
           <p>API Base URL: {baseUrl}</p>
-          <p>
-            Running locally:{" "}
-            {window.location.hostname === "localhost" ? "Yes" : "No"}
-          </p>
-          <p>Current URL: {window.location.href}</p>
+          {typeof window !== "undefined" && (
+            <>
+              <p>
+                Running locally:{" "}
+                {window.location.hostname === "localhost" ? "Yes" : "No"}
+              </p>
+              <p>Current URL: {window.location.href}</p>
+            </>
+          )}
         </div>
       </div>
 

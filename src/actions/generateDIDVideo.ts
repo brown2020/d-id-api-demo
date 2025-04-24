@@ -1,7 +1,7 @@
 "use server";
 
-import { DIDVideoStatus, Emotion, Movement } from "@/types/did";
-import { auth } from "@clerk/nextjs/server";
+import { DIDVideoStatus, Emotion, Movement } from "../types/did";
+import { protect } from "./auth";
 import axios from "axios";
 import { addErrorReport } from "./addErrorReport";
 
@@ -25,7 +25,7 @@ export async function generateDIDVideo(
   emotion: Emotion = "neutral",
   movement: Movement = "neutral"
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
-  await auth.protect();
+  await protect();
 
   // Add these logs at the start of the function to help debug the issue
   console.log("generateDIDVideo called with:");
@@ -143,15 +143,28 @@ export async function generateDIDVideo(
 
     console.log("Script settings configured:", scriptSettings);
 
+    // Log API key format for debugging (without revealing the actual key)
+    console.log(
+      "API Key format check:",
+      apiKey
+        ? `Length: ${apiKey.length}, Contains colon: ${apiKey.includes(":")}`
+        : "API Key is null"
+    );
+
+    // Use the exact header from the working curl command
+    console.log("Using exact authorization header from working curl command");
+
     const config = {
       method: "post",
       url: "https://api.d-id.com/talks",
       headers: {
+        accept: "application/json",
+        authorization:
+          "Basic WW5KdmQyNHlNREl3UUdkdFlXbHNMbU52YlE6emNjYm9IeXh4aHNxZm1lVjhibFVi",
+        "content-type": "application/json",
         "x-api-key-external": JSON.stringify({
           elevenlabs: elevenlabsApiKey, // Use the passed in ElevenLabs API key
         }),
-        "Content-Type": "application/json",
-        Authorization: `Basic ${apiKey}`,
       },
       data: {
         webhook: webhookUrl,

@@ -1,9 +1,9 @@
 "use server";
 
-import { CanvasObject } from "@/types/did";
-import { auth } from "@clerk/nextjs/server";
-import { VIDEO_COLLECTION } from "@/libs/constants";
-import { adminDb } from "@/firebase/firebaseAdmin";
+import { CanvasObject } from "../types/did";
+import { protect } from "./auth";
+import { VIDEO_COLLECTION } from "../libs/constants";
+import { adminDb } from "../firebase/firebaseAdmin";
 
 export async function addDraftVideo(
   canvas_object: CanvasObject,
@@ -14,29 +14,41 @@ export async function addDraftVideo(
   },
   avatar_id: string
 ) {
-  const { userId } = await auth.protect();
+  try {
+    // Get user ID from the auth check
+    const userId = await protect();
 
-  const id = `new-video-${Date.now()}`;
+    const id = `new-video-${Date.now()}`;
 
-  // add that thumbnail id to video object
-  const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
-  await videoRef.set(
-    {
-      id,
-      title: "Untitled Video",
-      did_id: "",
-      d_id_status: "",
-      avatar_id: avatar_id,
-      owner: userId,
-      type: "personal",
-      canvas_json: canvas_object,
-      canvas_detail: canvas_detail,
-    },
-    { merge: true }
-  );
+    // add that thumbnail id to video object
+    const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+    await videoRef.set(
+      {
+        id,
+        title: "Untitled Video",
+        did_id: "",
+        d_id_status: "",
+        avatar_id: avatar_id,
+        owner: userId,
+        type: "personal",
+        canvas_json: canvas_object,
+        canvas_detail: canvas_detail,
+        created_at: new Date().getTime(),
+      },
+      { merge: true }
+    );
 
-  return {
-    status: true,
-    id: id,
-  };
+    return {
+      status: true,
+      id: id,
+    };
+  } catch (error) {
+    console.error("Error adding draft video:", error);
+    return {
+      status: false,
+      message:
+        error instanceof Error ? error.message : "Error adding draft video",
+      id: null,
+    };
+  }
 }

@@ -60,7 +60,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
 
   return (
     <article className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
-      {avatar?.preview_image_url ? (
+      {avatar?.preview_image_url && avatar.preview_image_url.trim() !== "" ? (
         <Image
           src={avatar.preview_image_url}
           alt={avatar.talking_photo_name}
@@ -69,7 +69,9 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <></>
+        <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+          <span className="text-gray-400">No image</span>
+        </div>
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/0"></div>

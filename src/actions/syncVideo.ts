@@ -1,39 +1,54 @@
 "use server";
 
 import { DIDVideoStatus } from "@/types/did";
-import { VIDEO_COLLECTION } from "@/libs/constants";
+import { VIDEO_COLLECTION, NOTIFICATION_COLLECTION } from "@/libs/constants";
 import { adminDb } from "@/firebase/firebaseAdmin";
-import { addVideoToStorage } from "./addVideoToStorage";
+import { Timestamp } from "firebase-admin/firestore";
 
+interface SyncVideoParams {
+  video_id: string;
+  owner: string;
+  video_url: string;
+  status?: DIDVideoStatus;
+  errorMessage?: string;
+  errorDetails?: Record<string, unknown>;
+}
 
-export async function syncVideo(video_id: string, did_video_id: string, status: DIDVideoStatus, result_url: string, errorMessage?: string, error?: Record<string, unknown>) {
+export async function syncVideo(params: SyncVideoParams) {
+  try {
+    const {
+      video_id,
+      owner,
+      video_url,
+      status = "done",
+      errorMessage,
+      errorDetails,
+    } = params;
 
-    // Get video data from Firestore
-    // D_ID video id should match with video data
-    // Upload video to bucket
-
+    // Get the video document reference
     const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(video_id);
-    const video = await videoRef.get();
 
-    if (!video.exists || video.data() == undefined) { return { "error": "Video not found" }; }
+    // Update the video document
+    await videoRef.update({
+      video_url,
+      status,
+      errorMessage,
+      errorDetails,
+      updated_at: Timestamp.now(),
+    });
 
-    const videoData = video.data();
+    // Create notification
+    await adminDb.collection(NOTIFICATION_COLLECTION).add({
+      user_id: owner,
+      video_id,
+      status: "UNREAD",
+      type: status === "done" ? "video_generated" : "video_generation_failed",
+      created_at: Timestamp.now(),
+    });
 
-    // D_ID video id should match with video data
-    if (videoData == undefined || videoData.did_id !== did_video_id) { return { "error": "Video ID mismatch" }; }
-
-    // Download video from result_url and upload that video to firebase storage
-    // Stream the video from the URL directly to Firebase Storage
-    console.log("Downloading video from D-ID API result URL:", result_url);
-
-    if (status !== 'done') {
-        if (status === 'error') {
-            await videoRef.update({ d_id_status: status, error: error, errorMessage: errorMessage });
-        }
-        return { "error": "Video processing not completed" };
-    }
-
-    const addVideoResponse = await addVideoToStorage(video_id, result_url, status);
-    if (addVideoResponse.status) return { status: true, video_url: addVideoResponse.video_url };
-    else return { "error": "Error adding video to storage" };
+    return { success: true, video_url };
+  } catch (error) {
+    console.error("Error syncing video:", error);
+    return { error: "Failed to sync video" };
+  }
 }
