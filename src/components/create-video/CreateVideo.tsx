@@ -1031,6 +1031,25 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             console.log("- Is localhost:", isLocalhost);
             console.log("- Selected avatar:", selectedAvatar.talking_photo_id);
 
+            // Add detailed debugging for authentication parameters
+            console.log("=== AUTH DEBUG INFO ===");
+            console.log(`- Profile has API key: ${!!profile.did_api_key}`);
+            console.log(
+              `- API key length: ${profile.did_api_key?.length || 0}`
+            );
+            console.log(
+              `- Profile has Basic Auth: ${!!profile.did_basic_auth}`
+            );
+            console.log(
+              `- Basic Auth length: ${profile.did_basic_auth?.length || 0}`
+            );
+            console.log(
+              `- Basic Auth starts with 'Basic ': ${
+                profile.did_basic_auth?.startsWith("Basic ") || false
+              }`
+            );
+            console.log("======================");
+
             // Always use fallback image when on localhost
             const useFallbackImage = isLocalhost ? true : false;
 

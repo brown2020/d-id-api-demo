@@ -28,6 +28,24 @@ export async function generateDIDVideo(
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
   await protect();
 
+  // Detailed logging for authentication debugging
+  console.log("=== AUTHENTICATION DEBUG INFO ===");
+  console.log(`- API Key provided: ${!!apiKey}`);
+  console.log(`- API Key length: ${apiKey?.length || 0}`);
+  console.log(`- Basic Auth provided: ${!!basicAuth}`);
+  console.log(`- Basic Auth length: ${basicAuth?.length || 0}`);
+  if (basicAuth) {
+    console.log(
+      `- Basic Auth starts with 'Basic ': ${basicAuth.startsWith("Basic ")}`
+    );
+    console.log(
+      `- Basic Auth format: ${
+        basicAuth.startsWith("Basic ") ? "Correct" : "Needs prefix"
+      }`
+    );
+  }
+  console.log("=================================");
+
   // Add these logs at the start of the function to help debug the issue
   console.log("generateDIDVideo called with:");
   console.log(`- Image URL: ${imageUrl}`);
@@ -35,6 +53,34 @@ export async function generateDIDVideo(
   console.log(`- API Key present: ${!!apiKey}`);
   console.log(`- Basic Auth present: ${!!basicAuth}`);
   console.log(`- ElevenLabs API Key present: ${!!elevenlabsApiKey}`);
+
+  // Add more detailed raw data debugging for production issues
+  console.log("=========== RAW AUTH DATA BEFORE PROCESSING ===========");
+  // Log API Key details (safely)
+  if (apiKey) {
+    console.log(`- API Key type: ${typeof apiKey}`);
+    console.log(`- API Key length: ${apiKey.length}`);
+    console.log(`- API Key starts with: ${apiKey.substring(0, 5)}...`);
+    console.log(`- API Key includes colon: ${apiKey.includes(":")}`);
+    console.log(
+      `- API Key starts with 'Basic ': ${apiKey.startsWith("Basic ")}`
+    );
+  } else {
+    console.log("- API Key is null or empty");
+  }
+
+  // Log Basic Auth details (safely)
+  if (basicAuth) {
+    console.log(`- Basic Auth type: ${typeof basicAuth}`);
+    console.log(`- Basic Auth length: ${basicAuth.length}`);
+    console.log(`- Basic Auth starts with: ${basicAuth.substring(0, 10)}...`);
+    console.log(
+      `- Basic Auth starts with 'Basic ': ${basicAuth.startsWith("Basic ")}`
+    );
+  } else {
+    console.log("- Basic Auth is null or empty");
+  }
+  console.log("=====================================================");
 
   // Add more detailed debug for production issues
   console.log("=========== PRODUCTION DEBUG ===========");
@@ -312,65 +358,84 @@ export async function generateDIDVideo(
       };
     }
 
-    // Define the authorization header properly based on the available auth methods
-    let authHeader;
-
-    console.log("=========== AUTH HEADER DEBUG ===========");
-    // First priority: Use Basic Auth from profile if available
-    if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
-      console.log("USING PRIORITY 1: Basic Auth from profile");
-      console.log(
-        `- Basic Auth starts with 'Basic ': ${finalBasicAuth.startsWith(
-          "Basic "
-        )}`
-      );
-      console.log(`- Basic Auth length: ${finalBasicAuth.length}`);
-      authHeader = finalBasicAuth;
-    }
-    // Second priority: Use D_ID_BASIC_AUTH environment variable
-    else if (
-      process.env.D_ID_BASIC_AUTH &&
-      process.env.D_ID_BASIC_AUTH.startsWith("Basic ")
-    ) {
-      console.log("USING PRIORITY 2: D_ID_BASIC_AUTH environment variable");
-      console.log(
-        `- Env Basic Auth starts with 'Basic ': ${process.env.D_ID_BASIC_AUTH.startsWith(
-          "Basic "
-        )}`
-      );
-      console.log(
-        `- Env Basic Auth length: ${process.env.D_ID_BASIC_AUTH.length}`
-      );
-      authHeader = process.env.D_ID_BASIC_AUTH;
-    }
-    // Third priority: API key starting with "Basic"
-    else if (finalApiKey.startsWith("Basic ")) {
-      console.log("USING PRIORITY 3: API key that already starts with 'Basic'");
-      console.log(
-        `- API key starts with 'Basic ': ${finalApiKey.startsWith("Basic ")}`
-      );
-      console.log(`- API key length: ${finalApiKey.length}`);
+    // Configure the authorization header based on available authentication methods
+    let authHeader = "";
+    if (finalApiKey && finalApiKey.length > 1) {
+      console.log("Using DID API Key for authentication");
       authHeader = finalApiKey;
+    } else if (finalBasicAuth && finalBasicAuth.length > 1) {
+      console.log("Using DID Basic Auth for authentication");
+
+      // Check if finalBasicAuth already has the "Basic " prefix
+      if (finalBasicAuth.startsWith("Basic ")) {
+        authHeader = finalBasicAuth;
+      } else {
+        // Check if it looks like raw credentials (username:password)
+        if (finalBasicAuth.includes(":")) {
+          console.log("Converting raw credentials to Basic auth format");
+          // Convert raw credentials to basic auth format
+          const base64Credentials =
+            Buffer.from(finalBasicAuth).toString("base64");
+          authHeader = `Basic ${base64Credentials}`;
+        } else {
+          // Assume it's already base64 encoded but missing the "Basic " prefix
+          console.log("Adding Basic prefix to credentials");
+          authHeader = `Basic ${finalBasicAuth}`;
+        }
+      }
+    } else {
+      const errorMessage =
+        "No valid authentication method provided. Please check your profile settings.";
+      console.error(errorMessage);
+      return {
+        error: errorMessage,
+      } as GenerateVideoFailResponse;
     }
-    // Fourth priority: API key with colon (username:password format)
-    else if (finalApiKey.includes(":")) {
-      console.log("USING PRIORITY 4: API key in username:password format");
-      console.log(`- API key includes colon: ${finalApiKey.includes(":")}`);
-      console.log(`- API key length: ${finalApiKey.length}`);
-      authHeader = `Basic ${Buffer.from(finalApiKey).toString("base64")}`;
-    }
-    // Last resort: Assume API key is already Base64 encoded
-    else {
-      console.log("USING PRIORITY 5: API key as-is (assuming Base64 encoded)");
-      console.log(`- API key length: ${finalApiKey.length}`);
-      authHeader = `Basic ${finalApiKey}`;
-    }
+
     console.log("======================================");
 
     console.log(
       "Authorization header set:",
       authHeader.substring(0, 10) + "..."
     );
+
+    // Add validation to ensure the authHeader is properly formatted
+    if (!authHeader) {
+      console.error("FATAL ERROR: Authorization header is empty");
+      return {
+        error:
+          "Authentication error: Authorization header could not be constructed. Please check your API key or Basic Auth.",
+      };
+    }
+
+    if (!authHeader.startsWith("Basic ")) {
+      console.error(
+        `MALFORMED AUTH HEADER: Header doesn't start with "Basic ": ${authHeader.substring(
+          0,
+          20
+        )}...`
+      );
+      // Attempt to fix the header if possible
+      if (authHeader.includes(":")) {
+        console.log("Attempting to fix header by encoding as Base64");
+        authHeader = `Basic ${Buffer.from(authHeader).toString("base64")}`;
+      } else if (!/^[A-Za-z0-9+/=]+$/.test(authHeader)) {
+        console.error("Header is not valid Base64, cannot fix automatically");
+        return {
+          error:
+            "Authentication error: Invalid authorization format. Please check your API key or Basic Auth format.",
+        };
+      } else {
+        console.log(
+          "Header appears to be Base64 but missing 'Basic ' prefix, adding prefix"
+        );
+        authHeader = `Basic ${authHeader}`;
+      }
+      console.log(
+        "Fixed authorization header:",
+        authHeader.substring(0, 10) + "..."
+      );
+    }
 
     const config = {
       method: "post",
@@ -404,17 +469,38 @@ export async function generateDIDVideo(
     // Test D-ID API key by first making a GET request to check authentication
     try {
       console.log("Testing D-ID API authentication first...");
+      console.log("Auth test endpoint: https://api.d-id.com/talks?limit=1");
+      console.log("Auth test header:", authHeader.substring(0, 10) + "...");
+
+      // Log the full request details for debugging
+      const testRequest = {
+        method: "GET",
+        url: "https://api.d-id.com/talks?limit=1",
+        headers: {
+          accept: "application/json",
+          authorization: authHeader,
+        },
+      };
+      console.log(
+        "Auth test request config:",
+        JSON.stringify(testRequest, null, 2)
+      );
+
       const testResponse = await axios.get(
         "https://api.d-id.com/talks?limit=1",
         {
           headers: {
             accept: "application/json",
-            authorization: config.headers.authorization,
+            authorization: authHeader,
           },
         }
       );
       console.log(
         `Authentication test successful: ${testResponse.status} ${testResponse.statusText}`
+      );
+      console.log(
+        "Auth test response headers:",
+        JSON.stringify(testResponse.headers)
       );
     } catch (authError) {
       console.error("Authentication test failed:", authError);
