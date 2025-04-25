@@ -187,6 +187,30 @@ export default function Generate() {
         </div>
       )}
 
+      <div className="mb-4 flex items-center">
+        <input
+          type="checkbox"
+          id="useFallbackImageToggle"
+          checked={useFallbackImage}
+          onChange={(e) => setUseFallbackImage(e.target.checked)}
+          className="mr-2"
+        />
+        <label
+          htmlFor="useFallbackImageToggle"
+          className="text-sm text-gray-700"
+        >
+          Use fallback image (recommended if you&apos;re having issues with
+          video generation)
+        </label>
+
+        <button
+          onClick={() => window.open("/test-image-access", "_blank")}
+          className="ml-3 text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
+        >
+          Test Image Accessibility
+        </button>
+      </div>
+
       <div className="flex flex-col md:flex-row gap-4">
         <div className="mr-auto mb-4">
           <AvatarCard id={profile.selectedTalkingPhoto} />

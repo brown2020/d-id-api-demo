@@ -107,15 +107,50 @@ export async function generateVideo(
       baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1");
     let imageUrl;
 
-    // Force using fallback for localhost to prevent 404 errors
+    // Set initial image URL based on environment and user preference
     if (isLocalhost || useFallbackImage) {
       // Use the permanent public URL for the fallback image
-      // This ensures the D-ID API can access it regardless of environment
       imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
       console.log("Using permanent public fallback image URL:", imageUrl);
     } else {
-      // Use the normal proxy URL
+      // For production, first try to use the user's image through our proxy
       imageUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
+      console.log("Initial image URL (via proxy):", imageUrl);
+
+      // Test if the image is accessible from D-ID's perspective
+      try {
+        console.log("Testing image accessibility for D-ID...");
+        const testUrl = `${baseUrl}/api/check-did-image-access?url=${encodeURIComponent(
+          imageUrl
+        )}`;
+        console.log("Testing URL:", testUrl);
+
+        const didAccessResponse = await fetch(testUrl);
+        const didAccessResult = await didAccessResponse.json();
+
+        if (didAccessResult.success) {
+          console.log(
+            "✅ Image should be accessible to D-ID:",
+            didAccessResult
+          );
+          // Continue using the proxy URL since it's working
+        } else {
+          console.warn(
+            "⚠️ Image might not be accessible to D-ID:",
+            didAccessResult
+          );
+          // Fall back to the public image
+          imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
+          console.log("Falling back to public URL for D-ID compatibility");
+        }
+      } catch (error) {
+        console.error("Error testing image accessibility for D-ID:", error);
+        // Fall back to the public image
+        imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
+        console.log(
+          "Falling back to public URL due to error in D-ID accessibility testing"
+        );
+      }
     }
 
     const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);

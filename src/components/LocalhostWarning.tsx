@@ -11,16 +11,32 @@ export default function LocalhostWarning({
   onUseFallback,
 }: LocalhostWarningProps) {
   const [show, setShow] = useState(false);
+  const [environmentInfo, setEnvironmentInfo] = useState({
+    isLocalhost: false,
+    isNgrok: false,
+    isVercel: false,
+    origin: "",
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const origin = window.location.origin;
-      const isLocalhost = origin.includes("localhost");
-      const isNgrok =
-        origin.includes("ngrok.io") || origin.includes("ngrok-free.app");
+      const hostname = window.location.hostname;
 
-      // Only show warning if we're on localhost and not using ngrok
-      if (isLocalhost && !isNgrok) {
+      const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+      const isNgrok = origin.includes("ngrok");
+      const isVercel = origin.includes("vercel.app");
+
+      setEnvironmentInfo({
+        isLocalhost,
+        isNgrok,
+        isVercel,
+        origin,
+      });
+
+      // Show warning on localhost or if not on a verified domain
+      const shouldShowWarning = isLocalhost || (!isNgrok && !isVercel);
+      if (shouldShowWarning) {
         setShow(true);
       }
     }
@@ -47,37 +63,68 @@ export default function LocalhostWarning({
         </div>
         <div className="ml-3">
           <p className="text-sm text-orange-700">
-            <strong>Video Generation Warning:</strong> You&apos;re using
-            localhost, but the D-ID API requires a publicly accessible URL for
-            images.
+            <strong>Image Accessibility Warning:</strong>{" "}
+            {environmentInfo.isLocalhost
+              ? "You're using localhost, but the D-ID API requires a publicly accessible URL for images."
+              : "Your environment may have issues with image accessibility for the D-ID API."}
             <br />
             <span className="mt-1 block">
-              To avoid infinite error loops, you can:
+              Current environment:{" "}
+              <code className="bg-orange-50 px-1 rounded-sm">
+                {environmentInfo.origin}
+              </code>
+              (
+              {environmentInfo.isLocalhost
+                ? "localhost"
+                : environmentInfo.isNgrok
+                ? "ngrok"
+                : environmentInfo.isVercel
+                ? "Vercel"
+                : "unknown"}
+              )
+            </span>
+            <span className="mt-1 block">
+              To prevent video generation errors, you can:
             </span>
             <ul className="list-disc pl-5 mt-1 mb-2">
-              <li>
-                <strong>Recommended:</strong> Run ngrok with:{" "}
-                <code className="bg-orange-50 px-1 rounded-sm">
-                  ngrok http 3000
-                </code>{" "}
-                and use that URL instead
-              </li>
+              {environmentInfo.isLocalhost && (
+                <li>
+                  <strong>Recommended:</strong> Run ngrok with:{" "}
+                  <code className="bg-orange-50 px-1 rounded-sm">
+                    ngrok http 3000
+                  </code>{" "}
+                  and use that URL instead
+                </li>
+              )}
               <li>
                 <button
                   onClick={onUseFallback}
                   className="text-blue-600 underline hover:text-blue-800 font-medium"
                 >
-                  Use fallback image instead
+                  Use fallback image
                 </button>{" "}
-                (for testing only)
+                (reliable but doesn&apos;t use your custom avatar)
+              </li>
+              <li>
+                Click the &quot;Test Image Accessibility&quot; button below to
+                check if your image is accessible
               </li>
             </ul>
-            <Link
-              href="/diagnostic"
-              className="mt-2 font-medium underline inline-block"
-            >
-              Run diagnostics & troubleshooting
-            </Link>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Link
+                href="/test-image-access"
+                className="text-xs bg-orange-200 hover:bg-orange-300 px-2 py-1 rounded inline-block"
+                target="_blank"
+              >
+                Test Image Access
+              </Link>
+              <Link
+                href="/diagnostic"
+                className="text-xs bg-orange-200 hover:bg-orange-300 px-2 py-1 rounded inline-block"
+              >
+                Run Diagnostics
+              </Link>
+            </div>
           </p>
         </div>
         <div className="ml-auto pl-3">
