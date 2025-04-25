@@ -32,7 +32,7 @@ export default function SetNgrokUrl() {
       formattedUrl = formattedUrl.slice(0, -1);
     }
 
-    saveNgrokUrl(formattedUrl);
+    saveNgrokUrl();
     setCurrentUrl(formattedUrl);
     setSaved(true);
 

@@ -165,6 +165,31 @@ export async function generateDIDVideo(
     // Use the authorization from environment variable
     console.log("Using authorization from environment variable");
 
+    // Define a more specific type for the data object
+    interface DIDTalkRequestData {
+      script: {
+        type: "audio" | "text";
+        url?: string;
+        input?: string;
+        provider?: {
+          type: string;
+          voice_id: string;
+        };
+      };
+      source_url: string;
+      webhook?: string; // Optional webhook property
+      config: {
+        stitch: boolean;
+        driver_expressions: {
+          expressions: {
+            expression: Emotion;
+            start_frame: number;
+            intensity: number;
+          }[];
+        };
+      };
+    }
+
     const config = {
       method: "post",
       url: "https://api.d-id.com/talks",
@@ -177,7 +202,6 @@ export async function generateDIDVideo(
         }),
       },
       data: {
-        webhook: webhookUrl,
         script: scriptSettings,
         source_url: imageUrl,
         config: {
@@ -192,8 +216,21 @@ export async function generateDIDVideo(
             ],
           },
         },
-      },
+      } as DIDTalkRequestData, // Use a specific type instead of 'any'
     };
+
+    // Only add the webhook if it's a proper HTTPS URL
+    // This avoids webhook validation errors with localhost
+    if (
+      webhookUrl &&
+      webhookUrl.startsWith("https://") &&
+      !webhookUrl.includes("localhost")
+    ) {
+      console.log("Using webhook URL:", webhookUrl);
+      config.data.webhook = webhookUrl;
+    } else {
+      console.log("Skipping webhook URL - using polling for status updates");
+    }
 
     console.log(
       "Axios request config prepared:",

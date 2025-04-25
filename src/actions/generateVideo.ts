@@ -32,16 +32,36 @@ export async function generateVideo(
 
   const id = video_id ? video_id : `new-video-${Date.now()}`;
 
-  // Generate video thubnail
-  const filename = `thumbnail-${randomString(10)}.png`;
-  const filePath = `video-image/${id}/${filename}`;
-  console.log("filePath", filePath);
-
-  // Add that thumbnail to firebase storage
-  const bucket = admin.storage().bucket();
-  const file = bucket.file(filePath);
-  const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
   try {
+    // Create or get the video document in Firestore first, before generating
+    const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+    const videoDoc = await videoRef.get();
+
+    // If the video document doesn't exist, create it with initial values
+    if (!videoDoc.exists) {
+      console.log(`Creating new video document with ID: ${id}`);
+      await videoRef.set({
+        id,
+        title: "New Video",
+        type: "personal",
+        d_id_status: "created",
+        created_at: admin.firestore.Timestamp.now(),
+        owner: "user", // TODO: Use actual user ID
+      });
+    } else {
+      console.log(`Found existing video document with ID: ${id}`);
+    }
+
+    // Generate video thumbnail
+    const filename = `thumbnail-${randomString(10)}.png`;
+    const filePath = `video-image/${id}/${filename}`;
+    console.log("filePath", filePath);
+
+    // Add that thumbnail to firebase storage
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(filePath);
+    const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
+
     if (!matches) {
       throw new Error("Invalid data URL format");
     }
@@ -63,13 +83,9 @@ export async function generateVideo(
     const thumbnailUrl = await getFileUrl(filePath);
 
     // add that thumbnail id to video object
-    const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
-    await videoRef.set(
-      {
-        thumbnail_url: thumbnailUrl,
-      },
-      { merge: true }
-    );
+    await videoRef.update({
+      thumbnail_url: thumbnailUrl,
+    });
 
     // Create proxy link
     const secret_token = randomString(32);
@@ -133,23 +149,32 @@ export async function generateVideo(
 
     if (response) {
       if ("error" in response && response.error) {
+        // Update the document with error information
+        await videoRef.update({
+          d_id_status: "error",
+          errorMessage: response.error,
+          updated_at: admin.firestore.Timestamp.now(),
+        });
+
         return {
           status: false,
           message: response.error || "Error generating video",
           id: id,
         };
       } else if ("id" in response) {
-        const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+        // Update the document with D-ID information
+        await videoRef.update({
+          did_id: response.id,
+          d_id_status: response.status,
+          secret_token,
+          used_fallback_image: useFallbackImage,
+          updated_at: admin.firestore.Timestamp.now(),
+        });
 
-        await videoRef.set(
-          {
-            did_id: response.id,
-            d_id_status: response.status,
-            secret_token,
-            used_fallback_image: useFallbackImage,
-          },
-          { merge: true }
+        console.log(
+          `Successfully updated video document with D-ID ID: ${response.id}`
         );
+
         return {
           status: true,
           id: id,
@@ -157,6 +182,9 @@ export async function generateVideo(
       }
       return { status: false, message: "Error generating video", id };
     }
+
+    // Shouldn't reach here, but handle as failure case
+    return { status: false, message: "Error generating video", id };
   } catch (error) {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     let errorDetails: Record<string, any> = {};
@@ -181,12 +209,22 @@ export async function generateVideo(
     console.error("Error in generateVideo:", errorMessage, errorDetails);
     await addErrorReport("generateDIDVideo", errorDetails);
 
+    // Try to update the video document with error information
+    try {
+      const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+      await videoRef.update({
+        d_id_status: "error",
+        errorMessage: errorMessage,
+        updated_at: admin.firestore.Timestamp.now(),
+      });
+    } catch (updateError) {
+      console.error("Failed to update video document with error:", updateError);
+    }
+
     return {
       status: false,
       message: errorMessage,
       id,
     };
   }
-
-  return { status: false, message: "Error generating video", id };
 }

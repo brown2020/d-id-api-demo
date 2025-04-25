@@ -163,7 +163,7 @@ export default function DiagnosticPage() {
                 </p>
                 <button
                   onClick={() => {
-                    saveNgrokUrl(environment.origin);
+                    saveNgrokUrl();
                     setEnvironment({
                       ...environment,
                       baseUrl: environment.origin,

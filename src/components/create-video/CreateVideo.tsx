@@ -75,6 +75,7 @@ import { addDraftVideo } from "@/actions/addDraftVideo";
 import { generateVideo } from "@/actions/generateVideo";
 import TextareaAutosize from "react-textarea-autosize";
 import { ErrorMessage } from "@hookform/error-message";
+import { retrieveDIDVideo } from "@/actions/retrieveDIDVideo";
 
 type IconType =
   | keyof typeof icons
@@ -504,6 +505,15 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             setProcessing(false);
 
             // Ensure we have proper error data
+            if (
+              err === undefined ||
+              err === null ||
+              (typeof err === "object" && Object.keys(err).length === 0)
+            ) {
+              console.error("Video generation failed with empty error object");
+              return "Error: Video generation failed. Please check your API keys and try again.";
+            }
+
             console.error("Video generation error:", err);
 
             // Parse error or provide a fallback message
@@ -1002,7 +1012,12 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               multiplier,
             });
 
-            const baseUrl = getApiBaseUrl() ?? window.location.origin;
+            // Always use window.location.origin for the base URL
+            // This will work correctly for all environments:
+            // - localhost will be http://localhost:3000
+            // - ngrok will be the ngrok URL
+            // - production will be the production URL
+            const baseUrl = window.location.origin;
 
             // Check if we're on localhost
             const isLocalhost =
@@ -1033,12 +1048,77 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               useFallbackImage
             );
 
-            /**
-             * TODO: If status is false and id is provided then redirect it to video detail page
-             */
-
             if (response.status && response.id != undefined) {
-              resolve({ status: true, data: response.id });
+              // Instead of just resolving with the ID, initiate polling for the video status
+              // This is the internal video ID we should use, not the D-ID API's talk ID
+              const internalVideoId = videoIdRef.current || "";
+
+              console.log(
+                `Video created successfully with internal ID: ${internalVideoId} and D-ID talk ID: ${response.id}`
+              );
+
+              // Start polling for the video status
+              toast.success(
+                "Video submitted successfully! Waiting for D-ID to process...",
+                { duration: 5000 }
+              );
+
+              // Poll for video status
+              try {
+                // Add initial wait before attempting to poll
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+
+                console.log(
+                  "Starting to poll for video status",
+                  internalVideoId
+                );
+                const result = await retrieveDIDVideo(
+                  profile.did_api_key || "",
+                  internalVideoId, // Use our internal video ID, not the D-ID talk ID
+                  selectedAvatar.talking_photo_id || "",
+                  2000 // Poll every 2 seconds
+                );
+
+                if (result && result.status === "completed") {
+                  toast.success("Video processing completed successfully!");
+                  resolve({ status: true, data: internalVideoId });
+                } else if (result && result.status === "failed") {
+                  console.error("Video processing failed:", result.error);
+                  reject({
+                    status: false,
+                    data: result.error || "Video processing failed",
+                  });
+                } else if (result && result.status === "processing") {
+                  // If the video is still processing after our polling window, consider it a success
+                  // and direct the user to the video page where they can refresh to see progress
+                  console.log("Video is still processing after polling window");
+                  toast.success(
+                    "Your video is still processing. You'll be redirected to the video page where you can check its status.",
+                    { duration: 8000 }
+                  );
+                  resolve({ status: true, data: internalVideoId });
+                } else {
+                  // Fallback in case the result is unexpected
+                  console.log("Got unexpected video status:", result);
+                  toast.success(
+                    "Video has been submitted. You'll be redirected to view its status.",
+                    { duration: 5000 }
+                  );
+                  resolve({ status: true, data: internalVideoId });
+                }
+              } catch (pollingError) {
+                console.error(
+                  "Error during video status polling:",
+                  pollingError
+                );
+                // If polling fails, still consider the video generation successful
+                // as the video ID was generated correctly
+                toast.success(
+                  "Your video has been created but we couldn't verify its status. You'll be redirected to check it.",
+                  { duration: 5000 }
+                );
+                resolve({ status: true, data: internalVideoId });
+              }
             } else {
               reject({ status: false, data: response.message });
             }
@@ -1065,6 +1145,15 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
           setProcessing(false);
 
           // Ensure we have proper error data
+          if (
+            err === undefined ||
+            err === null ||
+            (typeof err === "object" && Object.keys(err).length === 0)
+          ) {
+            console.error("Video generation failed with empty error object");
+            return "Error: Video generation failed. Please check your API keys and try again.";
+          }
+
           console.error("Video generation error:", err);
 
           // Parse error or provide a fallback message

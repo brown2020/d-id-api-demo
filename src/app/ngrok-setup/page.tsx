@@ -25,7 +25,7 @@ export default function NgrokSetupGuide() {
       }
 
       // Save the URL
-      saveNgrokUrl(ngrokUrl);
+      saveNgrokUrl();
       setCurrentUrl(ngrokUrl);
       setSaved(true);
       setError("");
