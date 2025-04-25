@@ -124,6 +124,21 @@ export async function generateDIDVideo(
   try {
     let scriptSettings;
 
+    // Add this diagnostic check for environment variables
+    console.log("Environment variables check:");
+    console.log(`- D_ID_BASIC_AUTH set: ${!!process.env.D_ID_BASIC_AUTH}`);
+    console.log(`- D_ID_API_KEY set: ${!!process.env.D_ID_API_KEY}`);
+    console.log(
+      `- ELEVENLABS_API_KEY set: ${!!process.env.ELEVENLABS_API_KEY}`
+    );
+
+    // Add check for the actual API key passed in (without revealing it)
+    console.log(
+      `- API Key passed to function: ${
+        apiKey ? `Present (${apiKey.length} chars)` : "Not present"
+      }`
+    );
+
     // Determine script settings based on available inputs
     if (audioUrl) {
       console.log("Audio URL provided. Using pre-recorded audio:", audioUrl);
@@ -377,7 +392,11 @@ export async function generateDIDVideo(
     return {
       error:
         errorMessage ||
-        "An error occurred while generating the video. Please check your API keys in your profile settings and ensure you're using ngrok correctly. Visit /ngrok-setup for detailed instructions.",
+        `An error occurred while generating the video (${
+          errorDetails.name || "Unknown error"
+        }): ${
+          errorDetails.message || "No additional details"
+        }. Please check your API keys in your profile settings.`,
     };
   }
 }
