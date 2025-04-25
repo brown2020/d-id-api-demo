@@ -219,18 +219,8 @@ export async function generateDIDVideo(
       } as DIDTalkRequestData, // Use a specific type instead of 'any'
     };
 
-    // Only add the webhook if it's a proper HTTPS URL
-    // This avoids webhook validation errors with localhost
-    if (
-      webhookUrl &&
-      webhookUrl.startsWith("https://") &&
-      !webhookUrl.includes("localhost")
-    ) {
-      console.log("Using webhook URL:", webhookUrl);
-      config.data.webhook = webhookUrl;
-    } else {
-      console.log("Skipping webhook URL - using polling for status updates");
-    }
+    // Always skip webhook URLs and use polling instead
+    console.log("Skipping webhook URL - using polling for status updates");
 
     console.log(
       "Axios request config prepared:",

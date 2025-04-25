@@ -42,14 +42,9 @@ export const getWebhookUrl = (
   id: string,
   secret_token: string
 ) => {
-  // If localhost, use a dummy webhook URL that D-ID will accept
-  // D-ID API requires HTTPS webhook URLs, which localhost can't provide
-  if (baseUrl.includes("localhost") || !baseUrl.startsWith("https://")) {
-    // Use a fake https URL - the D-ID API will try to send webhooks here but they'll fail
-    // This at least allows the API to accept the request
-    return `https://webhook.site/${id}?token=${secret_token}`;
-  }
-  return `${baseUrl}/api/video-generated/${id}?token=${secret_token}`;
+  // Always use a dummy webhook URL to force polling
+  // This ensures consistent behavior across all environments
+  return `https://webhook.site/${id}?token=${secret_token}`;
 };
 
 export const checkCanvasObjectImageDomain = (fabricJSON: CanvasObjects) => {
