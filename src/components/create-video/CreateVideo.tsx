@@ -511,7 +511,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               (typeof err === "object" && Object.keys(err).length === 0)
             ) {
               console.error("Video generation failed with empty error object");
-              return "Error: Video generation failed. Please check your API keys and try again.";
+              return "Error: Video generation failed. Please check your API keys or test image accessibility at /test-image-access.";
             }
 
             console.error("Video generation error:", err);
@@ -533,7 +533,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
             // Add instructions for common issues
             errorMsg +=
-              " Please check your ngrok setup at /ngrok-setup or test your images at /test-image-access.";
+              " Please check your API keys or test image accessibility at /test-image-access.";
 
             return `Error: ${errorMsg}`;
           },
@@ -1151,7 +1151,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             (typeof err === "object" && Object.keys(err).length === 0)
           ) {
             console.error("Video generation failed with empty error object");
-            return "Error: Video generation failed. Please check your API keys and try again.";
+            return "Error: Video generation failed. Please check your API keys or test image accessibility at /test-image-access.";
           }
 
           console.error("Video generation error:", err);
@@ -1173,7 +1173,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
           // Add instructions for common issues
           errorMsg +=
-            " Please check your ngrok setup at /ngrok-setup or test your images at /test-image-access.";
+            " Please check your API keys or test image accessibility at /test-image-access.";
 
           return `Error: ${errorMsg}`;
         },

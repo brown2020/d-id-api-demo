@@ -75,7 +75,7 @@ export async function generateDIDVideo(
               `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
             );
             return {
-              error: `The image URL is not accessible (status ${getResponse.status}). Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
+              error: `The image URL is not accessible (status ${getResponse.status}).`,
             };
           } else {
             console.log("Image URL is accessible via GET request ✓");
@@ -92,7 +92,7 @@ export async function generateDIDVideo(
               `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
             );
             return {
-              error: `The image URL is not accessible. Make sure you're using ngrok in local development and accessing the app through the ngrok URL, not localhost.`,
+              error: `The image URL is not accessible.`,
             };
           } else {
             console.log("Image URL is accessible via GET request ✓");
@@ -105,7 +105,7 @@ export async function generateDIDVideo(
           return {
             error: `Failed to access the image URL: ${
               getError instanceof Error ? getError.message : String(getError)
-            }. The D-ID API will not be able to access it either.`,
+            }.`,
           };
         }
       }
@@ -363,7 +363,7 @@ export async function generateDIDVideo(
               "Image URL validation error - the D-ID API can't access the image URL"
             );
             errorMessage =
-              "The D-ID API cannot access the image. Make sure you're using ngrok for local development or try with a different public image URL.";
+              "The D-ID API cannot access the image. Please try with a different public image URL.";
           }
 
           // Log more detailed error data
@@ -389,14 +389,11 @@ export async function generateDIDVideo(
     }
     await addErrorReport("generateDIDVideo", errorDetails);
 
+    // Last fallback error message
     return {
       error:
         errorMessage ||
-        `An error occurred while generating the video (${
-          errorDetails.name || "Unknown error"
-        }): ${
-          errorDetails.message || "No additional details"
-        }. Please check your API keys in your profile settings.`,
+        `An error occurred while generating the video. Please check your API keys in your profile settings.`,
     };
   }
 }
