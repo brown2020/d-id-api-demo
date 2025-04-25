@@ -15,21 +15,27 @@ interface RetrieveVideoResponse {
 // Interface for D-ID talk item from API
 interface DIDTalkItem {
   id: string;
-  status: string;
+  status: "done" | "created" | "started" | "failed";
   result_url?: string;
   thumbnail_url?: string;
   error?: string;
+  config?: Record<string, unknown>;
+  created_at?: string;
+  modified_at?: string;
   [key: string]: unknown; // For other properties we don't explicitly define
 }
 
 // Helper function to fetch the result of the talk with retries
-async function fetchResult(talkId: string, maxRetries = 3) {
+async function fetchResult(
+  talkId: string,
+  authorization: string,
+  maxRetries = 3
+) {
   await protect();
 
-  // Use the authorization from environment variable
-  console.log("Using authorization from environment variable");
+  // Use the passed authorization
+  console.log("Using provided authorization for fetching video");
   const baseUrl = "https://api.d-id.com";
-  const authorization = process.env.D_ID_BASIC_AUTH || "";
 
   let lastError: unknown = null;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -140,8 +146,24 @@ export async function retrieveDIDVideo(
 ): Promise<RetrieveVideoResponse | null> {
   await protect();
 
-  if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
-    apiKey = process.env.D_ID_API_KEY;
+  // Use environment variable as a fallback if no API key is provided
+  const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
+
+  // Log which API key we're using (without revealing the actual value)
+  console.log(
+    `retrieveDIDVideo API Key: ${finalApiKey ? "Present" : "Missing"}`
+  );
+  console.log(`API Key source: ${apiKey ? "Profile" : "Environment Variable"}`);
+
+  if (!finalApiKey) {
+    console.error(
+      "No D-ID API key available - neither in profile nor in environment variables"
+    );
+    return {
+      status: "failed",
+      error:
+        "D-ID API key is missing. Please add it in your profile settings or contact the administrator.",
+    };
   }
 
   try {
@@ -196,27 +218,38 @@ export async function retrieveDIDVideo(
     }
 
     const videoData = videoDoc.data();
-    console.log(`Found video document data:`, videoData);
-
-    const didTalkId = videoData?.did_id;
-
-    if (!didTalkId) {
-      console.error("No D-ID talk ID found in video document");
+    if (!videoData) {
+      console.error(`Video document with ID ${videoId} exists but has no data`);
       return {
         status: "failed",
-        error: "D-ID talk ID not found",
+        error: "Video data is missing",
       };
     }
 
-    console.log(`Found D-ID talk ID: ${didTalkId}`);
+    // Get the D-ID talk ID from the document
+    const didTalkId = videoData.did_id;
+    if (!didTalkId) {
+      console.error(
+        `Video document with ID ${videoId} is missing the did_id field`
+      );
+      return {
+        status: "failed",
+        error: "D-ID talk ID is missing from the video record",
+      };
+    }
 
-    // Initial delay before first status check - D-ID needs time to register the video
-    console.log("Waiting 3 seconds before checking video status...");
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log(`Found D-ID talk ID in database: ${didTalkId}`);
 
-    let resultData;
+    // Try to poll for the video status with exponential backoff
     let attempts = 0;
-    const maxAttempts = 10; // Limit polling attempts to avoid infinite loops
+    const maxAttempts = 12; // Maximum number of attempts
+    let resultData: DIDTalkItem | null = null;
+
+    console.log(`Polling for video status...`);
+    console.log(`- Using D-ID API Key: ${finalApiKey ? "Present" : "Missing"}`);
+
+    // Setup for polling
+    const authorization = process.env.D_ID_BASIC_AUTH || `Basic ${finalApiKey}`;
 
     while (attempts < maxAttempts) {
       attempts++;
@@ -224,9 +257,31 @@ export async function retrieveDIDVideo(
 
       try {
         // Use the D-ID talk ID here, not our internal videoId
-        resultData = await fetchResult(didTalkId);
+        resultData = await fetchResult(didTalkId, authorization);
+
+        // Make sure resultData is not null before accessing its properties
+        if (!resultData) {
+          console.log("Received null response from fetchResult, will retry");
+          continue;
+        }
 
         if (resultData.status === "done") {
+          // Make sure result_url exists
+          if (!resultData.result_url) {
+            console.error("Video is done but result_url is missing");
+
+            // Update video status in database to reflect the error
+            await videoRef.update({
+              d_id_status: "error",
+              errorMessage: "Video completed but URL is missing",
+            });
+
+            return {
+              status: "failed",
+              error: "Video URL is missing from the API response",
+            };
+          }
+
           console.log(
             "Video processing completed, downloading from URL:",
             resultData.result_url
@@ -283,12 +338,17 @@ export async function retrieveDIDVideo(
             thumbnail_url: resultData.thumbnail_url,
           };
         } else if (resultData.status === "failed") {
-          console.error("Video processing failed:", resultData.error);
+          console.error(
+            "Video processing failed:",
+            resultData.error || "No specific error provided"
+          );
 
           // Update our main video document with the error
           await videoRef.update({
             d_id_status: "error",
-            error: resultData.error ? { message: resultData.error } : null,
+            error: resultData.error
+              ? { message: resultData.error }
+              : { message: "Unknown error" },
             errorMessage: resultData.error || "Unknown error",
           });
 

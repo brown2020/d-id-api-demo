@@ -13,25 +13,41 @@ interface GetVideoSuccessResponse {
 
 export async function getDIDVideo(d_id_api_key: string, videoId: string) {
   try {
+    // Use profile API key or fall back to environment variable
+    const finalApiKey = d_id_api_key || process.env.D_ID_API_KEY || "";
+
     // Log API key format for debugging
     console.log(
       "getDIDVideo API Key format:",
-      d_id_api_key
+      finalApiKey
         ? `Length: ${
-            d_id_api_key.length
-          }, Contains colon: ${d_id_api_key.includes(":")}`
+            finalApiKey.length
+          }, Contains colon: ${finalApiKey.includes(":")}`
         : "API Key is null"
     );
 
-    // Use the authorization from environment variable
-    console.log("Using authorization from environment variable");
+    // Use environment variable auth or construct from API key
+    const authorization =
+      process.env.D_ID_BASIC_AUTH ||
+      (finalApiKey ? `Basic ${finalApiKey}` : "");
+
+    // Check if we have valid authorization
+    if (!authorization) {
+      console.error("No authorization available for D-ID API");
+      return {
+        error:
+          "Missing D-ID API credentials. Please check your API key in profile settings.",
+      };
+    }
+
+    console.log("Using authorization for D-ID API request");
 
     const videoResponse = await axios.get<GetVideoSuccessResponse>(
       `https://api.d-id.com/talks/${videoId}`,
       {
         headers: {
           accept: "application/json",
-          authorization: process.env.D_ID_BASIC_AUTH || "",
+          authorization: authorization,
         },
       }
     );

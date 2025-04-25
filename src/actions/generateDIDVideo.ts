@@ -34,12 +34,38 @@ export async function generateDIDVideo(
   console.log(`- API Key present: ${!!apiKey}`);
   console.log(`- ElevenLabs API Key present: ${!!elevenlabsApiKey}`);
 
-  if (!apiKey && process.env.D_ID_API_KEY !== undefined) {
-    apiKey = process.env.D_ID_API_KEY;
+  // Use environment variables as fallbacks for the API keys
+  const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
+  const finalElevenlabsApiKey =
+    elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "";
+
+  // Ensure we have a valid API key for D-ID
+  if (!finalApiKey) {
+    console.error(
+      "No D-ID API key available - neither in profile nor in environment variables"
+    );
+    return {
+      error:
+        "D-ID API key is missing. Please add it in your profile settings or contact the administrator.",
+    };
   }
-  if (!elevenlabsApiKey && process.env.ELEVENLABS_API_KEY !== undefined) {
-    elevenlabsApiKey = process.env.ELEVENLABS_API_KEY;
-  }
+
+  // Log which API keys we're using (without revealing the actual values)
+  console.log("Using API keys:");
+  console.log(
+    `- D-ID API Key: ${
+      finalApiKey
+        ? "Using from " + (apiKey ? "profile" : "environment")
+        : "Missing"
+    }`
+  );
+  console.log(
+    `- ElevenLabs API Key: ${
+      finalElevenlabsApiKey
+        ? "Using from " + (elevenlabsApiKey ? "profile" : "environment")
+        : "Missing"
+    }`
+  );
 
   // Check if we're using the fallback image
   const isFallbackImage = imageUrl.includes("/assets/headshot_fallback.png");
@@ -135,7 +161,7 @@ export async function generateDIDVideo(
     // Add check for the actual API key passed in (without revealing it)
     console.log(
       `- API Key passed to function: ${
-        apiKey ? `Present (${apiKey.length} chars)` : "Not present"
+        finalApiKey ? `Present (${finalApiKey.length} chars)` : "Not present"
       }`
     );
 
@@ -172,8 +198,10 @@ export async function generateDIDVideo(
     // Log API key format for debugging (without revealing the actual key)
     console.log(
       "API Key format check:",
-      apiKey
-        ? `Length: ${apiKey.length}, Contains colon: ${apiKey.includes(":")}`
+      finalApiKey
+        ? `Length: ${
+            finalApiKey.length
+          }, Contains colon: ${finalApiKey.includes(":")}`
         : "API Key is null"
     );
 
@@ -211,10 +239,11 @@ export async function generateDIDVideo(
       headers: {
         accept: "application/json",
         authorization:
-          process.env.D_ID_BASIC_AUTH || (apiKey ? `Basic ${apiKey}` : ""),
+          process.env.D_ID_BASIC_AUTH ||
+          (finalApiKey ? `Basic ${finalApiKey}` : ""),
         "content-type": "application/json",
         "x-api-key-external": JSON.stringify({
-          elevenlabs: elevenlabsApiKey, // Use the passed in ElevenLabs API key
+          elevenlabs: finalElevenlabsApiKey, // Use the passed in ElevenLabs API key
         }),
       },
       data: {
