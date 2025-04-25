@@ -39,7 +39,6 @@ export async function generateDIDVideo(
   // Add more detailed debug for production issues
   console.log("=========== PRODUCTION DEBUG ===========");
   console.log(`- Runtime environment: ${process.env.NODE_ENV}`);
-  console.log(`- Is local flag: ${process.env.NEXT_PUBLIC_IS_LOCAL}`);
   console.log(`- API Key from param length: ${apiKey ? apiKey.length : 0}`);
   console.log(
     `- Basic Auth from param length: ${basicAuth ? basicAuth.length : 0}`

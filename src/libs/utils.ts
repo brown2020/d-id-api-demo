@@ -22,6 +22,14 @@ export const getApiBaseUrl = () => {
   }
 
   // Server-side rendering - use environment variable or default
+  // Make sure we use a stable, publicly accessible URL in production
+  if (process.env.NODE_ENV === "production") {
+    return (
+      process.env.NEXT_PUBLIC_API_BASE_URL || "https://didapidemo.vercel.app"
+    );
+  }
+
+  // For development, default to localhost
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 };
 

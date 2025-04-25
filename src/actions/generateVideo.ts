@@ -103,18 +103,34 @@ export async function generateVideo(
     // Create proxy link
     const secret_token = randomString(32);
 
-    // Determine if we should use the fallback image for localhost
+    // Determine environment by checking the URL structure rather than relying on env vars
     const isLocalhost =
       baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1");
     let imageUrl;
 
-    // Set initial image URL based on environment and user preference
-    if (isLocalhost || useFallbackImage) {
+    // Set initial image URL based on explicit useFallbackImage parameter
+    if (useFallbackImage) {
       // Use the permanent public URL for the fallback image
       imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
-      console.log("Using permanent public fallback image URL:", imageUrl);
+      console.log("Using fallback image as explicitly requested:", imageUrl);
+    } else if (isLocalhost) {
+      // For localhost without explicit fallback image request, warn but proceed
+      console.warn(
+        "Running in localhost environment without fallback image selected."
+      );
+      console.warn(
+        "This may cause issues with D-ID API as it requires publicly accessible images."
+      );
+
+      // Use the local proxy URL but prepare for potential failure
+      const originalProxyUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
+      imageUrl = originalProxyUrl;
+      console.log(
+        "Attempting to use localhost proxy URL (may fail):",
+        imageUrl
+      );
     } else {
-      // For production, first try to use the user's image through our proxy
+      // For production, use the user's image through our proxy with HTTPS
       const originalProxyUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
       console.log("Original proxy URL:", originalProxyUrl);
 
@@ -165,16 +181,6 @@ export async function generateVideo(
 
     const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
 
-    // Check if baseUrl is localhost - this is likely to cause issues
-    if (isLocalhost) {
-      console.warn(
-        "⚠️ WARNING: Using localhost URL for D-ID API with fallback image."
-      );
-      console.warn(
-        "For production use, you should access the application through an ngrok URL, not localhost."
-      );
-    }
-
     // Add this special diagnostic log
     console.log("📋 DIAGNOSTIC INFO 📋");
     console.log(`- Base URL: ${baseUrl}`);
@@ -182,9 +188,7 @@ export async function generateVideo(
     console.log(`- Using fallback image: ${useFallbackImage ? "Yes" : "No"}`);
     console.log(`- Image URL for D-ID: ${imageUrl}`);
     console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
-    console.log(
-      `- Production vs Local: NODE_ENV=${process.env.NODE_ENV}, NEXT_PUBLIC_IS_LOCAL=${process.env.NEXT_PUBLIC_IS_LOCAL}`
-    );
+    console.log(`- Environment: ${process.env.NODE_ENV || "unknown"}`);
     console.log(
       `- API Keys provided: D-ID (${apiKey ? "Yes" : "No"}), D-ID Basic Auth (${
         basicAuth ? "Yes" : "No"
