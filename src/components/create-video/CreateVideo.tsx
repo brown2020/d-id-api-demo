@@ -531,6 +531,19 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               }
             }
 
+            // Add specialized error handling for known error types
+            if (errorMsg.includes("celebrity")) {
+              return (
+                <div className="text-red-500">
+                  <strong>Celebrity detected:</strong> {errorMsg}
+                  <p className="mt-2">
+                    Please select a different image or use a non-celebrity
+                    avatar.
+                  </p>
+                </div>
+              );
+            }
+
             // Add instructions for common issues
             errorMsg +=
               " Please check your API keys or test image accessibility at /test-image-access.";
@@ -1190,6 +1203,18 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             } else if ("message" in err && err.message) {
               errorMsg = err.message;
             }
+          }
+
+          // Add specialized error handling for known error types
+          if (errorMsg.includes("celebrity")) {
+            return (
+              <div className="text-red-500">
+                <strong>Celebrity detected:</strong> {errorMsg}
+                <p className="mt-2">
+                  Please select a different image or use a non-celebrity avatar.
+                </p>
+              </div>
+            );
           }
 
           // Add instructions for common issues

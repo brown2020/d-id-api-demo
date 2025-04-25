@@ -26,9 +26,27 @@ export default function ProfileComponent() {
       elevenlabsApiKey !== profile.elevenlabs_api_key
     ) {
       try {
+        // Validate Basic Auth format
+        let finalBasicAuth = didBasicAuth?.trim() || "";
+
+        // If basic auth is provided, ensure it has the "Basic " prefix
+        if (finalBasicAuth && !finalBasicAuth.startsWith("Basic ")) {
+          if (finalBasicAuth.includes(":")) {
+            // If it's in username:password format, convert to proper Basic Auth
+            const base64Credentials =
+              Buffer.from(finalBasicAuth).toString("base64");
+            finalBasicAuth = `Basic ${base64Credentials}`;
+          } else if (/^[A-Za-z0-9+/=]+$/.test(finalBasicAuth)) {
+            // If it looks like base64 already, just add the prefix
+            finalBasicAuth = `Basic ${finalBasicAuth}`;
+          }
+          // Update the form data with the corrected value
+          setDidBasicAuth(finalBasicAuth);
+        }
+
         await updateProfile({
           did_api_key: didApiKey,
-          did_basic_auth: didBasicAuth,
+          did_basic_auth: finalBasicAuth,
           elevenlabs_api_key: elevenlabsApiKey,
         });
         console.log("API keys updated successfully!");

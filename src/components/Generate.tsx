@@ -241,7 +241,19 @@ export default function Generate() {
           </button>
           {error && (
             <div className="text-red-500 mt-2">
-              <p>{error}</p>
+              {error.includes("celebrity") ? (
+                <>
+                  <p>
+                    <strong>Celebrity Detected:</strong> {error}
+                  </p>
+                  <p className="mt-1">
+                    Please select a different image or use a non-celebrity
+                    avatar.
+                  </p>
+                </>
+              ) : (
+                <p>{error}</p>
+              )}
               {error.includes("API key") && (
                 <p className="mt-1">
                   <Link

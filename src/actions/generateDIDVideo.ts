@@ -97,7 +97,7 @@ export async function generateDIDVideo(
   const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
   const finalElevenlabsApiKey =
     elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "";
-  const finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
+  let finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
 
   // Check if we have either API key or Basic Auth
   if (!finalApiKey && !finalBasicAuth) {
@@ -360,9 +360,56 @@ export async function generateDIDVideo(
 
     // Configure the authorization header based on available authentication methods
     let authHeader = "";
+
+    // Add EXTRA DEBUG for production troubleshooting
+    console.log("EXTRA DEBUG INFO FOR PRODUCTION:");
+    console.log(
+      `finalApiKey type: ${typeof finalApiKey}, length: ${
+        finalApiKey?.length || 0
+      }`
+    );
+    console.log(
+      `finalBasicAuth type: ${typeof finalBasicAuth}, length: ${
+        finalBasicAuth?.length || 0
+      }`
+    );
+    if (finalBasicAuth) {
+      console.log(
+        `finalBasicAuth first 10 chars: ${finalBasicAuth.substring(0, 10)}...`
+      );
+      console.log(
+        `finalBasicAuth starts with Basic: ${finalBasicAuth.startsWith(
+          "Basic "
+        )}`
+      );
+
+      // If it doesn't start with Basic but looks like it should
+      if (!finalBasicAuth.startsWith("Basic ") && finalBasicAuth.length > 20) {
+        console.log(`BasicAuth transformation needed, adding 'Basic ' prefix`);
+        finalBasicAuth = `Basic ${finalBasicAuth.replace(/^Basic\s+/i, "")}`;
+        console.log(`New BasicAuth: ${finalBasicAuth.substring(0, 15)}...`);
+      }
+    }
+
     if (finalApiKey && finalApiKey.length > 1) {
       console.log("Using DID API Key for authentication");
-      authHeader = finalApiKey;
+
+      // Check if it's already in Basic format
+      if (finalApiKey.startsWith("Basic ")) {
+        authHeader = finalApiKey;
+      }
+      // Check if it looks like raw credentials (username:password)
+      else if (finalApiKey.includes(":")) {
+        console.log("Converting raw credentials to Basic auth format");
+        // Convert raw credentials to basic auth format
+        const base64Credentials = Buffer.from(finalApiKey).toString("base64");
+        authHeader = `Basic ${base64Credentials}`;
+      }
+      // Assume it's already base64 encoded but missing the "Basic " prefix
+      else {
+        console.log("Adding Basic prefix to credentials");
+        authHeader = `Basic ${finalApiKey}`;
+      }
     } else if (finalBasicAuth && finalBasicAuth.length > 1) {
       console.log("Using DID Basic Auth for authentication");
 
@@ -408,6 +455,12 @@ export async function generateDIDVideo(
       };
     }
 
+    // Also validate and fix finalBasicAuth directly
+    if (finalBasicAuth && !finalBasicAuth.startsWith("Basic ")) {
+      console.log("Fixing finalBasicAuth to ensure it has Basic prefix");
+      finalBasicAuth = `Basic ${finalBasicAuth.replace(/^Basic\s+/i, "")}`;
+    }
+
     if (!authHeader.startsWith("Basic ")) {
       console.error(
         `MALFORMED AUTH HEADER: Header doesn't start with "Basic ": ${authHeader.substring(
@@ -415,22 +468,32 @@ export async function generateDIDVideo(
           20
         )}...`
       );
+
       // Attempt to fix the header if possible
       if (authHeader.includes(":")) {
         console.log("Attempting to fix header by encoding as Base64");
         authHeader = `Basic ${Buffer.from(authHeader).toString("base64")}`;
       } else if (!/^[A-Za-z0-9+/=]+$/.test(authHeader)) {
         console.error("Header is not valid Base64, cannot fix automatically");
-        return {
-          error:
-            "Authentication error: Invalid authorization format. Please check your API key or Basic Auth format.",
-        };
+
+        // Last-ditch fallback: try to use finalBasicAuth directly if it looks valid
+        if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
+          console.log("Falling back to finalBasicAuth directly");
+          authHeader = finalBasicAuth;
+        } else {
+          return {
+            error:
+              "Authentication error: Invalid authorization format. Please check your API key or Basic Auth format.",
+          };
+        }
       } else {
         console.log(
           "Header appears to be Base64 but missing 'Basic ' prefix, adding prefix"
         );
         authHeader = `Basic ${authHeader}`;
       }
+
+      // Log the fixed header and continue
       console.log(
         "Fixed authorization header:",
         authHeader.substring(0, 10) + "..."
@@ -618,44 +681,31 @@ export async function generateDIDVideo(
             "D-ID server error. This may be due to an issue with the image URL or server load. Please try again or use a different image.";
         } else if (
           typeof error.response.data === "object" &&
-          "kind" in error.response.data &&
-          error.response.data.kind == "TextToSpeechProviderError"
+          "kind" in error.response.data
         ) {
-          errorMessage =
-            "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.";
-        } else if (
-          typeof error.response.data === "object" &&
-          "kind" in error.response.data &&
-          error.response.data.kind == "ValidationError"
-        ) {
-          /**
-           * TODO: Send Error Report
-           * Message: Issue with validation of the request
-           * Data: JSON.stringify(error.response.data, null, 2)
-           */
-          errorMessage =
-            "Something went wrong, while requesting your generate video.";
-        }
-
-        // Add additional checks for specific error patterns
-        if (error.response.data && typeof error.response.data === "object") {
-          if (
-            error.response.data.kind === "ValidationError" &&
-            error.response.data.message &&
-            error.response.data.message.includes("source_url")
-          ) {
-            console.error(
-              "Image URL validation error - the D-ID API can't access the image URL"
-            );
+          // Handle specific error types from D-ID API
+          if (error.response.data.kind === "TextToSpeechProviderError") {
             errorMessage =
-              "The D-ID API cannot access the image. Please try with a different public image URL.";
-          }
+              "Text to speech provider error. Please check the elevenlabs key, input text or voice ID.";
+          } else if (error.response.data.kind === "ValidationError") {
+            errorMessage =
+              "Something went wrong while validating your video generation request.";
+          } else if (error.response.data.kind === "CelebrityDetectedError") {
+            // Specific handling for celebrity detection
+            console.log("Celebrity detected in image:", error.response.data);
 
-          // Log more detailed error data
-          console.error(
-            "Detailed error data:",
-            JSON.stringify(error.response.data, null, 2)
-          );
+            let celebrityName = "unknown";
+            if (error.response.data.details?.celebrity) {
+              celebrityName = error.response.data.details.celebrity;
+            }
+
+            errorMessage = `D-ID has detected a celebrity in your image (${celebrityName}). D-ID does not allow using images of celebrities for ethical reasons. Please use a different image without celebrities.`;
+          } else {
+            // Generic error message for other error kinds
+            errorMessage = `D-ID API error: ${error.response.data.kind}. ${
+              error.response.data.description || ""
+            }`;
+          }
         }
       } else if (error.request) {
         console.error(
