@@ -17,7 +17,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "d-id-api-demo.vercel.app",
+        hostname: "didapidemo.vercel.app",
         port: "",
         pathname: "/**",
       },

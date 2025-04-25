@@ -60,27 +60,39 @@ export async function generateVideo(
     // Add that thumbnail to firebase storage
     const bucket = admin.storage().bucket();
     const file = bucket.file(filePath);
-    const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
 
-    if (!matches) {
-      throw new Error("Invalid data URL format");
+    let thumbnailUrl;
+
+    // Check if thumbnail_url is a data URL or already a regular URL
+    if (thumbnail_url.startsWith("data:")) {
+      const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
+
+      if (!matches) {
+        console.error("Invalid data URL format");
+        // Use a fallback instead of throwing an error
+        thumbnailUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
+      } else {
+        const mimeType = matches[1]; // e.g., 'image/png'
+        const base64Data = matches[2];
+
+        // Create a temporary file
+        const buffer = Buffer.from(base64Data, "base64");
+
+        // Save the file directly to Firebase Storage
+        await file.save(buffer, {
+          metadata: {
+            contentType: mimeType, // Set the MIME type of the file
+          },
+        });
+
+        // Create public url for that thumbnail
+        thumbnailUrl = await getFileUrl(filePath);
+      }
+    } else {
+      // If it's already a URL, just use it directly
+      console.log("Using existing URL for thumbnail:", thumbnail_url);
+      thumbnailUrl = thumbnail_url;
     }
-
-    const mimeType = matches[1]; // e.g., 'image/png'
-    const base64Data = matches[2];
-
-    // Create a temporary file
-    const buffer = Buffer.from(base64Data, "base64");
-
-    // Save the file directly to Firebase Storage
-    await file.save(buffer, {
-      metadata: {
-        contentType: mimeType, // Set the MIME type of the file
-      },
-    });
-
-    // Create public url for that thumbnail
-    const thumbnailUrl = await getFileUrl(filePath);
 
     // add that thumbnail id to video object
     await videoRef.update({
