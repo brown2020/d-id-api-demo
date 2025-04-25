@@ -36,6 +36,18 @@ export async function generateDIDVideo(
   console.log(`- Basic Auth present: ${!!basicAuth}`);
   console.log(`- ElevenLabs API Key present: ${!!elevenlabsApiKey}`);
 
+  // Add more detailed debug for production issues
+  console.log("=========== PRODUCTION DEBUG ===========");
+  console.log(`- Runtime environment: ${process.env.NODE_ENV}`);
+  console.log(`- Is local flag: ${process.env.NEXT_PUBLIC_IS_LOCAL}`);
+  console.log(`- API Key from param length: ${apiKey ? apiKey.length : 0}`);
+  console.log(
+    `- Basic Auth from param length: ${basicAuth ? basicAuth.length : 0}`
+  );
+  console.log(`- D_ID_API_KEY exists: ${!!process.env.D_ID_API_KEY}`);
+  console.log(`- D_ID_BASIC_AUTH exists: ${!!process.env.D_ID_BASIC_AUTH}`);
+  console.log("=======================================");
+
   // Use environment variables as fallbacks for the API keys
   const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
   const finalElevenlabsApiKey =
@@ -104,6 +116,27 @@ export async function generateDIDVideo(
   if (!isFallbackImage) {
     try {
       console.log("Testing if image is accessible...");
+      console.log(`Full image URL: ${imageUrl}`);
+
+      // Add more validation of the URL format
+      try {
+        const imageUrlObj = new URL(imageUrl);
+        console.log(`Image URL protocol: ${imageUrlObj.protocol}`);
+        console.log(`Image URL host: ${imageUrlObj.host}`);
+        console.log(`Image URL pathname: ${imageUrlObj.pathname}`);
+
+        // Check if URL uses HTTPS (D-ID API requires HTTPS)
+        if (imageUrlObj.protocol !== "https:") {
+          console.warn(
+            "Image URL doesn't use HTTPS - D-ID API requires HTTPS URLs"
+          );
+        }
+      } catch (urlError) {
+        console.error("Invalid image URL format:", urlError);
+        return {
+          error: `Invalid image URL format: ${imageUrl}. Please use a valid HTTPS URL.`,
+        };
+      }
 
       // Method 1: HEAD request (faster but less reliable)
       try {
@@ -114,6 +147,12 @@ export async function generateDIDVideo(
 
         if (headResponse.ok) {
           console.log("Image URL is accessible via HEAD request ✓");
+          console.log(`HEAD response status: ${headResponse.status}`);
+          console.log(
+            `HEAD response headers: ${JSON.stringify([
+              ...headResponse.headers.entries(),
+            ])}`
+          );
         } else {
           console.log(
             `HEAD request failed with status ${headResponse.status}, trying GET request...`
@@ -277,9 +316,16 @@ export async function generateDIDVideo(
     // Define the authorization header properly based on the available auth methods
     let authHeader;
 
+    console.log("=========== AUTH HEADER DEBUG ===========");
     // First priority: Use Basic Auth from profile if available
     if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
-      console.log("Using Basic Auth from profile");
+      console.log("USING PRIORITY 1: Basic Auth from profile");
+      console.log(
+        `- Basic Auth starts with 'Basic ': ${finalBasicAuth.startsWith(
+          "Basic "
+        )}`
+      );
+      console.log(`- Basic Auth length: ${finalBasicAuth.length}`);
       authHeader = finalBasicAuth;
     }
     // Second priority: Use D_ID_BASIC_AUTH environment variable
@@ -287,28 +333,40 @@ export async function generateDIDVideo(
       process.env.D_ID_BASIC_AUTH &&
       process.env.D_ID_BASIC_AUTH.startsWith("Basic ")
     ) {
+      console.log("USING PRIORITY 2: D_ID_BASIC_AUTH environment variable");
       console.log(
-        "Using D_ID_BASIC_AUTH environment variable for authorization"
+        `- Env Basic Auth starts with 'Basic ': ${process.env.D_ID_BASIC_AUTH.startsWith(
+          "Basic "
+        )}`
+      );
+      console.log(
+        `- Env Basic Auth length: ${process.env.D_ID_BASIC_AUTH.length}`
       );
       authHeader = process.env.D_ID_BASIC_AUTH;
     }
     // Third priority: API key starting with "Basic"
     else if (finalApiKey.startsWith("Basic ")) {
-      console.log("Using API key that already starts with 'Basic'");
+      console.log("USING PRIORITY 3: API key that already starts with 'Basic'");
+      console.log(
+        `- API key starts with 'Basic ': ${finalApiKey.startsWith("Basic ")}`
+      );
+      console.log(`- API key length: ${finalApiKey.length}`);
       authHeader = finalApiKey;
     }
     // Fourth priority: API key with colon (username:password format)
     else if (finalApiKey.includes(":")) {
-      console.log(
-        "Using API key in username:password format, encoding to Basic Auth"
-      );
+      console.log("USING PRIORITY 4: API key in username:password format");
+      console.log(`- API key includes colon: ${finalApiKey.includes(":")}`);
+      console.log(`- API key length: ${finalApiKey.length}`);
       authHeader = `Basic ${Buffer.from(finalApiKey).toString("base64")}`;
     }
     // Last resort: Assume API key is already Base64 encoded
     else {
-      console.log("Using API key as-is (assuming it's already Base64 encoded)");
+      console.log("USING PRIORITY 5: API key as-is (assuming Base64 encoded)");
+      console.log(`- API key length: ${finalApiKey.length}`);
       authHeader = `Basic ${finalApiKey}`;
     }
+    console.log("======================================");
 
     console.log(
       "Authorization header set:",
@@ -361,8 +419,29 @@ export async function generateDIDVideo(
       );
     } catch (authError) {
       console.error("Authentication test failed:", authError);
+
+      // Enhanced error reporting for auth failures
+      let authErrorDetails = "Unknown authentication error";
+      if (axios.isAxiosError(authError) && authError.response) {
+        const status = authError.response.status;
+        const responseData = JSON.stringify(authError.response.data, null, 2);
+
+        console.error(`Auth test failed with status: ${status}`);
+        console.error(`Auth test response data: ${responseData}`);
+
+        if (status === 401) {
+          authErrorDetails =
+            "Invalid credentials (Unauthorized). Please check your API key format.";
+        } else if (status === 403) {
+          authErrorDetails =
+            "Access forbidden. Your API key may not have sufficient permissions.";
+        } else {
+          authErrorDetails = `Status ${status}: ${authError.message}`;
+        }
+      }
+
       return {
-        error: "D-ID API authentication failed. Please check your API key.",
+        error: `D-ID API authentication failed: ${authErrorDetails}. Please check your API key or Basic Auth in profile settings.`,
       };
     }
 

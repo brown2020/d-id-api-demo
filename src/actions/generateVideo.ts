@@ -183,6 +183,9 @@ export async function generateVideo(
     console.log(`- Image URL for D-ID: ${imageUrl}`);
     console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
     console.log(
+      `- Production vs Local: NODE_ENV=${process.env.NODE_ENV}, NEXT_PUBLIC_IS_LOCAL=${process.env.NEXT_PUBLIC_IS_LOCAL}`
+    );
+    console.log(
       `- API Keys provided: D-ID (${apiKey ? "Yes" : "No"}), D-ID Basic Auth (${
         basicAuth ? "Yes" : "No"
       }), ElevenLabs (${elevenlabsApiKey ? "Yes" : "No"})`
