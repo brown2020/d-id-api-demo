@@ -142,27 +142,35 @@ export async function retrieveDIDVideo(
   apiKey: string,
   videoId: string,
   talkingPhotoId: string,
-  pollInterval: number = 1000
+  pollInterval: number = 1000,
+  basicAuth: string = ""
 ): Promise<RetrieveVideoResponse | null> {
   await protect();
 
   // Use environment variable as a fallback if no API key is provided
   const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
+  const finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
 
   // Log which API key we're using (without revealing the actual value)
   console.log(
     `retrieveDIDVideo API Key: ${finalApiKey ? "Present" : "Missing"}`
   );
+  console.log(
+    `retrieveDIDVideo Basic Auth: ${finalBasicAuth ? "Present" : "Missing"}`
+  );
   console.log(`API Key source: ${apiKey ? "Profile" : "Environment Variable"}`);
+  console.log(
+    `Basic Auth source: ${basicAuth ? "Profile" : "Environment Variable"}`
+  );
 
-  if (!finalApiKey) {
+  if (!finalApiKey && !finalBasicAuth) {
     console.error(
-      "No D-ID API key available - neither in profile nor in environment variables"
+      "No D-ID authentication available - neither API key nor Basic Auth provided"
     );
     return {
       status: "failed",
       error:
-        "D-ID API key is missing. Please add it in your profile settings or contact the administrator.",
+        "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings.",
     };
   }
 
@@ -240,30 +248,56 @@ export async function retrieveDIDVideo(
 
     console.log(`Found D-ID talk ID in database: ${didTalkId}`);
 
+    // Define the authorization header properly based on the available auth methods
+    let authHeader;
+
+    // First priority: Use Basic Auth from profile if available
+    if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
+      console.log("Using Basic Auth from profile");
+      authHeader = finalBasicAuth;
+    }
+    // Second priority: Use D_ID_BASIC_AUTH environment variable
+    else if (
+      process.env.D_ID_BASIC_AUTH &&
+      process.env.D_ID_BASIC_AUTH.startsWith("Basic ")
+    ) {
+      console.log(
+        "Using D_ID_BASIC_AUTH environment variable for authorization"
+      );
+      authHeader = process.env.D_ID_BASIC_AUTH;
+    }
+    // Third priority: API key starting with "Basic"
+    else if (finalApiKey.startsWith("Basic ")) {
+      console.log("Using API key that already starts with 'Basic'");
+      authHeader = finalApiKey;
+    }
+    // Fourth priority: API key with colon (username:password format)
+    else if (finalApiKey.includes(":")) {
+      console.log(
+        "Using API key in username:password format, encoding to Basic Auth"
+      );
+      authHeader = `Basic ${Buffer.from(finalApiKey).toString("base64")}`;
+    }
+    // Last resort: Assume API key is already Base64 encoded
+    else {
+      console.log("Using API key as-is (assuming it's already Base64 encoded)");
+      authHeader = `Basic ${finalApiKey}`;
+    }
+
     // Try to poll for the video status with exponential backoff
-    let attempts = 0;
     const maxAttempts = 12; // Maximum number of attempts
     let resultData: DIDTalkItem | null = null;
 
     console.log(`Polling for video status...`);
-    console.log(`- Using D-ID API Key: ${finalApiKey ? "Present" : "Missing"}`);
+    console.log(`- Using authorization: ${authHeader ? "Present" : "Missing"}`);
 
-    // Setup for polling
-    const authorization =
-      process.env.D_ID_BASIC_AUTH ||
-      (finalApiKey
-        ? finalApiKey.includes(":")
-          ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
-          : `Basic ${finalApiKey}`
-        : "");
-
+    let attempts = 0;
     while (attempts < maxAttempts) {
-      attempts++;
-      console.log(`Status check attempt ${attempts}/${maxAttempts}`);
-
       try {
-        // Use the D-ID talk ID here, not our internal videoId
-        resultData = await fetchResult(didTalkId, authorization);
+        console.log(`Poll attempt ${attempts + 1} of ${maxAttempts}`);
+
+        // Use the authHeader we constructed above instead of finalApiKey
+        resultData = await fetchResult(didTalkId, authHeader);
 
         // Make sure resultData is not null before accessing its properties
         if (!resultData) {
@@ -376,9 +410,12 @@ export async function retrieveDIDVideo(
             d_id_status: resultData.status,
           });
         }
+
+        // Make sure to increment the attempts variable
+        attempts++;
       } catch (error: unknown) {
         console.log(
-          `Error checking status (attempt ${attempts}/${maxAttempts}):`,
+          `Error checking status (attempt ${attempts + 1}/${maxAttempts}):`,
           error instanceof Error ? error.message : String(error)
         );
 

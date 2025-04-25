@@ -12,6 +12,7 @@ export interface ProfileType {
   emailVerified: boolean;
   credits: number;
   did_api_key: string;
+  did_basic_auth: string;
   elevenlabs_api_key: string;
   selectedAvatar: string;
   selectedTalkingPhoto: string;
@@ -25,6 +26,7 @@ const defaultProfile: ProfileType = {
   emailVerified: false,
   credits: 0,
   did_api_key: "",
+  did_basic_auth: "",
   elevenlabs_api_key: "",
   selectedAvatar: "",
   selectedTalkingPhoto: "",
@@ -89,6 +91,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
           emailVerified: authEmailVerified || false,
           credits: 1000,
           did_api_key: "",
+          did_basic_auth: "",
           elevenlabs_api_key: "",
           selectedAvatar: "",
           selectedTalkingPhoto: "",
@@ -112,7 +115,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
 
       set({ profile: updatedProfile });
       await updateDoc(userRef, updatedProfile);
-      toast.success("Profile updated successfully")
+      toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
     }

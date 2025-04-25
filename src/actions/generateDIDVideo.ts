@@ -23,7 +23,8 @@ export async function generateDIDVideo(
   audioUrl?: string,
   elevenlabsApiKey?: string,
   emotion: Emotion = "neutral",
-  movement: Movement = "neutral"
+  movement: Movement = "neutral",
+  basicAuth: string | null = null
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
   await protect();
 
@@ -32,26 +33,43 @@ export async function generateDIDVideo(
   console.log(`- Image URL: ${imageUrl}`);
   console.log(`- Webhook URL: ${webhookUrl}`);
   console.log(`- API Key present: ${!!apiKey}`);
+  console.log(`- Basic Auth present: ${!!basicAuth}`);
   console.log(`- ElevenLabs API Key present: ${!!elevenlabsApiKey}`);
 
   // Use environment variables as fallbacks for the API keys
   const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
   const finalElevenlabsApiKey =
     elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "";
+  const finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
 
-  // Ensure we have a valid API key for D-ID
-  if (!finalApiKey) {
+  // Check if we have either API key or Basic Auth
+  if (!finalApiKey && !finalBasicAuth) {
     console.error(
-      "No D-ID API key available - neither in profile nor in environment variables"
+      "No D-ID authentication available - neither API key nor Basic Auth provided"
     );
     return {
       error:
-        "D-ID API key is missing. Please add it in your profile settings or contact the administrator.",
+        "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings.",
     };
   }
 
-  // Validate API key format
-  if (!finalApiKey.includes(":") && !finalApiKey.startsWith("Basic ")) {
+  console.log(
+    `API key type check: ${typeof finalApiKey}, length: ${finalApiKey.length}`
+  );
+  console.log(
+    `Basic Auth type check: ${typeof finalBasicAuth}, length: ${
+      finalBasicAuth.length
+    }`
+  );
+
+  // Skip API key validation if we have Basic Auth
+  if (
+    !finalBasicAuth &&
+    typeof finalApiKey === "string" &&
+    finalApiKey.trim() !== "" &&
+    !finalApiKey.includes(":") &&
+    !finalApiKey.startsWith("Basic ")
+  ) {
     console.error(
       "API key format appears to be invalid - missing colon separator"
     );
@@ -256,12 +274,41 @@ export async function generateDIDVideo(
       };
     }
 
-    // Define the authorization header properly based on the API key format
-    const authHeader = finalApiKey.startsWith("Basic ")
-      ? finalApiKey
-      : finalApiKey.includes(":")
-      ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
-      : `Basic ${finalApiKey}`;
+    // Define the authorization header properly based on the available auth methods
+    let authHeader;
+
+    // First priority: Use Basic Auth from profile if available
+    if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
+      console.log("Using Basic Auth from profile");
+      authHeader = finalBasicAuth;
+    }
+    // Second priority: Use D_ID_BASIC_AUTH environment variable
+    else if (
+      process.env.D_ID_BASIC_AUTH &&
+      process.env.D_ID_BASIC_AUTH.startsWith("Basic ")
+    ) {
+      console.log(
+        "Using D_ID_BASIC_AUTH environment variable for authorization"
+      );
+      authHeader = process.env.D_ID_BASIC_AUTH;
+    }
+    // Third priority: API key starting with "Basic"
+    else if (finalApiKey.startsWith("Basic ")) {
+      console.log("Using API key that already starts with 'Basic'");
+      authHeader = finalApiKey;
+    }
+    // Fourth priority: API key with colon (username:password format)
+    else if (finalApiKey.includes(":")) {
+      console.log(
+        "Using API key in username:password format, encoding to Basic Auth"
+      );
+      authHeader = `Basic ${Buffer.from(finalApiKey).toString("base64")}`;
+    }
+    // Last resort: Assume API key is already Base64 encoded
+    else {
+      console.log("Using API key as-is (assuming it's already Base64 encoded)");
+      authHeader = `Basic ${finalApiKey}`;
+    }
 
     console.log(
       "Authorization header set:",

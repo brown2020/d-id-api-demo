@@ -2,28 +2,33 @@
 
 import useProfileStore from "@/zustand/useProfileStore";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
   const [didApiKey, setDidApiKey] = useState(profile.did_api_key);
+  const [didBasicAuth, setDidBasicAuth] = useState(profile.did_basic_auth);
   const [elevenlabsApiKey, setElevenlabsApiKey] = useState(
     profile.elevenlabs_api_key
   );
 
   useEffect(() => {
     setDidApiKey(profile.did_api_key);
+    setDidBasicAuth(profile.did_basic_auth);
     setElevenlabsApiKey(profile.elevenlabs_api_key);
-  }, [profile.did_api_key, profile.elevenlabs_api_key]);
+  }, [profile.did_api_key, profile.did_basic_auth, profile.elevenlabs_api_key]);
 
   const handleApiKeyChange = async () => {
     if (
       didApiKey !== profile.did_api_key ||
+      didBasicAuth !== profile.did_basic_auth ||
       elevenlabsApiKey !== profile.elevenlabs_api_key
     ) {
       try {
         await updateProfile({
           did_api_key: didApiKey,
+          did_basic_auth: didBasicAuth,
           elevenlabs_api_key: elevenlabsApiKey,
         });
         console.log("API keys updated successfully!");
@@ -50,7 +55,10 @@ export default function ProfileComponent() {
       </div> */}
       <div className="flex flex-col gap-5">
         <div className="flex flex-col">
-          <label htmlFor="did-api-key" className="text-base font-light mb-[5px]">
+          <label
+            htmlFor="did-api-key"
+            className="text-base font-light mb-[5px]"
+          >
             D-ID API Key:
           </label>
           <input
@@ -59,11 +67,47 @@ export default function ProfileComponent() {
             value={didApiKey}
             onChange={(e) => setDidApiKey(e.target.value)}
             className="border bg-ghostWhite text-mediumGray rounded-md py-[10px] px-[15px] h-10 text-sm"
-            placeholder="Enter your D-ID API Key"
+            placeholder="Enter your D-ID API Key (username:password format)"
           />
+          <div className="mt-1 text-xs text-gray-500">
+            Format: username:password from the D-ID dashboard
+          </div>
         </div>
+
         <div className="flex flex-col">
-          <label htmlFor="elevenlabs-api-key" className="text-base font-light mb-[5px]">
+          <label
+            htmlFor="did-basic-auth"
+            className="text-base font-light mb-[5px]"
+          >
+            D-ID Basic Auth:
+            <span className="ml-1 font-bold text-green-600 text-xs">
+              (Recommended for production)
+            </span>
+          </label>
+          <input
+            type="text"
+            id="did-basic-auth"
+            value={didBasicAuth}
+            onChange={(e) => setDidBasicAuth(e.target.value)}
+            className="border bg-ghostWhite text-mediumGray rounded-md py-[10px] px-[15px] h-10 text-sm"
+            placeholder="Enter your D-ID Basic Auth (starts with 'Basic ')"
+          />
+          <div className="mt-1 text-xs text-gray-500">
+            Format: Basic [base64-encoded-credentials] -
+            <Link
+              href="/basic-auth-generator"
+              className="text-blue-500 underline ml-1"
+            >
+              Use the generator
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex flex-col">
+          <label
+            htmlFor="elevenlabs-api-key"
+            className="text-base font-light mb-[5px]"
+          >
             ElevenLabs API Key:
           </label>
           <input
@@ -79,6 +123,7 @@ export default function ProfileComponent() {
           onClick={handleApiKeyChange}
           disabled={
             didApiKey === profile.did_api_key &&
+            didBasicAuth === profile.did_basic_auth &&
             elevenlabsApiKey === profile.elevenlabs_api_key
           }
           className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 disabled:opacity-50"

@@ -20,7 +20,8 @@ export async function generateVideo(
   elevenlabsApiKey?: string,
   emotion: Emotion = "neutral",
   movement: Movement = "neutral",
-  useFallbackImage: boolean = false
+  useFallbackImage: boolean = false,
+  basicAuth: string | null = null
 ) {
   await protect();
   // const { userId } = auth();
@@ -182,9 +183,9 @@ export async function generateVideo(
     console.log(`- Image URL for D-ID: ${imageUrl}`);
     console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
     console.log(
-      `- API Keys provided: D-ID (${apiKey ? "Yes" : "No"}), ElevenLabs (${
-        elevenlabsApiKey ? "Yes" : "No"
-      })`
+      `- API Keys provided: D-ID (${apiKey ? "Yes" : "No"}), D-ID Basic Auth (${
+        basicAuth ? "Yes" : "No"
+      }), ElevenLabs (${elevenlabsApiKey ? "Yes" : "No"})`
     );
     console.log(
       `- Script length: ${inputText ? inputText.length : 0} characters`
@@ -200,7 +201,8 @@ export async function generateVideo(
       audioUrl,
       elevenlabsApiKey,
       emotion,
-      movement
+      movement,
+      basicAuth
     );
 
     if (response) {

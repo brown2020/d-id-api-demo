@@ -99,15 +99,19 @@ export default function Generate() {
         profile.elevenlabs_api_key,
         "neutral",
         "neutral",
-        useFallbackImage // Pass the fallback flag
+        useFallbackImage, // Pass the fallback flag
+        profile.did_basic_auth || "" // Pass the Basic Auth from profile
       );
 
       if (result.status && result && "id" in result && result.id) {
         console.log("Video generation initiated. Video ID:", result.id);
+        // Use Basic Auth from profile if available for retrieving the video
         const statusResponse = await retrieveDIDVideo(
           profile.did_api_key || "",
           result.id,
-          profile.selectedTalkingPhoto || "noTalkingPhotoId"
+          profile.selectedTalkingPhoto || "noTalkingPhotoId",
+          undefined,
+          profile.did_basic_auth || "" // Pass Basic Auth to retrieveDIDVideo as well
         );
 
         if (statusResponse && statusResponse.status === "completed") {

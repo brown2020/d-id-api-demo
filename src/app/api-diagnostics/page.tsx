@@ -155,10 +155,69 @@ export default function ApiDiagnosticsPage() {
                   Avoid extra spaces, line breaks or other special characters
                 </li>
                 <li>
-                  Try a different browser or clear your browser cache if issues
-                  persist
+                  If using environment variables, ensure{" "}
+                  <code className="bg-gray-100 px-1">D_ID_API_KEY</code> is set
+                  correctly
+                </li>
+                <li>
+                  For Vercel deployment, you might need to set{" "}
+                  <code className="bg-gray-100 px-1">D_ID_BASIC_AUTH</code>
+                  as{" "}
+                  <code className="bg-gray-100 px-1">
+                    Basic &lt;encoded-credentials&gt;
+                  </code>{" "}
+                  where
+                  <code className="bg-gray-100 px-1">
+                    &lt;encoded-credentials&gt;
+                  </code>{" "}
+                  is Base64 encoded
+                  <code className="bg-gray-100 px-1">username:password</code>
                 </li>
               </ul>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded">
+              <h3 className="font-bold mb-2">Setting Up Authentication:</h3>
+              <p className="mb-2">
+                The app can use three different methods for D-ID API
+                authentication:
+              </p>
+              <ol className="list-decimal pl-5 mb-3">
+                <li>
+                  Your profile&apos;s API key (recommended for regular users)
+                </li>
+                <li>
+                  Environment variable{" "}
+                  <code className="bg-gray-100 px-1">D_ID_API_KEY</code> in the
+                  format{" "}
+                  <code className="bg-gray-100 px-1">username:password</code>
+                </li>
+                <li>
+                  Environment variable{" "}
+                  <code className="bg-gray-100 px-1">D_ID_BASIC_AUTH</code> in
+                  the format{" "}
+                  <code className="bg-gray-100 px-1">
+                    Basic &lt;encoded-credentials&gt;
+                  </code>
+                </li>
+              </ol>
+              <p className="mb-2">
+                For production deployment on Vercel, option 3 is often most
+                reliable.
+              </p>
+              <div className="mt-3">
+                <Link
+                  href="/basic-auth-generator"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm rounded inline-block"
+                >
+                  Generate Basic Auth Header
+                </Link>
+                <span className="text-xs ml-2 text-gray-600">
+                  (Use this to create your{" "}
+                  <code className="bg-gray-100 px-1">D_ID_BASIC_AUTH</code>{" "}
+                  value for Vercel)
+                </span>
+              </div>
             </div>
 
             <div className="bg-green-50 p-4 rounded">
@@ -181,6 +240,7 @@ export default function ApiDiagnosticsPage() {
                 <li>
                   Check the browser console for more detailed error messages
                 </li>
+                <li>Clear browser cache and try again</li>
               </ul>
             </div>
           </div>

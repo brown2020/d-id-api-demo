@@ -961,9 +961,9 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
   }, [selectAvatarForm]);
 
   const handleGenerateVideo = writeScriptForm.handleSubmit(() => {
-    if (!profile.did_api_key) {
+    if (!profile.did_api_key && !profile.did_basic_auth) {
       toast.error(
-        "D-ID API key is missing. Please add it in your profile settings."
+        "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings."
       );
       return;
     }
@@ -1045,7 +1045,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               profile.elevenlabs_api_key,
               selectAvatarForm.getValues("emotion"),
               selectAvatarForm.getValues("movement"),
-              useFallbackImage
+              useFallbackImage,
+              profile.did_basic_auth
             );
 
             if (response.status && response.id != undefined) {
@@ -1076,7 +1077,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                   profile.did_api_key || "",
                   internalVideoId, // Use our internal video ID, not the D-ID talk ID
                   selectedAvatar.talking_photo_id || "",
-                  2000 // Poll every 2 seconds
+                  2000, // Poll every 2 seconds
+                  profile.did_basic_auth // Pass Basic Auth to retrieveDIDVideo as well
                 );
 
                 if (result && result.status === "completed") {
@@ -1663,13 +1665,14 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 </p>
 
                 {/* API Key Warnings */}
-                {!profile.did_api_key && (
+                {!profile.did_api_key && !profile.did_basic_auth && (
                   <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
                     <p className="text-amber-700 flex items-center gap-2">
                       <AlertTriangle size={16} className="shrink-0" />
                       <span>
-                        <strong>Warning:</strong> D-ID API key is missing.
-                        Please add it in your{" "}
+                        <strong>Warning:</strong> D-ID authentication is
+                        missing. Please add either a D-ID API key or Basic Auth
+                        in your{" "}
                         <a href="/profile" className="text-blue-600 underline">
                           profile settings
                         </a>{" "}
