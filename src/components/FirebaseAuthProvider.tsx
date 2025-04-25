@@ -47,35 +47,52 @@ export function FirebaseAuthProvider({
   );
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    // Safety check - only run in browser
+    if (typeof window === "undefined") {
+      return;
+    }
 
-      if (currentUser) {
-        // User is signed in
-        setAuthDetails({
-          uid: currentUser.uid,
-          firebaseUid: currentUser.uid,
-          authEmail: currentUser.email || "",
-          authDisplayName: currentUser.displayName || "",
-          authPhotoUrl: currentUser.photoURL || "",
-          authEmailVerified: currentUser.emailVerified,
-          authReady: true,
-          lastSignIn: serverTimestamp() as Timestamp,
-        });
-      } else {
-        // User is signed out
-        clearAuthDetails();
+    // Initialize the auth subscription
+    let unsubscribe: () => void;
 
-        // Redirect to home if on a protected route
-        if (isProtectedRoute) {
-          router.push("/");
+    try {
+      unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+
+        if (currentUser) {
+          // User is signed in
+          setAuthDetails({
+            uid: currentUser.uid,
+            firebaseUid: currentUser.uid,
+            authEmail: currentUser.email || "",
+            authDisplayName: currentUser.displayName || "",
+            authPhotoUrl: currentUser.photoURL || "",
+            authEmailVerified: currentUser.emailVerified,
+            authReady: true,
+            lastSignIn: serverTimestamp() as Timestamp,
+          });
+        } else {
+          // User is signed out
+          clearAuthDetails();
+
+          // Redirect to home if on a protected route
+          if (isProtectedRoute) {
+            router.push("/");
+          }
         }
-      }
 
+        setLoading(false);
+      });
+    } catch (error) {
+      console.error("Error setting up auth state listener:", error);
       setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [setAuthDetails, clearAuthDetails, router, isProtectedRoute]);
 
   return (
