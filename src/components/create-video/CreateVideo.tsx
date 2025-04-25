@@ -534,9 +534,10 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             // Add specialized error handling for known error types
             if (errorMsg.includes("celebrity")) {
               return (
-                <div className="text-red-500">
-                  <strong>Celebrity detected:</strong> {errorMsg}
-                  <p className="mt-2">
+                <div className="bg-red-600 text-white p-3 rounded-md shadow-sm">
+                  <p className="font-semibold mb-1">Celebrity Detected:</p>
+                  <p>{errorMsg}</p>
+                  <p className="mt-3 text-sm bg-red-700 p-2 rounded">
                     Please select a different image or use a non-celebrity
                     avatar.
                   </p>
@@ -1208,9 +1209,10 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
           // Add specialized error handling for known error types
           if (errorMsg.includes("celebrity")) {
             return (
-              <div className="text-red-500">
-                <strong>Celebrity detected:</strong> {errorMsg}
-                <p className="mt-2">
+              <div className="bg-red-600 text-white p-3 rounded-md shadow-sm">
+                <p className="font-semibold mb-1">Celebrity Detected:</p>
+                <p>{errorMsg}</p>
+                <p className="mt-3 text-sm bg-red-700 p-2 rounded">
                   Please select a different image or use a non-celebrity avatar.
                 </p>
               </div>
