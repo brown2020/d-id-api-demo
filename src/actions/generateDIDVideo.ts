@@ -165,6 +165,18 @@ export async function generateDIDVideo(
       }`
     );
 
+    // Add detailed diagnostic check for environment variables format
+    console.log(`D_ID_BASIC_AUTH environment variable check:`);
+    console.log(`- Exists: ${!!process.env.D_ID_BASIC_AUTH}`);
+    if (process.env.D_ID_BASIC_AUTH) {
+      console.log(`- Length: ${process.env.D_ID_BASIC_AUTH.length}`);
+      console.log(
+        `- Starts with 'Basic ': ${process.env.D_ID_BASIC_AUTH.startsWith(
+          "Basic "
+        )}`
+      );
+    }
+
     // Determine script settings based on available inputs
     if (audioUrl) {
       console.log("Audio URL provided. Using pre-recorded audio:", audioUrl);
@@ -240,10 +252,14 @@ export async function generateDIDVideo(
         accept: "application/json",
         authorization:
           process.env.D_ID_BASIC_AUTH ||
-          (finalApiKey ? `Basic ${finalApiKey}` : ""),
+          (finalApiKey
+            ? finalApiKey.includes(":")
+              ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
+              : `Basic ${finalApiKey}`
+            : ""),
         "content-type": "application/json",
         "x-api-key-external": JSON.stringify({
-          elevenlabs: finalElevenlabsApiKey, // Use the passed in ElevenLabs API key
+          elevenlabs: finalElevenlabsApiKey,
         }),
       },
       data: {
@@ -261,7 +277,7 @@ export async function generateDIDVideo(
             ],
           },
         },
-      } as DIDTalkRequestData, // Use a specific type instead of 'any'
+      } as DIDTalkRequestData,
     };
 
     // Debug the auth header for troubleshooting (without revealing the full value)
@@ -273,6 +289,28 @@ export async function generateDIDVideo(
     console.log(
       `Authorization header format is valid: ${authHeader.startsWith("Basic ")}`
     );
+
+    // Test D-ID API key by first making a GET request to check authentication
+    try {
+      console.log("Testing D-ID API authentication first...");
+      const testResponse = await axios.get(
+        "https://api.d-id.com/talks?limit=1",
+        {
+          headers: {
+            accept: "application/json",
+            authorization: config.headers.authorization,
+          },
+        }
+      );
+      console.log(
+        `Authentication test successful: ${testResponse.status} ${testResponse.statusText}`
+      );
+    } catch (authError) {
+      console.error("Authentication test failed:", authError);
+      return {
+        error: "D-ID API authentication failed. Please check your API key.",
+      };
+    }
 
     // Always skip webhook URLs and use polling instead
     console.log("Skipping webhook URL - using polling for status updates");

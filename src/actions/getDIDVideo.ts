@@ -29,7 +29,11 @@ export async function getDIDVideo(d_id_api_key: string, videoId: string) {
     // Use environment variable auth or construct from API key
     const authorization =
       process.env.D_ID_BASIC_AUTH ||
-      (finalApiKey ? `Basic ${finalApiKey}` : "");
+      (finalApiKey
+        ? finalApiKey.includes(":")
+          ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
+          : `Basic ${finalApiKey}`
+        : "");
 
     // Check if we have valid authorization
     if (!authorization) {

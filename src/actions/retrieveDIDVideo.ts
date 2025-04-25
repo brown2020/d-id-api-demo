@@ -249,7 +249,13 @@ export async function retrieveDIDVideo(
     console.log(`- Using D-ID API Key: ${finalApiKey ? "Present" : "Missing"}`);
 
     // Setup for polling
-    const authorization = process.env.D_ID_BASIC_AUTH || `Basic ${finalApiKey}`;
+    const authorization =
+      process.env.D_ID_BASIC_AUTH ||
+      (finalApiKey
+        ? finalApiKey.includes(":")
+          ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
+          : `Basic ${finalApiKey}`
+        : "");
 
     while (attempts < maxAttempts) {
       attempts++;
