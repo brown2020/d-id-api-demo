@@ -195,7 +195,8 @@ export async function generateDIDVideo(
       url: "https://api.d-id.com/talks",
       headers: {
         accept: "application/json",
-        authorization: process.env.D_ID_BASIC_AUTH || "",
+        authorization:
+          process.env.D_ID_BASIC_AUTH || (apiKey ? `Basic ${apiKey}` : ""),
         "content-type": "application/json",
         "x-api-key-external": JSON.stringify({
           elevenlabs: elevenlabsApiKey, // Use the passed in ElevenLabs API key
@@ -218,6 +219,16 @@ export async function generateDIDVideo(
         },
       } as DIDTalkRequestData, // Use a specific type instead of 'any'
     };
+
+    // Debug the auth header for troubleshooting (without revealing the full value)
+    const authHeader = config.headers.authorization;
+    console.log(`Authorization header length: ${authHeader.length}`);
+    console.log(
+      `Authorization header starts with: ${authHeader.substring(0, 10)}...`
+    );
+    console.log(
+      `Authorization header format is valid: ${authHeader.startsWith("Basic ")}`
+    );
 
     // Always skip webhook URLs and use polling instead
     console.log("Skipping webhook URL - using polling for status updates");

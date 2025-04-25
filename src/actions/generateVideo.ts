@@ -99,7 +99,7 @@ export async function generateVideo(
     if (isLocalhost || useFallbackImage) {
       // Use the permanent public URL for the fallback image
       // This ensures the D-ID API can access it regardless of environment
-      imageUrl = `https://d-id-api-demo.vercel.app/assets/headshot_fallback.png`;
+      imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
       console.log("Using permanent public fallback image URL:", imageUrl);
     } else {
       // Use the normal proxy URL
