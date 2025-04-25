@@ -50,6 +50,17 @@ export async function generateDIDVideo(
     };
   }
 
+  // Validate API key format
+  if (!finalApiKey.includes(":") && !finalApiKey.startsWith("Basic ")) {
+    console.error(
+      "API key format appears to be invalid - missing colon separator"
+    );
+    return {
+      error:
+        "D-ID API key format is invalid. It should be in the format 'username:password'. Please check your API key in profile settings.",
+    };
+  }
+
   // Log which API keys we're using (without revealing the actual values)
   console.log("Using API keys:");
   console.log(
@@ -245,18 +256,24 @@ export async function generateDIDVideo(
       };
     }
 
+    // Define the authorization header properly based on the API key format
+    const authHeader = finalApiKey.startsWith("Basic ")
+      ? finalApiKey
+      : finalApiKey.includes(":")
+      ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
+      : `Basic ${finalApiKey}`;
+
+    console.log(
+      "Authorization header set:",
+      authHeader.substring(0, 10) + "..."
+    );
+
     const config = {
       method: "post",
       url: "https://api.d-id.com/talks",
       headers: {
         accept: "application/json",
-        authorization:
-          process.env.D_ID_BASIC_AUTH ||
-          (finalApiKey
-            ? finalApiKey.includes(":")
-              ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
-              : `Basic ${finalApiKey}`
-            : ""),
+        authorization: authHeader,
         "content-type": "application/json",
         "x-api-key-external": JSON.stringify({
           elevenlabs: finalElevenlabsApiKey,
@@ -279,16 +296,6 @@ export async function generateDIDVideo(
         },
       } as DIDTalkRequestData,
     };
-
-    // Debug the auth header for troubleshooting (without revealing the full value)
-    const authHeader = config.headers.authorization;
-    console.log(`Authorization header length: ${authHeader.length}`);
-    console.log(
-      `Authorization header starts with: ${authHeader.substring(0, 10)}...`
-    );
-    console.log(
-      `Authorization header format is valid: ${authHeader.startsWith("Basic ")}`
-    );
 
     // Test D-ID API key by first making a GET request to check authentication
     try {

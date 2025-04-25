@@ -235,7 +235,22 @@ export default function Generate() {
               "Generate Video"
             )}
           </button>
-          {error && <div className="text-red-500 mt-2">{error}</div>}
+          {error && (
+            <div className="text-red-500 mt-2">
+              <p>{error}</p>
+              {error.includes("API key") && (
+                <p className="mt-1">
+                  <Link
+                    href="/api-diagnostics"
+                    className="underline hover:text-red-700"
+                  >
+                    Check API Key Diagnostics
+                  </Link>{" "}
+                  for troubleshooting help.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

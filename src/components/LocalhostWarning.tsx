@@ -119,6 +119,12 @@ export default function LocalhostWarning({
                 Test Image Access
               </Link>
               <Link
+                href="/api-diagnostics"
+                className="text-xs bg-orange-200 hover:bg-orange-300 px-2 py-1 rounded inline-block"
+              >
+                API Key Diagnostics
+              </Link>
+              <Link
                 href="/diagnostic"
                 className="text-xs bg-orange-200 hover:bg-orange-300 px-2 py-1 rounded inline-block"
               >

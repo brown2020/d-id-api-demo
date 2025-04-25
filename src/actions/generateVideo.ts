@@ -114,8 +114,17 @@ export async function generateVideo(
       console.log("Using permanent public fallback image URL:", imageUrl);
     } else {
       // For production, first try to use the user's image through our proxy
-      imageUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
-      console.log("Initial image URL (via proxy):", imageUrl);
+      const originalProxyUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
+      console.log("Original proxy URL:", originalProxyUrl);
+
+      // On Vercel production, we'll use forced HTTPS for the image URL
+      // This ensures the D-ID API can access it properly
+      imageUrl = originalProxyUrl.replace("http://", "https://");
+      if (imageUrl !== originalProxyUrl) {
+        console.log("Updated to HTTPS proxy URL:", imageUrl);
+      }
+
+      console.log("Using image URL (via proxy):", imageUrl);
 
       // Test if the image is accessible from D-ID's perspective
       try {
