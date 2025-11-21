@@ -22,7 +22,7 @@ import { Controller, useForm } from "react-hook-form";
 import Select, { components, ControlProps } from "react-select";
 import CustomAudioOption from "./CustomAudioOption";
 import { useAudio } from "@/hooks/useAudio";
-import { Voice } from "elevenlabs/api";
+import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import CustomAudioOption2 from "./CustomAudioOption2";
 import { createDIDAvatarProfile } from "@/actions/createDIDAvatarProfile";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -174,7 +174,7 @@ export default function AvatarForm({
   const initialLoad = useRef(true);
 
   // Add a state variable to store memoized options
-  const [stableOptions, setStableOptions] = useState<Voice[]>([]);
+  const [stableOptions, setStableOptions] = useState<ElevenLabs.Voice[]>([]);
 
   // Update our approach to voice options memoization
   useEffect(() => {
@@ -198,12 +198,12 @@ export default function AvatarForm({
   // Update our lookups to use stable options if available, otherwise use original options
   const voiceDetail = useMemo(() => {
     const optionsToUse = stableOptions.length > 0 ? stableOptions : options;
-    return optionsToUse.find((audio) => audio.voice_id === voiceId);
+    return optionsToUse.find((audio) => audio.voiceId === voiceId);
   }, [voiceId, options, stableOptions]);
 
   const voiceValue = useMemo(() => {
     const optionsToUse = stableOptions.length > 0 ? stableOptions : options;
-    return optionsToUse.find((option) => option.voice_id === voiceId);
+    return optionsToUse.find((option) => option.voiceId === voiceId);
   }, [voiceId, options, stableOptions]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -345,7 +345,7 @@ export default function AvatarForm({
                       <Select
                         value={voiceValue || null}
                         onChange={(e) => {
-                          setValue("voiceId", (e as Voice)?.voice_id || "");
+                          setValue("voiceId", (e as ElevenLabs.Voice)?.voiceId || "");
                           field.onBlur();
                         }}
                         options={options}
@@ -354,7 +354,7 @@ export default function AvatarForm({
                           Control: ({
                             children,
                             ...props
-                          }: ControlProps<Voice, false>) => {
+                          }: ControlProps<ElevenLabs.Voice, false>) => {
                             return (
                               <components.Control {...props}>
                                 {voiceValue ? (
@@ -373,8 +373,8 @@ export default function AvatarForm({
                 />
 
                 {voiceDetail ? (
-                  <audio controls key={voiceDetail.voice_id} className="mt-2">
-                    <source src={voiceDetail.preview_url} type="audio/mpeg" />
+                  <audio controls key={voiceDetail.voiceId} className="mt-2">
+                    <source src={voiceDetail.previewUrl} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
                 ) : (

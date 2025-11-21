@@ -1,7 +1,7 @@
 import { findAudio } from "@/actions/findAudio";
 import { getAudioList } from "@/actions/getAudioList";
 import useProfileStore from "@/zustand/useProfileStore";
-import { Voice } from "elevenlabs/api";
+import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -12,10 +12,10 @@ export const useAudio = () => {
   const loadingRef = useRef(false);
 
   // Use a stable reference for an empty voice list to avoid triggering re-renders
-  const emptyVoiceList = useRef<Voice[]>([]);
+  const emptyVoiceList = useRef<ElevenLabs.Voice[]>([]);
 
   // Only use state for the final, loaded voice list
-  const [voiceList, setVoiceList] = useState<Voice[]>(emptyVoiceList.current);
+  const [voiceList, setVoiceList] = useState<ElevenLabs.Voice[]>(emptyVoiceList.current);
 
   // Track refs for API status
   const hasAttemptedLoadRef = useRef(false);
@@ -50,7 +50,7 @@ export const useAudio = () => {
       }
 
       // Check if voice list already has the voice
-      const voice = voiceList.find((v) => v.voice_id === voiceId);
+      const voice = voiceList.find((v) => v.voiceId === voiceId);
       if (voice) {
         return { status: true, voice };
       } else {

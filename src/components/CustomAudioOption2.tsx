@@ -1,8 +1,8 @@
 import React from "react";
 import { Languages } from "../utils/Languages";
-import { Voice } from "elevenlabs/api";
+import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 
-const CustomAudioOption2 = ({ data }: { data: Voice }) => {
+const CustomAudioOption2 = ({ data }: { data: ElevenLabs.Voice }) => {
   const language = (code: string) => {
     return (
       Languages.find((lang) => lang.code === code) || {
@@ -54,8 +54,8 @@ const CustomAudioOption2 = ({ data }: { data: Voice }) => {
         </span>
         <div className="flex items-center gap-2">
           <span className="text-neutral-600 text-sm">
-            {data.fine_tuning?.language &&
-              language(data.fine_tuning?.language.toString()).name}{" "}
+            {data.fineTuning?.language &&
+              language(data.fineTuning?.language.toString()).name}{" "}
             ( {data.labels?.accent} )
           </span>
         </div>

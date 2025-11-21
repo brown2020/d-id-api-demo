@@ -1,5 +1,5 @@
 "use server";
-import { ElevenLabsClient, ElevenLabsError } from "elevenlabs";
+import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
 
 export async function findAudio(elevenlabs_api_key: string, voiceId: string) {
     try {

@@ -10,7 +10,7 @@ const protectedPaths = [
   "/profile",
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Check if the path matches any protected path
   const isProtectedPath = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)

@@ -66,7 +66,7 @@ import { useRouter } from "next/navigation";
 import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
 import { useAudio } from "@/hooks/useAudio";
-import { Voice } from "elevenlabs/api";
+import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import * as fabric from "fabric";
 import { Background_Images } from "./utils";
 import AvatarGallery from "./AvatarGallery";
@@ -1356,13 +1356,13 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     [canvas]
   );
 
-  const [audioDetail, setAudioDetail] = useState<Voice | null>(null);
+  const [audioDetail, setAudioDetail] = useState<ElevenLabs.Voice | null>(null);
 
   const stepOneCompeted = useMemo(() => {
     return (
       selectedAvatar != null &&
       audioDetail != null &&
-      selectedAvatar.voiceId == audioDetail.voice_id
+      selectedAvatar.voiceId == audioDetail.voiceId
     );
   }, [selectedAvatar, audioDetail]);
 
@@ -1459,10 +1459,10 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                               <audio
                                 className="w-full"
                                 controls
-                                key={audioDetail.voice_id}
+                                key={audioDetail.voiceId}
                               >
                                 <source
-                                  src={audioDetail.preview_url}
+                                  src={audioDetail.previewUrl}
                                   type="audio/mpeg"
                                 />
                                 Your browser does not support the audio element.
