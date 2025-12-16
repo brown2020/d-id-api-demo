@@ -1,7 +1,8 @@
 "use server";
 
-import { adminAuth } from "../firebase/firebaseAdmin";
+import { adminAuth } from "@/firebase/firebaseAdmin";
 import { cookies } from "next/headers";
+import { SESSION_COOKIE_NAME } from "@/libs/auth-constants";
 
 // Auth error class
 class AuthError extends Error {
@@ -14,19 +15,19 @@ class AuthError extends Error {
 // Function to protect server actions - replacement for Clerk's auth.protect()
 export async function protect() {
   const cookieStore = await cookies();
-  const session = cookieStore.get("__session")?.value;
+  const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (!session) {
     throw new AuthError("Authentication required");
   }
 
   try {
-    // Verify the session cookie
-    const decodedClaims = await adminAuth.verifySessionCookie(session);
-
-    // Optionally check if session was revoked (for additional security)
+    // Verify the session cookie and check if it was revoked
     const checkRevoked = true;
-    await adminAuth.verifySessionCookie(session, checkRevoked);
+    const decodedClaims = await adminAuth.verifySessionCookie(
+      session,
+      checkRevoked
+    );
 
     return decodedClaims.uid;
   } catch (error) {
@@ -38,7 +39,7 @@ export async function protect() {
 // Function to get the current user from the session
 export async function getCurrentUser() {
   const cookieStore = await cookies();
-  const session = cookieStore.get("__session")?.value;
+  const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (!session) {
     return null;

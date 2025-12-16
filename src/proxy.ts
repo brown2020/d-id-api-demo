@@ -1,20 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Paths that require authentication
-const protectedPaths = [
-  "/avatars",
-  "/generate",
-  "/payment-attempt",
-  "/payment-success",
-  "/profile",
-];
+import {
+  isProtectedPathname,
+  SESSION_COOKIE_NAME,
+} from "@/libs/auth-constants";
 
 export async function proxy(request: NextRequest) {
   // Check if the path matches any protected path
-  const isProtectedPath = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+  const isProtectedPath = isProtectedPathname(request.nextUrl.pathname);
 
   // No checks needed for non-protected paths
   if (!isProtectedPath) {
@@ -22,7 +16,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // For protected paths, check if the user has a valid session cookie
-  const sessionCookie = request.cookies.get("__session")?.value;
+  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   // If no session cookie is found, redirect to the login page
   if (!sessionCookie) {

@@ -1,8 +1,7 @@
-"use server";
-
-import { adminAuth } from "../../../firebase/firebaseAdmin";
+import { adminAuth } from "@/firebase/firebaseAdmin";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE_NAME } from "@/libs/auth-constants";
 
 // Set session cookie
 export async function POST(request: NextRequest) {
@@ -10,16 +9,18 @@ export async function POST(request: NextRequest) {
     const { idToken } = await request.json();
 
     // Create a session cookie
-    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+    const expiresInMs = 60 * 60 * 24 * 5 * 1000; // 5 days
+    const maxAgeSeconds = Math.floor(expiresInMs / 1000);
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
-      expiresIn,
+      expiresIn: expiresInMs,
     });
 
     // Set cookie options
     const options = {
-      name: "__session",
+      name: SESSION_COOKIE_NAME,
       value: sessionCookie,
-      maxAge: expiresIn,
+      // next/headers cookie `maxAge` is seconds (Firebase `expiresIn` is ms)
+      maxAge: maxAgeSeconds,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
@@ -41,7 +42,7 @@ export async function DELETE() {
   try {
     const cookieStore = await cookies();
     cookieStore.set({
-      name: "__session",
+      name: SESSION_COOKIE_NAME,
       value: "",
       maxAge: 0,
       httpOnly: true,

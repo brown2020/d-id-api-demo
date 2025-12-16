@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import { Timestamp, serverTimestamp } from "firebase/firestore";
 import { usePathname } from "next/navigation";
+import { isProtectedPathname } from "@/libs/auth-constants";
 
 interface AuthContextType {
   user: User | null;
@@ -31,20 +32,7 @@ export function FirebaseAuthProvider({
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
   const router = useRouter();
   const pathname = usePathname();
-
-  // List of protected routes that require authentication
-  const protectedRoutes = [
-    "/avatars",
-    "/generate",
-    "/payment-attempt",
-    "/payment-success",
-    "/profile",
-  ];
-
-  // Check if current route is protected
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  const isProtectedRoute = isProtectedPathname(pathname);
 
   useEffect(() => {
     // Safety check - only run in browser
