@@ -1,6 +1,7 @@
 {
   "name": "didapidemo",
   "version": "0.1.0",
+  "license": "AGPL-3.0-only",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -15,11 +16,11 @@
     "@stripe/react-stripe-js": "^5.4.0",
     "@stripe/stripe-js": "^8.5.2",
     "axios": "^1.7.7",
-    "fabric": "^6.5.0",
+    "fabric": "^7.0.0",
     "firebase": "^12.6.0",
     "firebase-admin": "^13.0.1",
     "framer-motion": "^12.4.7",
-    "lucide-react": "^0.561.0",
+    "lucide-react": "^0.562.0",
     "moment": "^2.30.1",
     "next": "^16.0.3",
     "react": "^19.0.0",

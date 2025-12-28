@@ -1,0 +1,166 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isOwnerField(ownerField) {
+      return isSignedIn() && ownerField == request.auth.uid;
+    }
+
+    function isValidFavoriteToggle() {
+      // Only allow changing favorite_of, and only by toggling the caller's uid
+      return isSignedIn()
+        && ('favorite_of' in resource.data)
+        && ('favorite_of' in request.resource.data)
+        && resource.data.favorite_of is list
+        && request.resource.data.favorite_of is list
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['favorite_of'])
+        && (
+          // add my uid
+          (
+            !(request.auth.uid in resource.data.favorite_of)
+            && (request.auth.uid in request.resource.data.favorite_of)
+            && request.resource.data.favorite_of.size() == resource.data.favorite_of.size() + 1
+            && request.resource.data.favorite_of.hasAll(resource.data.favorite_of)
+          )
+          ||
+          // remove my uid
+          (
+            (request.auth.uid in resource.data.favorite_of)
+            && !(request.auth.uid in request.resource.data.favorite_of)
+            && request.resource.data.favorite_of.size() == resource.data.favorite_of.size() - 1
+            && resource.data.favorite_of.hasAll(request.resource.data.favorite_of)
+          )
+        );
+    }
+
+    // Default: deny everything unless explicitly allowed below.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // Users
+    // ---------------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if isSelf(userId);
+
+      // Allow creating/updating only your own doc.
+      // Clients may only change a small set of non-privileged auth/profile fields.
+      allow create: if isSelf(userId)
+        && (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false)
+        && (!('isAllowed' in request.resource.data) || request.resource.data.isAllowed == false)
+        && (!('premium' in request.resource.data) || request.resource.data.premium == false)
+        && (!('credits' in request.resource.data) || request.resource.data.credits == 0);
+
+      allow update: if isSelf(userId)
+        // Prevent client-side privilege escalation (must remain unchanged if present)
+        && (!('isAdmin' in resource.data) || request.resource.data.isAdmin == resource.data.isAdmin)
+        && (!('isAllowed' in resource.data) || request.resource.data.isAllowed == resource.data.isAllowed)
+        && (!('premium' in resource.data) || request.resource.data.premium == resource.data.premium)
+        && (!('credits' in resource.data) || request.resource.data.credits == resource.data.credits)
+        // Only allow changing these keys
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'firebaseUid',
+          'authEmail',
+          'authDisplayName',
+          'authPhotoUrl',
+          'authEmailVerified',
+          'authReady',
+          'authPending',
+          'lastSignIn'
+        ]);
+
+      allow delete: if false;
+
+      // Private per-user profile (stores API keys, credits, preferences, etc.)
+      match /profile/{docId} {
+        allow read, write: if isSelf(userId);
+      }
+
+      // Private per-user payments history
+      match /payments/{paymentId} {
+        allow read, write: if isSelf(userId);
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Notifications (server creates; user can read & mark their own as read)
+    // ---------------------------------------------------------------------
+    match /notifications/{notificationId} {
+      allow read: if isOwnerField(resource.data.user_id);
+
+      // Only allow the owner to update status (e.g., unread -> read)
+      allow update: if isOwnerField(resource.data.user_id)
+        && request.resource.data.user_id == resource.data.user_id
+        && request.resource.data.video_id == resource.data.video_id
+        && request.resource.data.type == resource.data.type
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status']);
+
+      // Client never creates/deletes notifications
+      allow create, delete: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // Generated videos (private to owner)
+    // ---------------------------------------------------------------------
+    match /generated-videos/{videoId} {
+      allow read: if isOwnerField(resource.data.owner);
+
+      allow create: if isSignedIn()
+        && request.resource.data.owner == request.auth.uid;
+
+      allow update, delete: if isOwnerField(resource.data.owner)
+        && request.resource.data.owner == resource.data.owner;
+    }
+
+    // ---------------------------------------------------------------------
+    // Avatars / Talking photos
+    // - Personal avatars: private to owner
+    // - Template avatars: readable by anyone signed-in; only safe favorite toggles allowed
+    // ---------------------------------------------------------------------
+    match /didTalkingPhotos/{talkingPhotoId} {
+      allow read: if isSignedIn() && ((resource.data.type == 'template') || isOwnerField(resource.data.owner));
+
+      allow create: if isSignedIn()
+        && request.resource.data.type == 'personal'
+        && request.resource.data.owner == request.auth.uid;
+
+      // Personal avatars: owner can fully manage
+      allow update, delete: if resource.data.type == 'personal'
+        && isOwnerField(resource.data.owner)
+        && request.resource.data.owner == resource.data.owner;
+
+      // Template avatars: allow *only* safe favorite toggles
+      allow update: if resource.data.type == 'template'
+        && isValidFavoriteToggle();
+    }
+
+    // Videos under a talking photo are written server-side; clients can only read their own.
+    match /didTalkingPhotos/{talkingPhotoId}/videos/{videoId} {
+      allow read: if isSignedIn()
+        && get(/databases/$(database)/documents/didTalkingPhotos/$(talkingPhotoId)).data.owner == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // Server-only operational collections
+    // ---------------------------------------------------------------------
+    match /webhook-history/{id} {
+      allow read, write: if false;
+    }
+
+    match /error-report/{id} {
+      allow read, write: if false;
+    }
+  }
+}
+
+

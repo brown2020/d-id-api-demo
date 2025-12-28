@@ -469,9 +469,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 const scaledWidth = imageWidth * scaleFactor;
                 const scaledHeight = imageHeight * scaleFactor;
 
-                // Set the new dimensions for the canvas
-                canvas.setWidth(scaledWidth);
-                canvas.setHeight(scaledHeight);
+                // Set the new dimensions for the canvas (Fabric v7)
+                canvas.setDimensions({ width: scaledWidth, height: scaledHeight });
                 canvas?.renderAll();
 
                 // Add the image to the canvas with the scaled dimensions
@@ -606,9 +605,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
           const scaledWidth = imageWidth * scaleFactor;
           const scaledHeight = imageHeight * scaleFactor;
 
-          // Set the new dimensions for the canvas
-          canvas.setWidth(scaledWidth);
-          canvas.setHeight(scaledHeight);
+          // Set the new dimensions for the canvas (Fabric v7)
+          canvas.setDimensions({ width: scaledWidth, height: scaledHeight });
 
           // Add the image to the canvas with the scaled dimensions
           img.set({
@@ -650,9 +648,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
             canvasWidth = canvasWidth * scale; // Scale width based on height adjustment
           }
 
-          // Set the calculated width and height for the canvas
-          canvas.setWidth(canvasWidth - 4);
-          canvas.setHeight(canvasHeight - 4);
+          // Set the calculated width and height for the canvas (Fabric v7)
+          canvas.setDimensions({ width: canvasWidth - 4, height: canvasHeight - 4 });
 
           // Scale the image uniformly to fit within the canvas
           const imageAspectRatio = img.width / img.height;
@@ -903,9 +900,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         targetWidth = targetHeight * aspectRatio;
       }
 
-      // Resize the canvas to fit within container constraints
-      canvas.setWidth(targetWidth);
-      canvas.setHeight(targetHeight);
+      // Resize the canvas to fit within container constraints (Fabric v7)
+      canvas.setDimensions({ width: targetWidth, height: targetHeight });
 
       // Calculate scale factors for the objects
       const scaleX = targetWidth / originalWidth;

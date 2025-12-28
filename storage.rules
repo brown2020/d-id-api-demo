@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isImageUpload() {
+      return request.resource != null
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    function underMaxSize(bytes) {
+      return request.resource != null && request.resource.size < bytes;
+    }
+
+    // User-uploaded avatar images
+    // Client writes to: images/{uid}/{avatarId}/{fileName}
+    match /images/{userId}/{avatarId}/{fileName} {
+      allow read: if isSelf(userId);
+      allow write: if isSelf(userId) && isImageUpload() && underMaxSize(10 * 1024 * 1024);
+    }
+
+    // Everything else is server-managed via Admin SDK + signed URLs.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+

@@ -51,7 +51,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     const { ...oldState } = get();
     const newState = { ...oldState, ...details };
     set(newState);
-    await updateUserDetailsInFirestore(newState, get().uid);
+    // Only persist safe, non-privileged fields to Firestore.
+    // (Privileged fields like admin flags/credits should be server-managed.)
+    const uid = newState.uid;
+    await updateUserDetailsInFirestore(details, uid);
   },
 
   clearAuthDetails: () => set({ ...defaultAuthState }),
@@ -63,10 +66,21 @@ async function updateUserDetailsInFirestore(
 ) {
   if (uid) {
     const userRef = doc(db, `users/${uid}`);
-    console.log("Updating auth details in Firestore:", details);
+    const safeDetails: Partial<AuthState> = {
+      firebaseUid: details.firebaseUid,
+      authEmail: details.authEmail,
+      authDisplayName: details.authDisplayName,
+      authPhotoUrl: details.authPhotoUrl,
+      authEmailVerified: details.authEmailVerified,
+      authReady: details.authReady,
+      authPending: details.authPending,
+      lastSignIn: details.lastSignIn,
+    };
+
+    console.log("Updating auth details in Firestore:", safeDetails);
 
     // Sanitize details to remove invalid data
-    const sanitizedDetails = sanitizeFirestoreData(details);
+    const sanitizedDetails = sanitizeFirestoreData(safeDetails);
 
     try {
       await setDoc(

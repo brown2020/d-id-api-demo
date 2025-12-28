@@ -2,7 +2,17 @@
 
 ## Project Description
 
-This demo application showcases the integration of the D-ID API with a Next.js 14 application using the App Router. The project enables users to generate and manage digital human videos, leveraging technologies like Firebase for data storage, ElevenLabs for voice synthesis, and Stripe for payment processing.
+This demo application showcases the integration of the D-ID API with a Next.js (App Router) application. The project enables users to generate and manage digital human videos, leveraging Firebase (Auth/Firestore/Storage), ElevenLabs (voice synthesis), and Stripe (payments).
+
+## Tech Stack (from `package-lock.json`)
+
+- **Framework**: Next.js `^16.0.3` (App Router)
+- **UI**: React `^19.0.0`, Tailwind CSS `^4.1.4`, Framer Motion `^12.4.7`, Lucide `^0.562.0`, Styled Components `^6.1.13`
+- **State**: Zustand `^5.0.1`
+- **Forms**: React Hook Form `^7.53.0` (+ `@hookform/resolvers`), Yup `^1.4.0`
+- **APIs**: D-ID (external), ElevenLabs via `@elevenlabs/elevenlabs-js` `^2.25.0`
+- **Payments**: Stripe SDK `stripe` `^20.0.0`, `@stripe/react-stripe-js` `^5.4.0`, `@stripe/stripe-js` `^8.5.2`
+- **Firebase**: `firebase` `^12.6.0` (client), `firebase-admin` `^13.0.1` (server/Admin SDK)
 
 ## Features
 
@@ -54,8 +64,6 @@ Ensure you have the following tools installed:
 
    ```plaintext
    NEXT_PUBLIC_API_BASE_URL=your_api_base_url
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-   CLERK_SECRET_KEY=your_clerk_secret_key
 
    NEXT_PUBLIC_STRIPE_PRODUCT_NAME=your_stripe_product_name
    NEXT_PUBLIC_STRIPE_KEY=your_stripe_key
@@ -116,6 +124,40 @@ To run this project locally, use Ngrok to expose your local server to the public
 
 **API Keys**: Users must enter their ElevenLabs API key and D-ID API key in the profile section. These keys are user-specific and not fetched from the environment variables. The app will not function properly without these keys.
 
+## Firebase Security Rules (from `firestore.rules` + `storage.rules`)
+
+### Firestore (`firestore.rules`)
+
+- **Default**: deny all reads/writes unless explicitly allowed.
+- **`users/{userId}`**:
+  - **read**: only the signed-in user can read their own user doc.
+  - **create/update**: only for self, with explicit protections against client-side privilege/credits escalation.
+  - **subcollections**:
+    - `users/{userId}/profile/{docId}`: read/write self (private per-user profile data)
+    - `users/{userId}/payments/{paymentId}`: read/write self (private per-user payment history)
+- **`notifications/{notificationId}`**:
+  - **read**: only if `resource.data.user_id == request.auth.uid`
+  - **update**: owner can only change `status` (immutable `user_id`, `video_id`, `type`)
+  - **create/delete**: denied for clients
+- **`generated-videos/{videoId}`**:
+  - private to owner via `owner` field (read/create/update/delete gated by ownership)
+- **`didTalkingPhotos/{talkingPhotoId}`**:
+  - **personal**: private to owner (`owner` field) and fully manageable by owner
+  - **template**: readable by any signed-in user; updates limited to a safe “favorite” toggle in `favorite_of`
+  - **subcollection** `didTalkingPhotos/{talkingPhotoId}/videos/{videoId}`: client read only for owner; all writes denied
+- **Server-only collections**:
+  - `webhook-history/*`: no client read/write
+  - `error-report/*`: no client read/write
+
+### Storage (`storage.rules`)
+
+- **Default**: deny all reads/writes unless explicitly allowed.
+- **Allowed client uploads (avatar images)**:
+  - Path: `images/{uid}/{avatarId}/{fileName}`
+  - **read/write**: only for the signed-in owner (`uid`)
+  - **write constraints**: must be an `image/*` content type and **< 10MB**
+- **Everything else**: server-managed (Admin SDK and/or signed URLs).
+
 ## Usage
 
 ### Development
@@ -156,7 +198,7 @@ npm run build
 
 ### Middleware
 
-The application uses [Clerk's middleware](https://clerk.dev/docs/nextjs) to protect specific routes by enforcing authentication where required.
+Authentication is enforced via Firebase Auth on the client, and Firestore/Storage access is constrained by the security rules in `firestore.rules` and `storage.rules`.
 
 ### State Management
 
@@ -186,7 +228,7 @@ Uses [Zustand](https://github.com/pmndrs/zustand) to manage local state and sync
 
 - **Profile Page**:
   - Allows users to enter their API keys for D-ID and ElevenLabs, view profile details, and manage account settings.
-  - Displays user authentication data, including email and display name, via Clerk.
+  - Displays user authentication data (email, display name) via Firebase.
   - Integrates a payment page for purchasing additional credits for video generation.
 
 ## Contribution
@@ -195,7 +237,7 @@ Contributions are welcome! Fork the repository and submit a pull request with yo
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See `LICENSE.md`.
 
 ## Acknowledgments
 
@@ -212,7 +254,7 @@ This project is licensed under the MIT License.
 
 ### Summary
 
-- **Next.js 14 with App Router and Server Actions**: Demonstrates the use of Next.js 14 with the App Router and React Server Actions for D-ID API integration.
+- **Next.js (App Router) and Server Actions**: Demonstrates the use of Next.js with the App Router and React Server Actions for D-ID API integration.
 - **Polling vs. Webhooks**: Discusses the use of polling to check video generation status and recommends webhooks for efficient real-time updates.
 - **Production Command**: Explains the use of `npm run build` for production and emphasizes the need for Ngrok in local development.
 
