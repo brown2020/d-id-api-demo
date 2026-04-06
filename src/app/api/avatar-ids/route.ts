@@ -8,7 +8,7 @@ export async function GET() {
     const snapshot = await adminDb.collection(DOCUMENT_COLLECTION).get();
 
     // Extract document IDs
-    const avatarIds = snapshot.docs.map((doc) => doc.id);
+    const avatarIds = snapshot.docs.map((doc: any) => doc.id);
 
     return NextResponse.json({ avatarIds }, { status: 200 });
   } catch (error) {
