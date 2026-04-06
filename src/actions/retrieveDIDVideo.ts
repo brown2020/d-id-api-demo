@@ -192,7 +192,7 @@ export async function retrieveDIDVideo(
         const collections = await adminDb.listCollections();
         console.log(
           "Available collections:",
-          collections.map((col) => col.id)
+          collections.map((col: any) => col.id)
         );
 
         // Check if we can find the document in both possible collection names
