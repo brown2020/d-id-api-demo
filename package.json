@@ -14,7 +14,7 @@
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^5.2.2",
     "@stripe/react-stripe-js": "^6.1.0",
-    "@stripe/stripe-js": "^9.0.1",
+    "@stripe/stripe-js": "^9.1.0",
     "axios": "^1.14.0",
     "fabric": "^7.2.0",
     "firebase": "^12.11.0",
