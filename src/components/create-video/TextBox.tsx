@@ -5,8 +5,8 @@ import textBox1 from "@/assets/images/text-box-1.png";
 import textBox2 from "@/assets/images/text-box-2.png";
 import textBox3 from "@/assets/images/text-box-3.png";
 import textBox4 from "@/assets/images/text-box-4.png";
-import Image from 'next/image';
-import { StaticImageData } from 'next/image';
+import Image, { StaticImageData } from 'next/image';
+
 import { TextGroup1, TextGroup2, TextGroup3, TextGroup4 } from './TextGroupStyle';
 import { useEffect, useState } from 'react';
 
@@ -50,7 +50,7 @@ interface TextStyleConfig {
 interface TextBox {
     id: number;
     onClick: (canvas: fabric.Canvas | null) => void;
-    src: StaticImageData;
+    src: StaticImageData | string;
     alt: string;
   }
 
@@ -66,6 +66,34 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
         underline: false,
         strikethrough: false,
     });
+
+    const clearSettings = () => {
+        setColor("#000000");
+        setFontSize(16);
+        setTextStyle({
+            bold: false,
+            italic: false,
+            underline: false,
+            strikethrough: false,
+        });
+        setTextAlign('center');
+    };
+
+    const handleObjectSelection = (object: fabric.Object) => {
+        if (!object) return;
+        if (object.type === "i-text") {
+            setColor(object.fill ? object.fill.toString() : "#000000");
+            setFontSize((object as fabric.IText).fontSize ? (object as fabric.IText).fontSize : 16);
+            setSelectedFont((object as fabric.IText).fontFamily || '');
+            setTextStyle({
+                bold: (object as fabric.IText).fontWeight === 'bold',
+                italic: (object as fabric.IText).fontStyle === 'italic',
+                underline: (object as fabric.IText).underline || false,
+                strikethrough: (object as fabric.IText).linethrough || false,
+            });
+            setTextAlign(((object as fabric.IText).textAlign as 'left' | 'center' | 'right'));
+        }
+    };
 
     useEffect(() => {
         if (canvas) {
@@ -194,22 +222,6 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
         },
       ];
 
-    const handleObjectSelection = (object: fabric.Object) => {
-        if (!object) return;
-        if (object.type === "i-text") {
-            setColor(object.fill ? object.fill.toString() : "#000000");
-            setFontSize((object as fabric.IText).fontSize ? (object as fabric.IText).fontSize : 16);
-            setSelectedFont((object as fabric.IText).fontFamily || '');
-            setTextStyle({
-                bold: (object as fabric.IText).fontWeight === 'bold',
-                italic: (object as fabric.IText).fontStyle === 'italic',
-                underline: (object as fabric.IText).underline || false,
-                strikethrough: (object as fabric.IText).linethrough || false,
-            });
-            setTextAlign(((object as fabric.IText).textAlign as 'left' | 'center' | 'right'));
-        }
-    };
-
     const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         setColor(value);
@@ -275,18 +287,6 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                 canvas.renderAll();
             }
         }
-    };
-
-    const clearSettings = () => {
-        setColor("#000000");
-        setFontSize(16);
-        setTextStyle({
-            bold: false,
-            italic: false,
-            underline: false,
-            strikethrough: false,
-        });
-        setTextAlign('center');
     };
 
     return (

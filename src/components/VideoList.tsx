@@ -19,7 +19,7 @@ export default function VideosPage() {
     const router = useRouter();
 
     useEffect(() => {
-        setFetching(true);
+        queueMicrotask(() => setFetching(true));
         const videoCollection = query(
             collection(db, "generated-videos"),
             where('type', '==', AVATAR_TYPE_PERSONAL),

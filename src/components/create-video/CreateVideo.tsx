@@ -80,7 +80,8 @@ import { retrieveDIDVideo } from "@/actions/retrieveDIDVideo";
 type IconType =
   | keyof typeof icons
   | ReactElement
-  | ComponentType<React.SVGProps<SVGSVGElement>>;
+  | ComponentType<React.SVGProps<SVGSVGElement>>
+  | string;
 
 const steps = [
   {
@@ -228,6 +229,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
   const totalProcessesRef = useRef(0);
   const completedProcessesRef = useRef(0);
   const [avatarChangeProcessed, setAvatarChangeProcessed] = useState(false);
+  const [audioDetail, setAudioDetail] = useState<ElevenLabs.Voice | null>(null);
 
   const selectAvatarForm = useForm<{
     talking_photo_id: string;
@@ -245,12 +247,6 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     },
   });
 
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  });
   useEffect(() => {
     videoIdRef.current = video_id;
   }, [video_id]);
@@ -330,7 +326,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     // Check personal talking photo should exist
     if (video_id && uid && personalTalkingPhotos.length > 0) {
       const docRef = doc(collection(db, VIDEO_COLLECTION), video_id);
-      setProcessing(true);
+      queueMicrotask(() => setProcessing(true));
 
       getDoc(docRef).then((snapshot) => {
         setProcessing(false);
@@ -384,6 +380,20 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     }
     return null;
   }, [canvas]);
+
+  const getContainerHeightWidth = () => {
+    const container = canvasContainerRef.current;
+
+    return container
+      ? {
+          width: container.offsetWidth,
+          height: container.offsetHeight,
+        }
+      : {
+          width: 0,
+          height: 0,
+        };
+  };
 
   const changeAvatarImageOnFrame = useCallback(async () => {
     if (fetchingImage) return;
@@ -563,20 +573,6 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     avatarChangeProcessed,
   ]);
 
-  const getContainerHeightWidth = () => {
-    const container = canvasContainerRef.current;
-
-    return container
-      ? {
-          width: container.offsetWidth,
-          height: container.offsetHeight,
-        }
-      : {
-          width: 0,
-          height: 0,
-        };
-  };
-
   const setCanvasDimensions = useCallback(
     (
       widthOrHeight: number,
@@ -737,7 +733,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     name: ["frame"],
   });
   useEffect(() => {
-    updateCanvasAsPerVariable(updatedFields[0]);
+    queueMicrotask(() => updateCanvasAsPerVariable(updatedFields[0]));
   }, [updatedFields, updateCanvasAsPerVariable]);
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -777,6 +773,13 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
       }
     }
   };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  });
 
   const writeScriptForm = useForm<{ script: string }>({ mode: "all" });
 
@@ -941,10 +944,10 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     ) {
       if (!loadFirstTime && videoCanvasDetail && video_id) {
         console.log("Load canvas for first time");
-        loadCanvasForFirstTime();
+        queueMicrotask(() => loadCanvasForFirstTime());
       } else if (!avatarChangeProcessed) {
         console.log("Load canvas for other time else");
-        changeAvatarImageOnFrame();
+        queueMicrotask(() => changeAvatarImageOnFrame());
       }
     }
   }, [
@@ -963,14 +966,14 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
   // Reset the processed flag when avatar changes
   useEffect(() => {
-    setAvatarChangeProcessed(false);
+    queueMicrotask(() => setAvatarChangeProcessed(false));
   }, [selectedAvatar]);
 
   useEffect(() => {
     selectAvatarForm.handleSubmit(() => {});
   }, [selectAvatarForm]);
 
-  const handleGenerateVideo = writeScriptForm.handleSubmit(() => {
+  const handleGenerateVideo = (e?: React.BaseSyntheticEvent) => writeScriptForm.handleSubmit(() => {
     if (!profile.did_api_key && !profile.did_basic_auth) {
       toast.error(
         "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings."
@@ -1223,15 +1226,15 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         },
       }
     );
-  });
+  })(e);
 
   const setBackgroundColor = useCallback(
     (color: string) => {
       if (canvas) {
         if (canvas.backgroundImage) {
-          canvas.backgroundImage = undefined;
+          canvas.set("backgroundImage", undefined);
         }
-        canvas.backgroundColor = color;
+        canvas.set("backgroundColor", color);
         canvas.renderAll();
       }
     },
@@ -1242,7 +1245,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     (image: fabric.FabricImage) => {
       setFabricBackgroundImage(image);
       if (canvas) {
-        canvas.backgroundImage = image;
+        canvas.set("backgroundImage", image);
         canvas.renderAll();
       }
     },
@@ -1351,8 +1354,6 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     },
     [canvas]
   );
-
-  const [audioDetail, setAudioDetail] = useState<ElevenLabs.Voice | null>(null);
 
   const stepOneCompeted = useMemo(() => {
     return (

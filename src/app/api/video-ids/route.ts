@@ -9,7 +9,7 @@ export async function GET() {
     const snapshot = await adminDb.collection(VIDEO_COLLECTION).get();
 
     // Extract document IDs
-    const videoIds = snapshot.docs.map((doc: any) => doc.id);
+    const videoIds = snapshot.docs.map((doc) => doc.id);
     console.log(`Found ${videoIds.length} videos`);
 
     return NextResponse.json(

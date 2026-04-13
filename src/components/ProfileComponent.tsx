@@ -14,9 +14,11 @@ export default function ProfileComponent() {
   );
 
   useEffect(() => {
-    setDidApiKey(profile.did_api_key);
-    setDidBasicAuth(profile.did_basic_auth);
-    setElevenlabsApiKey(profile.elevenlabs_api_key);
+    queueMicrotask(() => {
+      setDidApiKey(profile.did_api_key);
+      setDidBasicAuth(profile.did_basic_auth);
+      setElevenlabsApiKey(profile.elevenlabs_api_key);
+    });
   }, [profile.did_api_key, profile.did_basic_auth, profile.elevenlabs_api_key]);
 
   const handleApiKeyChange = async () => {

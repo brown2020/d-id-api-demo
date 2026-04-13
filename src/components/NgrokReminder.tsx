@@ -1,41 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
+function getNgrokInfo() {
+  if (typeof window === "undefined") {
+    return { isNgrok: false, isLocalhost: false, origin: "" };
+  }
+  const origin = window.location.origin;
+  const isNgrok =
+    origin.includes("ngrok.io") || origin.includes("ngrok-free.app");
+  const isLocalhost = origin.includes("localhost");
+
+  if (isNgrok) {
+    localStorage.setItem("ngrok_url", origin);
+  }
+
+  return { isNgrok, isLocalhost, origin };
+}
+
 export default function NgrokReminder() {
-  const [show, setShow] = useState(false);
-  const [ngrokInfo, setNgrokInfo] = useState<{
-    isNgrok: boolean;
-    isLocalhost: boolean;
-    origin: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const origin = window.location.origin;
-      const isNgrok =
-        origin.includes("ngrok.io") || origin.includes("ngrok-free.app");
-      const isLocalhost = origin.includes("localhost");
-
-      // Store in localStorage if we're on ngrok
-      if (isNgrok) {
-        localStorage.setItem("ngrok_url", origin);
-      }
-
-      setNgrokInfo({
-        isNgrok,
-        isLocalhost,
-        origin,
-      });
-
-      // Only show reminder if we're on localhost and not using ngrok
-      // AND we don't have a saved ngrok URL
-      if (isLocalhost && !isNgrok && !localStorage.getItem("ngrok_url")) {
-        setShow(true);
-      }
-    }
-  }, []);
+  const [ngrokInfo] = useState(getNgrokInfo);
+  const [show, setShow] = useState(() => {
+    if (!ngrokInfo) return false;
+    const { isLocalhost, isNgrok } = ngrokInfo;
+    if (typeof window === "undefined") return false;
+    return isLocalhost && !isNgrok && !localStorage.getItem("ngrok_url");
+  });
 
   if (!show || !ngrokInfo) return null;
 

@@ -73,7 +73,7 @@ export function FirebaseAuthProvider({
       });
     } catch (error) {
       console.error("Error setting up auth state listener:", error);
-      setLoading(false);
+      queueMicrotask(() => setLoading(false));
     }
 
     return () => {
