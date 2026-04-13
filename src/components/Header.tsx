@@ -53,12 +53,14 @@ export default function Header() {
 
   useEffect(() => {
     if (!uid) {
-      setNotifications([]);
-      setProcessing(false);
+      queueMicrotask(() => {
+        setNotifications([]);
+        setProcessing(false);
+      });
       return;
     }
 
-    setProcessing(true);
+    queueMicrotask(() => setProcessing(true));
     const notificationCollection = query(
       collection(db, NOTIFICATION_COLLECTION),
       where("user_id", "==", uid),

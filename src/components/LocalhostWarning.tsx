@@ -1,46 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 interface LocalhostWarningProps {
   onUseFallback: () => void;
 }
 
+function getEnvironmentInfo() {
+  if (typeof window === "undefined") {
+    return { isLocalhost: false, isNgrok: false, isVercel: false, origin: "" };
+  }
+  const origin = window.location.origin;
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+  const isNgrok = origin.includes("ngrok");
+  const isVercel = origin.includes("vercel.app");
+  return { isLocalhost, isNgrok, isVercel, origin };
+}
+
 export default function LocalhostWarning({
   onUseFallback,
 }: LocalhostWarningProps) {
-  const [show, setShow] = useState(false);
-  const [environmentInfo, setEnvironmentInfo] = useState({
-    isLocalhost: false,
-    isNgrok: false,
-    isVercel: false,
-    origin: "",
+  const [environmentInfo] = useState(getEnvironmentInfo);
+  const [show, setShow] = useState(() => {
+    const { isLocalhost, isNgrok, isVercel } = environmentInfo;
+    return isLocalhost || (!isNgrok && !isVercel);
   });
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const origin = window.location.origin;
-      const hostname = window.location.hostname;
-
-      const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
-      const isNgrok = origin.includes("ngrok");
-      const isVercel = origin.includes("vercel.app");
-
-      setEnvironmentInfo({
-        isLocalhost,
-        isNgrok,
-        isVercel,
-        origin,
-      });
-
-      // Show warning on localhost or if not on a verified domain
-      const shouldShowWarning = isLocalhost || (!isNgrok && !isVercel);
-      if (shouldShowWarning) {
-        setShow(true);
-      }
-    }
-  }, []);
 
   if (!show) return null;
 
