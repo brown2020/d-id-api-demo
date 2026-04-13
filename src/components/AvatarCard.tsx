@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import Image from "next/image";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
@@ -23,15 +23,13 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   // const [isDirty, setIsDirty] = useState(false);
   // const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uid = useAuthStore((state) => state.uid);
-  const [isLocalhost, setIsLocalhost] = useState(false);
-
-  // Check if we're on localhost
-  useEffect(() => {
+  const [isLocalhost] = useState(() => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
-      setIsLocalhost(hostname === "localhost" || hostname === "127.0.0.1");
+      return hostname === "localhost" || hostname === "127.0.0.1";
     }
-  }, []);
+    return false;
+  });
 
   const toggleFavorite = async () => {
     toast.promise(

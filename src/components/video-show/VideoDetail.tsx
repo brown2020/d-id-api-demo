@@ -14,19 +14,11 @@ export default function VideoDetail() {
   const params = useParams();
   const uid = useAuthStore((state) => state.uid);
   const profile = useProfileStore((state) => state.profile);
-  const [videoID, setVideoID] = useState<string | null>(null);
+  const videoID = params?.id ? params.id.toString() : null;
   const [videoData, setVideoData] = useState<VideoDetailType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [generating, setGenerating] = useState<boolean>(true);
   const videoStatus: DIDVideoStatus | null = null;
-
-  useEffect(() => {
-    if (params?.id) {
-      setVideoID(params.id.toString());
-    } else {
-      setVideoID(null); // Handle cases where params.id is undefined
-    }
-  }, [params]);
 
   const loadVideo = useCallback(
     async (video: VideoDetailType) => {
@@ -61,7 +53,7 @@ export default function VideoDetail() {
     if (videoID === null || !uid) return;
 
     const docRef = doc(collection(db, VIDEO_COLLECTION), videoID);
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
 
     const unsubscribe = onSnapshot(docRef, {
       next: (snapshot) => {
