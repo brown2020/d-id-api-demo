@@ -125,6 +125,9 @@ export const FirebaseAuth = () => {
       // Sign out from Firebase
       await signOut(auth);
 
+      // Clear sessionStorage
+      sessionStorage.clear();
+
       toast.success("Signed out successfully");
 
       // Refresh the page to update auth state

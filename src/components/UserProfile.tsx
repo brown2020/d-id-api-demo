@@ -21,10 +21,25 @@ export const UserProfile = () => {
 
   const handleSignOut = async () => {
     try {
+      // 1. Delete server session cookie BEFORE Firebase sign-out.
+      //    Without this, the __session cookie persists and proxy.ts
+      //    still considers the user authenticated (ghost session).
+      await fetch("/api/auth", { method: "DELETE" });
+
+      // 2. Sign out of Firebase.
       await signOut(auth);
+
+      // 3. Clear sessionStorage.
+      sessionStorage.clear();
+
       setIsMenuOpen(false);
+
+      // 4. Navigate AFTER all cleanup.
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
+      // Best-effort: still try to navigate away
+      router.push("/");
     }
   };
 
