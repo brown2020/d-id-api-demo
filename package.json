@@ -7,22 +7,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.43.0",
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^5.2.2",
-    "@stripe/react-stripe-js": "^6.1.0",
+    "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.2.0",
     "axios": "^1.15.0",
     "fabric": "^7.2.0",
     "firebase": "^12.12.0",
     "firebase-admin": "^13.8.0",
     "framer-motion": "^12.38.0",
-    "lucide-react": "0.468.0",
+    "lucide-react": "1.8.0",
     "moment": "^2.30.1",
-    "next": "^16.2.3",
+    "next": "^16.2.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hook-form": "^7.72.1",
@@ -31,7 +31,7 @@
     "react-spinners": "^0.17.0",
     "react-textarea-autosize": "^8.5.9",
     "sharp": "^0.34.5",
-    "stripe": "^22.0.1",
+    "stripe": "^22.0.2",
     "styled-components": "^6.4.0",
     "uuid": "^13.0.0",
     "yup": "^1.7.1",
@@ -43,10 +43,14 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^10.2.0",
-    "postcss": "^8.5.9",
+    "eslint": "^9.30.1",
+    "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3",
+    "eslint-config-next": "latest"
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "yarn@1.22.22",
+  "overrides": {
+    "eslint-plugin-react-hooks": "^6.0.0"
+  }
 }
