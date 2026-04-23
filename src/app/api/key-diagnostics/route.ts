@@ -6,12 +6,12 @@ export async function GET() {
     await protect();
 
     // Get the D-ID API key from environment variables for comparison
-    const envApiKey = process.env.D_ID_API_KEY || "";
+    const envApiKey = process.env.DID_API_KEY || "";
 
     // Check if environment variables are set
     const diagnostics = {
       d_id_api_key: {
-        exists: !!process.env.D_ID_API_KEY,
+        exists: !!process.env.DID_API_KEY,
         length: envApiKey.length,
         format: {
           contains_colon: envApiKey.includes(":"),
@@ -39,16 +39,16 @@ export async function GET() {
       },
       auth_status: {
         has_valid_auth: !!(
-          (process.env.D_ID_API_KEY &&
-            (process.env.D_ID_API_KEY.includes(":") ||
-              process.env.D_ID_API_KEY.startsWith("Basic "))) ||
+          (process.env.DID_API_KEY &&
+            (process.env.DID_API_KEY.includes(":") ||
+              process.env.DID_API_KEY.startsWith("Basic "))) ||
           (process.env.D_ID_BASIC_AUTH &&
             process.env.D_ID_BASIC_AUTH.startsWith("Basic "))
         ),
         recommended_method:
           process.env.NODE_ENV === "production"
             ? "D_ID_BASIC_AUTH"
-            : "D_ID_API_KEY",
+            : "DID_API_KEY",
       },
     };
 
