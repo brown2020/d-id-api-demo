@@ -148,7 +148,7 @@ export async function retrieveDIDVideo(
   await protect();
 
   // Use environment variable as a fallback if no API key is provided
-  const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
+  const finalApiKey = apiKey || process.env.DID_API_KEY || "";
   const finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
 
   // Log which API key we're using (without revealing the actual value)

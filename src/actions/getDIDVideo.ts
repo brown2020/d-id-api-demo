@@ -14,7 +14,7 @@ interface GetVideoSuccessResponse {
 export async function getDIDVideo(d_id_api_key: string, videoId: string) {
   try {
     // Use profile API key or fall back to environment variable
-    const finalApiKey = d_id_api_key || process.env.D_ID_API_KEY || "";
+    const finalApiKey = d_id_api_key || process.env.DID_API_KEY || "";
 
     // Log API key format for debugging
     console.log(

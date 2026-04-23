@@ -70,7 +70,7 @@ Ensure you have the following tools installed:
    STRIPE_SECRET_KEY=your_stripe_secret_key
 
    # D-ID API Authentication
-   D_ID_API_KEY=your_did_api_key
+   DID_API_KEY=your_did_api_key
    D_ID_BASIC_AUTH=your_did_basic_auth_string
 
    # ElevenLabs API key
