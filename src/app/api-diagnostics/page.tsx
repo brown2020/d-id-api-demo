@@ -156,7 +156,7 @@ export default function ApiDiagnosticsPage() {
                 </li>
                 <li>
                   If using environment variables, ensure{" "}
-                  <code className="bg-gray-100 px-1">D_ID_API_KEY</code> is set
+                  <code className="bg-gray-100 px-1">DID_API_KEY</code> is set
                   correctly
                 </li>
                 <li>
@@ -188,7 +188,7 @@ export default function ApiDiagnosticsPage() {
                 </li>
                 <li>
                   Environment variable{" "}
-                  <code className="bg-gray-100 px-1">D_ID_API_KEY</code> in the
+                  <code className="bg-gray-100 px-1">DID_API_KEY</code> in the
                   format{" "}
                   <code className="bg-gray-100 px-1">username:password</code>
                 </li>

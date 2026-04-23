@@ -89,12 +89,12 @@ export async function generateDIDVideo(
   console.log(
     `- Basic Auth from param length: ${basicAuth ? basicAuth.length : 0}`
   );
-  console.log(`- D_ID_API_KEY exists: ${!!process.env.D_ID_API_KEY}`);
+  console.log(`- DID_API_KEY exists: ${!!process.env.DID_API_KEY}`);
   console.log(`- D_ID_BASIC_AUTH exists: ${!!process.env.D_ID_BASIC_AUTH}`);
   console.log("=======================================");
 
   // Use environment variables as fallbacks for the API keys
-  const finalApiKey = apiKey || process.env.D_ID_API_KEY || "";
+  const finalApiKey = apiKey || process.env.DID_API_KEY || "";
   const finalElevenlabsApiKey =
     elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "";
   let finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
@@ -266,7 +266,7 @@ export async function generateDIDVideo(
     // Add this diagnostic check for environment variables
     console.log("Environment variables check:");
     console.log(`- D_ID_BASIC_AUTH set: ${!!process.env.D_ID_BASIC_AUTH}`);
-    console.log(`- D_ID_API_KEY set: ${!!process.env.D_ID_API_KEY}`);
+    console.log(`- DID_API_KEY set: ${!!process.env.DID_API_KEY}`);
     console.log(
       `- ELEVENLABS_API_KEY set: ${!!process.env.ELEVENLABS_API_KEY}`
     );
