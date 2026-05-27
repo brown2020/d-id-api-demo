@@ -57,9 +57,9 @@ Full-stack demo: Firebase-authenticated users manage API keys and credits, creat
 | Stripe payments | **Working** | Demo $99.99; client credit grant |
 | Notifications | **Working** | On video complete/fail |
 | D-ID webhooks | **Partial** | Route exists; generation uses polling + dummy webhook URL |
-| Route protection | **Partial** | `/videos*` not in protected prefixes |
-| Video ownership | **Broken/incomplete** | `owner: "user"` hardcoded in `generateVideo` |
-| Automated tests | **Absent** | No test runner or test files |
+| Route protection | **Improved** | `/videos*` protected; prefix boundary matching |
+| Video ownership | **Fixed** | `generateVideo` sets `owner` to authenticated uid |
+| Automated tests | **Partial** | Vitest for auth route helpers |
 | Credit enforcement | **Partial** | `useCredits` exists; generation path unclear **(inferred)** |
 
 ### Current user flows
@@ -99,10 +99,10 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 
 ### Known limitations
 
-1. **Video ownership:** New videos created with `owner: "user"` instead of Firebase uid — Firestore rules and `getVideo` ownership checks are unreliable for new records.
-2. **Split auth coverage:** `/videos*` routes accessible without session cookie at edge; rely on client uid.
-3. **Session desync:** Sign-out paths may not always clear `__session` cookie.
-4. **Edge proxy:** Checks cookie presence only, not validity.
+1. ~~**Video ownership:**~~ **Fixed (dev):** New videos use authenticated uid; existing docs with `owner: "user"` may need migration.
+2. ~~**Split auth coverage:**~~ **Fixed (dev):** `/videos*` added to protected prefixes.
+3. **Session desync:** Sign-out paths now clear session cookie via shared `signOutUser()`.
+4. **Edge proxy:** Still checks cookie presence only, not cryptographic validity at edge.
 5. **Polling vs webhooks:** Polling is active; webhooks deliberately disabled via dummy URL in `getWebhookUrl`.
 6. **Client-side credits:** Profile subcollection allows client writes to credits; payment success adds credits from client.
 7. **Open diagnostic APIs:** ID enumeration and URL fetch endpoints without auth.
@@ -126,28 +126,13 @@ Ordered by product impact and dependency. Each item is sized for one clean commi
 
 ### Milestone 1 — Fix video ownership and library trust
 
-**User value:** Users only see and manage their own videos; library and notifications match identity.
-
-**Acceptance criteria:**
-- New videos in `generateVideo` set `owner` to authenticated uid from `protect()`.
-- Updating an existing `video_id` verifies document exists, `d_id_status` is draft/created/blank, and `owner` matches caller.
-- `/videos`, `/videos/create`, `/videos/[id]/*` added to `PROTECTED_PATH_PREFIXES` and client auth mirror updated.
-- Manual flow: user A cannot open user B’s video show page.
-
-**Implementation intent:** Complete TODOs in `src/actions/generateVideo.ts`; extend `auth-constants.ts` and `FirebaseAuthProvider`; audit `getVideo` ownership when `video_url` already exists.
+**Status:** Largely complete on `dev` (ownership, `/videos*` protection, `getVideo` auth ordering). Remaining: migrate legacy docs with `owner: "user"`.
 
 ---
 
 ### Milestone 2 — Reliable sign-in/sign-out and post-login redirect
 
-**User value:** Auth state stays consistent; users return to the page they tried to open.
-
-**Acceptance criteria:**
-- All sign-out paths call `DELETE /api/auth` and Firebase `signOut`.
-- After login, `callbackUrl` query param from proxy redirect is honored when safe (same-origin path).
-- Session cookie uses explicit `sameSite` appropriate for production.
-
-**Implementation intent:** Unify sign-out in `UserProfile.tsx` and `FirebaseAuth.tsx`; handle `callbackUrl` in `Home` or `FirebaseAuthProvider`.
+**Status:** Partially complete on `dev` (`signOutUser`, `callbackUrl` handling). Remaining: explicit `sameSite` verified in all environments.
 
 ---
 

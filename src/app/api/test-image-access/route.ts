@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { requireNonProduction } from "@/libs/api-auth";
+
 export async function GET(req: Request) {
+  const blocked = requireNonProduction();
+  if (blocked) {
+    return blocked;
+  }
+
   const url = new URL(req.url);
   const imageUrl = url.searchParams.get("url");
 
@@ -12,7 +19,6 @@ export async function GET(req: Request) {
   }
 
   try {
-    console.log(`Testing server-side access to: ${imageUrl}`);
     const response = await fetch(imageUrl, {
       method: "HEAD",
       headers: {

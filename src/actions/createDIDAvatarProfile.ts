@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUser } from "./getCurrentUser";
+import { getCurrentUser } from "./auth";
 import { DIDTalkingPhoto } from "@/types/did";
 
 // Response types
@@ -38,6 +38,13 @@ export async function createDIDAvatarProfile(
       };
     }
 
+    if (ownerId !== user.uid) {
+      return {
+        status: false,
+        error: "Unauthorized",
+      };
+    }
+
     // Create DIDTalkingPhoto object without D-ID API validation
     const avatar: DIDTalkingPhoto = {
       talking_photo_id: avatarId,
@@ -47,7 +54,7 @@ export async function createDIDAvatarProfile(
       favorite_of: [],
       type: "personal",
       voiceId: voiceId,
-      owner: ownerId,
+      owner: user.uid,
       created_at: Date.now(),
     };
 

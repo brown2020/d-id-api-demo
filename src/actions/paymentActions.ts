@@ -1,7 +1,7 @@
 // paymentActions.ts
 "use server";
 
-import { getCurrentUser } from "./getCurrentUser";
+import { getCurrentUser } from "./auth";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");

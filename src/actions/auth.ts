@@ -46,8 +46,8 @@ export async function getCurrentUser() {
   }
 
   try {
-    // Verify the session cookie
-    const decodedClaims = await adminAuth.verifySessionCookie(session);
+    // Verify the session cookie and check if it was revoked
+    const decodedClaims = await adminAuth.verifySessionCookie(session, true);
 
     // Get the user from Firebase Auth
     const user = await adminAuth.getUser(decodedClaims.uid);

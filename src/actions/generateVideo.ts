@@ -8,6 +8,8 @@ import { adminDb, admin } from "../firebase/firebaseAdmin";
 import { getWebhookUrl, randomString, videoImageProxyUrl } from "../libs/utils";
 import { getFileUrl } from "./getFileUrl";
 import { addErrorReport } from "./addErrorReport";
+import { isEditableVideoStatus } from "../libs/auth-constants";
+import { checkDidImageAccess } from "../libs/did-image-access";
 
 export async function generateVideo(
   video_id: string | null,
@@ -23,13 +25,7 @@ export async function generateVideo(
   useFallbackImage: boolean = false,
   basicAuth: string | null = null
 ) {
-  await protect();
-  // const { userId } = auth();
-
-  // TODO: If video id provided
-  // TODO: check exist
-  // TODO: d_id_status should be draft or blank
-  // TODO: owner of video should be current user
+  const userId = await protect();
 
   const id = video_id ? video_id : `new-video-${Date.now()}`;
 
@@ -38,19 +34,27 @@ export async function generateVideo(
     const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
     const videoDoc = await videoRef.get();
 
-    // If the video document doesn't exist, create it with initial values
-    if (!videoDoc.exists) {
-      console.log(`Creating new video document with ID: ${id}`);
+    if (videoDoc.exists) {
+      const existing = videoDoc.data();
+      if (!existing || existing.owner !== userId) {
+        return { status: false, message: "Unauthorized", id };
+      }
+      if (!isEditableVideoStatus(existing.d_id_status)) {
+        return {
+          status: false,
+          message: "Video cannot be edited in its current state",
+          id,
+        };
+      }
+    } else {
       await videoRef.set({
         id,
         title: "New Video",
         type: "personal",
         d_id_status: "created",
         created_at: admin.firestore.Timestamp.now(),
-        owner: "user", // TODO: Use actual user ID
+        owner: userId,
       });
-    } else {
-      console.log(`Found existing video document with ID: ${id}`);
     }
 
     // Generate video thumbnail
@@ -143,39 +147,16 @@ export async function generateVideo(
 
       console.log("Using image URL (via proxy):", imageUrl);
 
-      // Test if the image is accessible from D-ID's perspective
       try {
-        console.log("Testing image accessibility for D-ID...");
-        const testUrl = `${baseUrl}/api/check-did-image-access?url=${encodeURIComponent(
-          imageUrl
-        )}`;
-        console.log("Testing URL:", testUrl);
-
-        const didAccessResponse = await fetch(testUrl);
-        const didAccessResult = await didAccessResponse.json();
+        const didAccessResult = await checkDidImageAccess(imageUrl);
 
         if (didAccessResult.success) {
-          console.log(
-            "✅ Image should be accessible to D-ID:",
-            didAccessResult
-          );
           // Continue using the proxy URL since it's working
         } else {
-          console.warn(
-            "⚠️ Image might not be accessible to D-ID:",
-            didAccessResult
-          );
-          // Fall back to the public image
           imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
-          console.log("Falling back to public URL for D-ID compatibility");
         }
-      } catch (error) {
-        console.error("Error testing image accessibility for D-ID:", error);
-        // Fall back to the public image
+      } catch {
         imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
-        console.log(
-          "Falling back to public URL due to error in D-ID accessibility testing"
-        );
       }
     }
 

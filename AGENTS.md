@@ -85,9 +85,12 @@ Image proxy API routes — public URLs for D-ID to fetch Firebase images
 ```bash
 yarn install          # Install dependencies
 yarn dev              # Dev server (localhost:3000)
-yarn build            # Production build + TypeScript check (canonical validation)
+yarn build            # Production build + TypeScript check
 yarn start            # Run production build locally
-yarn lint             # Currently broken on Next.js 16 — see Canonical validation section
+yarn lint             # ESLint (flat config via eslint.config.mjs)
+yarn typecheck        # tsc --noEmit
+yarn test             # Vitest unit tests
+yarn validate         # lint + typecheck + test + build (canonical gate)
 ```
 
 No `test` or `typecheck` script is defined. TypeScript is checked during `yarn build`.
@@ -97,12 +100,10 @@ No `test` or `typecheck` script is defined. TypeScript is checked during `yarn b
 Run before committing:
 
 ```bash
-yarn build
+yarn validate
 ```
 
-`yarn build` runs TypeScript checking and production compilation.
-
-**Lint status (as of Next.js 16):** `yarn lint` (`next lint`) is **not available** in this Next.js version — the CLI treats `lint` as a directory argument and fails. Direct `eslint` invocation also fails because the project uses `.eslintrc.json` while ESLint 9 expects `eslint.config.js`. Treat **`yarn build` as the canonical gate** until lint config is migrated. No automated test script exists.
+Or individually: `yarn lint`, `yarn typecheck`, `yarn test`, `yarn build`.
 
 ## Non-interactive testing rules
 
@@ -139,7 +140,9 @@ yarn build
 
 ## Route-protection guidance
 
-Protected path prefixes (`src/libs/auth-constants.ts`): `/avatars`, `/generate`, `/payment-attempt`, `/payment-success`, `/profile`.
+Protected path prefixes (`src/libs/auth-constants.ts`): `/avatars`, `/generate`, `/payment-attempt`, `/payment-success`, `/profile`, `/videos`.
+
+Matching uses exact prefix or `prefix/` boundary (e.g. `/profile-settings` is **not** protected).
 
 Enforcement layers:
 
@@ -147,7 +150,7 @@ Enforcement layers:
 2. **`FirebaseAuthProvider`** — client redirect if Firebase user null on protected path.
 3. **Server actions** — `protect()` verifies session cookie with revocation check.
 
-**Not protected at edge:** `/videos`, `/videos/create`, `/videos/[id]/*` — they depend on Firebase uid client-side. When extending auth, update `PROTECTED_PATH_PREFIXES`, `FirebaseAuthProvider`, and document in `spec.md`.
+**Not protected at edge:** Diagnostic/dev pages (`/diagnostic`, `/test-*`, etc.) remain public. Image proxy API routes stay public for D-ID.
 
 **Caution:** `UserProfile` sign-out may not call `DELETE /api/auth`; `FirebaseAuth.tsx` does. Prefer clearing both Firebase and session cookie when fixing auth flows.
 
@@ -164,16 +167,15 @@ Use Zustand for cross-page client state; use Firestore listeners in components f
 
 ## Testing expectations
 
-- **No automated test suite** exists (no Jest/Vitest/Playwright config or test files).
-- Validation is `yarn lint` + `yarn build`.
-- Manual testing requires Firebase project, D-ID/ElevenLabs keys in profile, and public URL (Vercel or ngrok) for image proxy.
+- Vitest unit tests in `src/**/*.test.ts` (route-protection helpers).
+- Canonical gate: `yarn validate`.
 
 ## Files and systems requiring extra caution
 
 | Area | Risk |
 |------|------|
-| `src/actions/generateVideo.ts` | Hardcoded `owner: "user"` — breaks ownership; TODOs for edit flow |
-| `src/actions/auth.ts` / `getCurrentUser.ts` | Duplicate helpers; different revoke behavior |
+| `src/actions/generateVideo.ts` | Owner validation enforced; uses authenticated uid |
+| `src/actions/auth.ts` | Single source for `protect()` and `getCurrentUser()` |
 | `firestore.rules` / `storage.rules` | Client credit/payment writes allowed on profile subcollections |
 | `/api/avatar-ids`, `/api/video-ids`, `/api/debug`, `/api/test-image-access` | Unauthenticated; SSRF/enumeration risk |
 | `getWebhookUrl` | Forces dummy webhook; changing affects D-ID completion strategy |
@@ -197,7 +199,7 @@ Use Zustand for cross-page client state; use Firestore listeners in components f
 ## Definition of done
 
 1. Change matches task scope; no unrelated refactors.
-2. `yarn build` passes (canonical gate; lint migration pending).
+2. `yarn validate` passes.
 3. Auth, Firestore rules, and server/client boundaries respected.
 4. No secrets committed; no lockfile manager switches.
 5. `spec.md` updated if product behavior or roadmap materially changes.

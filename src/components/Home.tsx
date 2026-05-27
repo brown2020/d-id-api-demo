@@ -3,10 +3,12 @@
 import { useAuthStore } from "@/zustand/useAuthStore";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LoaderCircle, ArrowRight } from "lucide-react";
 import { useAuth } from "./FirebaseAuthProvider";
 import { FirebaseAuth } from "./FirebaseAuth";
+import { getSafeCallbackUrl } from "@/libs/auth-constants";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Home() {
   const uid = useAuthStore((state) => state.uid);
@@ -15,7 +17,15 @@ export default function Home() {
   const fullName = useAuthStore((state) => state.authDisplayName);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
+  useEffect(() => {
+    if (user && callbackUrl) {
+      router.replace(callbackUrl);
+    }
+  }, [user, callbackUrl, router]);
   const handleClick = () => {
     setLoading(true);
   };

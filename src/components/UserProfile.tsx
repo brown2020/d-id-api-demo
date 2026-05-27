@@ -3,9 +3,8 @@
 import { useAuth } from "./FirebaseAuthProvider";
 import Image from "next/image";
 import { useState } from "react";
-import { signOut } from "firebase/auth";
-import { auth } from "@/firebase/firebaseClient";
 import { useRouter } from "next/navigation";
+import { signOutUser } from "@/libs/sign-out-client";
 
 export const UserProfile = () => {
   const { user } = useAuth();
@@ -21,8 +20,9 @@ export const UserProfile = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOutUser();
       setIsMenuOpen(false);
+      window.location.href = "/";
     } catch (error) {
       console.error("Error signing out:", error);
     }
