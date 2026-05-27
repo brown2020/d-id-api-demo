@@ -49,8 +49,8 @@ Full-stack demo: Firebase-authenticated users manage API keys and credits, creat
 | Google Firebase auth | **Working** | Session cookie via `POST /api/auth` |
 | Profile & API keys | **Working** | Stored in `users/{uid}/profile/userData` |
 | Avatar management | **Working** | Personal + template types, favorites |
-| Simple video generation (`/generate`) | **Working** | Server action pipeline |
-| Canvas video composer | **Working** | Fabric.js; large `CreateVideo.tsx` |
+| Simple video generation (`/generate`) | **Working** | Key validation; redirects to show page after submit |
+| Canvas video composer | **Working** | Redirects and actionable errors on submit/load failures |
 | Video library & detail | **Working** | Firestore real-time + polling |
 | Image proxy for D-ID | **Working** | Required for Firebase Storage URLs |
 | ElevenLabs voice list / TTS | **Working** | Keys from profile; forwarded to D-ID |
@@ -138,14 +138,9 @@ Ordered by product impact and dependency. Each item is sized for one clean commi
 
 ### Milestone 3 — Complete video generation UX (composer + simple flow)
 
-**User value:** Clear success and failure feedback; no dead ends after submit.
+**Status:** ✅ Complete (dev)
 
-**Acceptance criteria:**
-- On success or terminal failure, user is redirected to `/videos` or video show page (resolve TODOs in `CreateVideo.tsx`).
-- Errors surface via toast with actionable message (missing keys, image unreachable, D-ID error body).
-- Processing state visible on show page until video URL available.
-
-**Implementation intent:** Finish redirect/error handling in `CreateVideo.tsx`; align with `retrieveDIDVideo` status responses.
+**Implementation note:** Redirects to `/videos` or `/videos/[id]/show` on composer errors/success; shared `formatVideoGenerationError` / `isVideoProcessing` helpers; Generate flow validates keys/script and redirects to show page; VideoDetail shows accessible processing/error/playback states with live Firestore updates.
 
 ---
 
