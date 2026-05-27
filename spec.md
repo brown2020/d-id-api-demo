@@ -54,7 +54,7 @@ Full-stack demo: Firebase-authenticated users manage API keys and credits, creat
 | Video library & detail | **Working** | Firestore real-time + polling |
 | Image proxy for D-ID | **Working** | Required for Firebase Storage URLs |
 | ElevenLabs voice list / TTS | **Working** | Keys from profile; forwarded to D-ID |
-| Stripe payments | **Working** | Demo $99.99; client credit grant |
+| Stripe payments | **Working** | Server-side `fulfillPayment`; idempotent credit grant |
 | Notifications | **Working** | On video complete/fail |
 | D-ID webhooks | **Working** | Registered on public HTTPS; polling fallback on localhost |
 | Route protection | **Improved** | `/videos*` protected; prefix boundary matching |
@@ -104,7 +104,7 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 3. **Session desync:** Sign-out paths now clear session cookie via shared `signOutUser()`.
 4. **Edge proxy:** Still checks cookie presence only, not cryptographic validity at edge.
 5. **Webhooks vs polling:** Webhooks active on public HTTPS deployments; localhost uses polling only.
-6. **Client-side credits:** Profile subcollection allows client writes to credits; payment success adds credits from client.
+6. **Client-side credits:** Payment grants are server-side; profile `credits` field is read-only for clients (deduction still client-side until M6).
 7. **Open diagnostic APIs:** ID enumeration and URL fetch endpoints without auth.
 8. **No automated tests.**
 9. **README drift:** Some docs reference removed middleware and wrong proxy path names — use this file and `AGENTS.md` as authority.
@@ -154,20 +154,19 @@ Ordered by product impact and dependency. Each item is sized for one clean commi
 
 ### Milestone 5 — Server-side credit and payment fulfillment
 
-**User value:** Credits cannot be self-granted; payments reliably add credits once.
+**Status:** ✅ Complete (dev)
 
-**Acceptance criteria:**
-- Credit increment runs in server action or Stripe webhook after verified payment — not only client `addCredits`.
-- Firestore rules restrict client writes to credits on profile (server/admin only).
-- Duplicate payment intents cannot double-grant credits.
+**Implementation note:** `fulfillPayment` verifies Stripe payment intent ownership, grants credits once in a Firestore transaction (Admin SDK), and records payment under `users/{uid}/payments/{paymentIntentId}`. Firestore rules block client writes to `credits` and `payments`. Payment success page calls `fulfillPayment` then `fetchProfile`.
 
-**Implementation intent:** Move fulfillment to `paymentActions.ts` or new webhook route; tighten `firestore.rules` for `users/{uid}/profile`; keep UI reading credits from profile store.
+**Follow-up:** Client `useCredits` still writes credits and will fail under new rules until Milestone 6 adds server-side deduction.
 
 ---
 
 ### Milestone 6 — Credit gating on generation
 
 **User value:** Demo billing model is visible — users understand cost per video.
+
+**Prerequisite:** Milestone 5 locked client credit increments; this milestone must move **deduction** to the server as well (`useCredits` currently writes Firestore from the client and will fail under updated rules).
 
 **Acceptance criteria:**
 - Before D-ID submit, server action checks credits and decrements atomically (or rejects).
