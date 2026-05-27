@@ -162,23 +162,11 @@ export async function generateVideo(
 
     const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
 
-    // Add this special diagnostic log
-    console.log("📋 DIAGNOSTIC INFO 📋");
-    console.log(`- Base URL: ${baseUrl}`);
-    console.log(`- Using ngrok: ${baseUrl.includes("ngrok") ? "Yes" : "No"}`);
-    console.log(`- Using fallback image: ${useFallbackImage ? "Yes" : "No"}`);
-    console.log(`- Image URL for D-ID: ${imageUrl}`);
-    console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
-    console.log(`- Environment: ${process.env.NODE_ENV || "unknown"}`);
-    console.log(
-      `- API Keys provided: D-ID (${apiKey ? "Yes" : "No"}), D-ID Basic Auth (${
-        basicAuth ? "Yes" : "No"
-      }), ElevenLabs (${elevenlabsApiKey ? "Yes" : "No"})`
-    );
-    console.log(
-      `- Script length: ${inputText ? inputText.length : 0} characters`
-    );
-    console.log("📋 END DIAGNOSTIC INFO 📋");
+    if (webhookUrl) {
+      console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
+    } else {
+      console.log("- Webhook URL: not registered (private base URL); using polling");
+    }
 
     const response = await generateDIDVideo(
       apiKey,

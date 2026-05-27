@@ -56,7 +56,7 @@ Full-stack demo: Firebase-authenticated users manage API keys and credits, creat
 | ElevenLabs voice list / TTS | **Working** | Keys from profile; forwarded to D-ID |
 | Stripe payments | **Working** | Demo $99.99; client credit grant |
 | Notifications | **Working** | On video complete/fail |
-| D-ID webhooks | **Partial** | Route exists; generation uses polling + dummy webhook URL |
+| D-ID webhooks | **Working** | Registered on public HTTPS; polling fallback on localhost |
 | Route protection | **Improved** | `/videos*` protected; prefix boundary matching |
 | Video ownership | **Fixed** | `generateVideo` sets `owner` to authenticated uid |
 | Automated tests | **Partial** | Vitest for auth route helpers |
@@ -103,7 +103,7 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 2. ~~**Split auth coverage:**~~ **Fixed (dev):** `/videos*` added to protected prefixes.
 3. **Session desync:** Sign-out paths now clear session cookie via shared `signOutUser()`.
 4. **Edge proxy:** Still checks cookie presence only, not cryptographic validity at edge.
-5. **Polling vs webhooks:** Polling is active; webhooks deliberately disabled via dummy URL in `getWebhookUrl`.
+5. **Webhooks vs polling:** Webhooks active on public HTTPS deployments; localhost uses polling only.
 6. **Client-side credits:** Profile subcollection allows client writes to credits; payment success adds credits from client.
 7. **Open diagnostic APIs:** ID enumeration and URL fetch endpoints without auth.
 8. **No automated tests.**
@@ -112,7 +112,7 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 
 ### Abandoned or partial systems **(inferred)**
 
-- **Real webhook delivery:** Infrastructure present; generation path forces webhook.site dummy URL.
+- **Real webhook delivery:** Enabled when `baseUrl` is public HTTPS (Vercel, ngrok).
 - **Clerk auth:** Removed; comments reference Firebase replacement.
 - **Ngrok URL persistence:** `saveNgrokUrl` deprecated; pages still exist for documentation.
 - **Edit existing video via `video_id`:** TODOs in `generateVideo` for validation and owner checks.
@@ -146,14 +146,9 @@ Ordered by product impact and dependency. Each item is sized for one clean commi
 
 ### Milestone 4 — Enable D-ID webhooks for faster completion
 
-**User value:** Videos appear ready sooner; less polling load.
+**Status:** ✅ Complete (dev)
 
-**Acceptance criteria:**
-- `generateDIDVideo` sends real webhook URL from `getWebhookUrl` when `baseUrl` is public.
-- Webhook handler validates secret token and updates Firestore + notification (existing route).
-- Polling remains fallback if webhook not received within timeout.
-
-**Implementation intent:** Replace dummy webhook.site URL in `src/libs/utils.ts`; pass webhook in D-ID payload; document env requirement for public `NEXT_PUBLIC_API_BASE_URL`.
+**Implementation note:** `getWebhookUrl` registers `https://{public-base}/api/video-generated/{id}?token=…` when the base URL is public HTTPS; localhost stays polling-only. `generateDIDVideo` sends the webhook to D-ID when available. Webhook handler accepts early callbacks before `did_id` is persisted (race fix). Client polling in `retrieveDIDVideo` / show page remains fallback.
 
 ---
 

@@ -65,7 +65,7 @@ Image proxy API routes — public URLs for D-ID to fetch Firebase images
 
 **Video pipeline (inferred):** Create Firestore doc → upload thumbnail → build proxied image URL → `generateDIDVideo` POST to D-ID `/talks` → poll via `retrieveDIDVideo` / `getVideo` → download result → Firebase Storage → update `generated-videos` + notification.
 
-**Webhook path exists but is not primary:** `getWebhookUrl` returns a dummy webhook.site URL; `generateDIDVideo` skips real webhooks. `/api/video-generated/[id]` handles webhook callbacks if enabled later.
+**Webhook path:** `getWebhookUrl` builds app webhook URLs on public HTTPS; `/api/video-generated/[id]` handles callbacks. Localhost uses polling only.
 
 ## Key app features (today)
 
@@ -178,7 +178,7 @@ Use Zustand for cross-page client state; use Firestore listeners in components f
 | `src/actions/auth.ts` | Single source for `protect()` and `getCurrentUser()` |
 | `firestore.rules` / `storage.rules` | Client credit/payment writes allowed on profile subcollections |
 | `/api/avatar-ids`, `/api/video-ids`, `/api/debug`, `/api/test-image-access` | Unauthenticated; SSRF/enumeration risk |
-| `getWebhookUrl` | Forces dummy webhook; changing affects D-ID completion strategy |
+| `getWebhookUrl` | Returns null on localhost; real URL on public HTTPS — polling remains fallback |
 | `CreateVideo.tsx` | Large Fabric.js surface; incomplete error/redirect TODOs |
 | `.env.local` / Firebase service account | Secrets — never commit |
 | `package-lock.json` | Coexists with `yarn.lock`; use Yarn only |
