@@ -1,5 +1,12 @@
 # D-ID API Demo
 
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [`spec.md`](./spec.md) | Product behavior, current state, and roadmap (authoritative) |
+| [`AGENTS.md`](./AGENTS.md) | Agent and contributor workflow for autonomous development |
+
 ## Project Description
 
 This demo application showcases the integration of the D-ID API with a Next.js (App Router) application. The project enables users to generate and manage digital human videos, leveraging Firebase (Auth/Firestore/Storage), ElevenLabs (voice synthesis), and Stripe (payments).
@@ -46,13 +53,7 @@ Ensure you have the following tools installed:
    cd d-id-api-demo
    ```
 
-2. **Install the dependencies**:
-
-   ```bash
-   npm install
-   ```
-
-   or
+2. **Install the dependencies** (Yarn is the canonical package manager):
 
    ```bash
    yarn install
@@ -109,7 +110,7 @@ To run this project locally, use Ngrok to expose your local server to the public
 2. Start your local server:
 
    ```bash
-   npm run dev
+   yarn dev
    ```
 
 3. In a new terminal window, run:
@@ -165,7 +166,7 @@ To run this project locally, use Ngrok to expose your local server to the public
 To start the development server:
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 ### Production
@@ -173,7 +174,7 @@ npm run dev
 To build the project for production:
 
 ```bash
-npm run build
+yarn build
 ```
 
 ## Main Features
@@ -184,21 +185,23 @@ npm run build
 
 ### API Routes
 
-- **`/api/proxy-image/[id]`**: Proxies images from Firebase Storage to D-ID API due to a bug in D-ID's handling of Firebase Storage URLs.
+- **`/api/imageproxy/[id]`**: Proxies avatar images from Firestore/Firebase Storage for D-ID (Firebase Storage URLs are not reliably accepted by D-ID).
+
+- **`/api/video-image-proxy/[id]`**: Proxies video thumbnail images for D-ID.
 
   Example usage:
 
   ```bash
-  GET /api/proxy-image/{image_id}.png
+  GET /api/imageproxy/{document_id}.png
   ```
 
   This route fetches the image from Firebase Storage and serves it through your Next.js server with the appropriate headers, ensuring compatibility with D-ID's API.
 
 ## Application Structure
 
-### Middleware
+### Route protection
 
-Authentication is enforced via Firebase Auth on the client, and Firestore/Storage access is constrained by the security rules in `firestore.rules` and `storage.rules`.
+Authentication uses Firebase Auth on the client, an httpOnly session cookie (`__session`), and edge checks in `src/proxy.ts` for protected routes. Firestore/Storage access is constrained by `firestore.rules` and `storage.rules`. See `AGENTS.md` for protected path list and gaps.
 
 ### State Management
 
@@ -256,7 +259,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 - **Next.js (App Router) and Server Actions**: Demonstrates the use of Next.js with the App Router and React Server Actions for D-ID API integration.
 - **Polling vs. Webhooks**: Discusses the use of polling to check video generation status and recommends webhooks for efficient real-time updates.
-- **Production Command**: Explains the use of `npm run build` for production and emphasizes the need for Ngrok in local development.
+- **Production Command**: Explains the use of `yarn build` for production and emphasizes the need for Ngrok in local development.
 
 ## Contact
 
