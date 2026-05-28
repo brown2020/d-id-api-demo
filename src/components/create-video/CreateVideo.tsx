@@ -62,6 +62,7 @@ import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { formatVideoGenerationError } from "@/libs/video-status";
 // import { useRouter } from "next/router";
 import useProfileStore from "@/zustand/useProfileStore";
 import CustomAudioOption2 from "../CustomAudioOption2";
@@ -333,7 +334,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
         if (!snapshot.exists()) {
           toast.error("Video not found");
-          // TODO: Send back to video list
+          router.replace("/videos");
+          return;
         } else {
           // Set avatar selected
           const videoDetail = snapshot.data();
@@ -343,7 +345,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
           );
           if (!avatar) {
             toast.error("Selected avatar not found");
-            // TODO: Send back to video list
+            router.replace("/videos");
+            return;
           } else {
             handleChangeAvatar(avatar);
             if (
@@ -369,7 +372,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         }
       });
     }
-  }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar]);
+  }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar, router]);
 
   const canvasMainImage = useCallback(() => {
     if (canvas) {
@@ -1157,13 +1160,13 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
               reject({ status: false, data: response.message });
             }
           } catch (error) {
-            console.log("Error", error);
-            /**
-             * TODO: Handle error
-             */
+            const message =
+              error instanceof Error
+                ? error.message
+                : "An error occurred during video generation.";
             reject({
               status: false,
-              data: "An error occurred during video generation.",
+              data: formatVideoGenerationError(message),
             });
           }
         }
@@ -1219,8 +1222,13 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
           }
 
           // Add instructions for common issues
-          errorMsg +=
-            " Please check your API keys or test image accessibility at /test-image-access.";
+          if (
+            !errorMsg.includes("Profile") &&
+            !errorMsg.includes("/api-diagnostics") &&
+            !errorMsg.includes("/test-image-access")
+          ) {
+            errorMsg = formatVideoGenerationError(errorMsg);
+          }
 
           return `Error: ${errorMsg}`;
         },

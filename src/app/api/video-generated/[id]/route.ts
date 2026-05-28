@@ -101,12 +101,23 @@ export const POST = async (
           return;
         }
 
-        // D_ID video id should match with video data
+        // D-ID talk id from webhook body
         const did_video_id = body.id;
-        if (videoData == undefined || videoData.did_id !== did_video_id) {
+        if (!did_video_id || typeof did_video_id !== "string") {
+          console.error("Missing D-ID video ID in webhook request body");
+          resolve({ error: "Missing D-ID video ID" });
+          return;
+        }
+
+        // Allow webhook to arrive before generateVideo persists did_id (race)
+        if (videoData.did_id && videoData.did_id !== did_video_id) {
           console.error("Video ID mismatch in webhook request");
           resolve({ error: "Video ID mismatch" });
           return;
+        }
+
+        if (!videoData.did_id) {
+          await videoRef.update({ did_id: did_video_id });
         }
 
         // Find video url from request

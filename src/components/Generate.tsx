@@ -14,9 +14,13 @@ import { generateVideo } from "@/actions/generateVideo";
 import { DIDTalkingPhoto } from "@/types/did";
 import LocalhostWarning from "./LocalhostWarning";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { formatVideoGenerationError } from "@/libs/video-status";
 
 export default function Generate() {
   const profile = useProfileStore((state) => state.profile);
+  const router = useRouter();
   const [itemDetails, setItemDetails] = useState<DIDTalkingPhoto | null>(null);
   const [loading, setLoading] = useState(true);
   const [script, setScript] = useState<string>("");
@@ -71,12 +75,31 @@ export default function Generate() {
 
   const handleGenerate = async () => {
     if (!profile.selectedTalkingPhoto) {
-      setError("No selected talking photo.");
+      setError("No avatar selected. Choose one on the Avatars page.");
+      return;
+    }
+
+    if (!profile.did_api_key?.trim() && !profile.did_basic_auth?.trim()) {
+      setError(
+        "D-ID API key or Basic Auth is missing. Add credentials in your Profile."
+      );
+      return;
+    }
+
+    if (!profile.elevenlabs_api_key?.trim()) {
+      setError(
+        "ElevenLabs API key is missing. Add it in your Profile for voice generation."
+      );
       return;
     }
 
     if (!itemDetails?.voiceId) {
       setError("Voice ID is missing for the selected talking photo.");
+      return;
+    }
+
+    if (!script.trim()) {
+      setError("Enter a script before generating a video.");
       return;
     }
 
@@ -104,33 +127,49 @@ export default function Generate() {
       );
 
       if (result.status && result && "id" in result && result.id) {
-        console.log("Video generation initiated. Video ID:", result.id);
-        // Use Basic Auth from profile if available for retrieving the video
         const statusResponse = await retrieveDIDVideo(
           profile.did_api_key || "",
           result.id,
           profile.selectedTalkingPhoto || "noTalkingPhotoId",
           undefined,
-          profile.did_basic_auth || "" // Pass Basic Auth to retrieveDIDVideo as well
+          profile.did_basic_auth || ""
         );
 
-        if (statusResponse && statusResponse.status === "completed") {
-          console.log(
-            "Video generation completed. Video URL:",
-            statusResponse.video_url
+        if (statusResponse?.status === "failed") {
+          setError(
+            formatVideoGenerationError(
+              statusResponse.error || "Video generation failed."
+            )
           );
-          setVideoUrl(statusResponse.video_url!);
-        } else if (statusResponse && statusResponse.status === "failed") {
-          console.error("Video generation failed:", statusResponse.error);
-          setError(statusResponse.error || "Video generation failed.");
+          return;
         }
+
+        if (statusResponse?.status === "completed" && statusResponse.video_url) {
+          setVideoUrl(statusResponse.video_url);
+          toast.success("Your video is ready!");
+        } else {
+          toast.success(
+            "Video submitted! Redirecting to the status page.",
+            { duration: 5000 }
+          );
+        }
+
+        router.push(`/videos/${result.id}/show`);
       } else if (!result.status) {
-        console.error("Failed to generate video:", result.message);
-        setError(result.message || "Failed to generate video.");
+        setError(
+          formatVideoGenerationError(
+            result.message || "Failed to generate video."
+          )
+        );
       }
     } catch (error) {
-      console.error("Error during video generation:", error);
-      setError("An error occurred while generating the video.");
+      setError(
+        formatVideoGenerationError(
+          error instanceof Error
+            ? error.message
+            : "An error occurred while generating the video."
+        )
+      );
     } finally {
       setIsGenerating(false);
       console.log("Video generation process completed.");
@@ -253,17 +292,22 @@ export default function Generate() {
               ) : (
                 <p className="text-red-500">{error}</p>
               )}
-              {error.includes("API key") && (
-                <p className="mt-1 text-red-500">
+              {error.includes("Profile") ||
+              error.includes("API key") ||
+              error.includes("Basic Auth") ? (
+                <p className="mt-2 text-sm">
+                  <Link href="/profile" className="text-blue-600 underline">
+                    Open Profile settings
+                  </Link>
+                  {" · "}
                   <Link
                     href="/api-diagnostics"
-                    className="underline hover:text-red-700"
+                    className="text-blue-600 underline"
                   >
-                    Check API Key Diagnostics
-                  </Link>{" "}
-                  for troubleshooting help.
+                    API diagnostics
+                  </Link>
                 </p>
-              )}
+              ) : null}
             </div>
           )}
         </div>

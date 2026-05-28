@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
+
+import { requireApiSession } from "@/libs/api-auth";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { adminDb } from "@/firebase/firebaseAdmin";
 
 export async function GET() {
-  try {
-    // Fetch documents from the collection
-    console.log(`Fetching videos from collection: ${VIDEO_COLLECTION}`);
-    const snapshot = await adminDb.collection(VIDEO_COLLECTION).get();
+  const auth = await requireApiSession();
+  if (auth instanceof NextResponse) {
+    return auth;
+  }
 
-    // Extract document IDs
+  try {
+    const snapshot = await adminDb.collection(VIDEO_COLLECTION).get();
     const videoIds = snapshot.docs.map((doc) => doc.id);
-    console.log(`Found ${videoIds.length} videos`);
 
     return NextResponse.json(
       { videoIds },

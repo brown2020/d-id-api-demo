@@ -7,7 +7,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "validate": "yarn lint && yarn typecheck && yarn test && yarn build"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.44.0",
@@ -44,10 +47,11 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.2.1",
+    "eslint-config-next": "latest",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
-    "eslint-config-next": "latest"
+    "vitest": "^3.2.4"
   },
   "packageManager": "yarn@1.22.22",
   "overrides": {
