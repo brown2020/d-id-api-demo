@@ -80,14 +80,23 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // Private per-user profile (stores API keys, credits, preferences, etc.)
+      // Private per-user profile (API keys client-writable; credits server-only)
       match /profile/{docId} {
-        allow read, write: if isSelf(userId);
+        allow read: if isSelf(userId);
+
+        allow create: if isSelf(userId)
+          && (!('credits' in request.resource.data) || request.resource.data.credits == 1000);
+
+        allow update: if isSelf(userId)
+          && (!('credits' in request.resource.data) || request.resource.data.credits == resource.data.credits);
+
+        allow delete: if false;
       }
 
-      // Private per-user payments history
+      // Payment history is written by the server after Stripe verification
       match /payments/{paymentId} {
-        allow read, write: if isSelf(userId);
+        allow read: if isSelf(userId);
+        allow write: if false;
       }
     }
 

@@ -1,12 +1,14 @@
 "use client";
 
 import { auth } from "../firebase/firebaseClient";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useAuth } from "./FirebaseAuthProvider";
 import { LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
+import { getSafeCallbackUrl } from "@/libs/auth-constants";
+import { signOutUser } from "@/libs/sign-out-client";
 
 // Add a debug function to log the auth configuration
 function logAuthConfiguration() {
@@ -103,8 +105,10 @@ export const FirebaseAuth = () => {
 
       toast.success("Signed in successfully");
 
-      // Refresh the page to update auth state
-      window.location.reload();
+      const callbackUrl = getSafeCallbackUrl(
+        new URLSearchParams(window.location.search).get("callbackUrl")
+      );
+      window.location.href = callbackUrl ?? window.location.pathname;
     } catch (error) {
       console.error("Error signing in with Google:", error);
       toast.error("Failed to sign in");
@@ -116,22 +120,12 @@ export const FirebaseAuth = () => {
   const handleSignOut = async () => {
     try {
       setLoading(true);
-
-      // Call the API to clear the session cookie
-      await fetch("/api/auth", {
-        method: "DELETE",
-      });
-
-      // Sign out from Firebase
-      await signOut(auth);
-
-      // Clear sessionStorage
-      sessionStorage.clear();
-
+      await signOutUser();
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
       toast.success("Signed out successfully");
-
-      // Refresh the page to update auth state
-      window.location.reload();
+      window.location.href = "/";
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Failed to sign out");

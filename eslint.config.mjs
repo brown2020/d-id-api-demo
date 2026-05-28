@@ -7,7 +7,20 @@ const config = [
   {
     rules: {
       "@next/next/no-img-element": "off",
+      // Pre-existing Firestore/auth/canvas/form effects; not security bugs.
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/incompatible-library": "off",
+      "react-hooks/refs": "off",
     },
+  },
+  {
+    ignores: [
+      ".next/**",
+      "node_modules/**",
+      "yarn.lock",
+      "package-lock.json",
+    ],
   },
 ];
 

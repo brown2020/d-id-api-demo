@@ -1,6 +1,8 @@
 import { CanvasObjects } from "../types/did";
 import { AUDIO_LIST } from "./constants";
 
+export { getWebhookUrl, isPublicWebhookBaseUrl } from "./webhook-url";
+
 export function getAudioDetails(audio_id: string) {
   return AUDIO_LIST.find((audio) => audio.voice_id === audio_id);
 }
@@ -45,15 +47,6 @@ export const imageProxyUrl = (baseUrl: string, image: string) =>
   `${baseUrl}/api/imageproxy/${image}`;
 export const videoImageProxyUrl = (baseUrl: string, image: string) =>
   `${baseUrl}/api/video-image-proxy/${encodeURIComponent(image)}`;
-export const getWebhookUrl = (
-  baseUrl: string,
-  id: string,
-  secret_token: string
-) => {
-  // Always use a dummy webhook URL to force polling
-  // This ensures consistent behavior across all environments
-  return `https://webhook.site/${id}?token=${secret_token}`;
-};
 
 export const checkCanvasObjectImageDomain = (fabricJSON: CanvasObjects) => {
   // If image url is from different domain, then replace it with proxy url

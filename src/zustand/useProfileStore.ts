@@ -144,21 +144,8 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  addCredits: async (amount: number) => {
-    const uid = useAuthStore.getState().uid;
-    if (!uid) return;
-
-    const profile = get().profile;
-    const newCredits = profile.credits + amount;
-
-    try {
-      const userRef = doc(db, `users/${uid}/profile/userData`);
-
-      await updateDoc(userRef, { credits: newCredits });
-      set({ profile: { ...profile, credits: newCredits } });
-    } catch (error) {
-      console.error("Error adding credits:", error);
-    }
+  addCredits: async () => {
+    // Credits are granted server-side via fulfillPayment (Admin SDK).
   },
 }));
 

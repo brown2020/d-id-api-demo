@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
+
+import { requireNonProduction } from "@/libs/api-auth";
 import { getApiBaseUrl } from "@/libs/utils";
 
 export async function GET(req: Request) {
+  const blocked = requireNonProduction();
+  if (blocked) {
+    return blocked;
+  }
+
   try {
     const url = new URL(req.url);
 
-    // Get information about the request
     const info = {
       requestUrl: req.url,
-      headers: Object.fromEntries(req.headers.entries()),
       envBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "(not set)",
       computedBaseUrl: getApiBaseUrl(),
       hostname: url.hostname,

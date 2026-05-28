@@ -17,7 +17,7 @@ export type GenerateVideoFailResponse = {
 export async function generateDIDVideo(
   apiKey: string | null,
   imageUrl: string,
-  webhookUrl: string,
+  webhookUrl: string | null,
   inputText?: string,
   voiceId?: string,
   audioUrl?: string,
@@ -500,6 +500,32 @@ export async function generateDIDVideo(
       );
     }
 
+    const talkPayload: DIDTalkRequestData = {
+      script: scriptSettings as DIDTalkRequestData["script"],
+      source_url: imageUrl,
+      config: {
+        stitch: true,
+        driver_expressions: {
+          expressions: [
+            {
+              expression: emotion,
+              start_frame: 0,
+              intensity: movement == "lively" ? 1 : 0.5,
+            },
+          ],
+        },
+      },
+    };
+
+    if (webhookUrl) {
+      talkPayload.webhook = webhookUrl;
+      console.log("Registering D-ID webhook for status updates:", webhookUrl);
+    } else {
+      console.log(
+        "No public webhook URL available — client will poll for status updates"
+      );
+    }
+
     const config = {
       method: "post",
       url: "https://api.d-id.com/talks",
@@ -511,22 +537,7 @@ export async function generateDIDVideo(
           elevenlabs: finalElevenlabsApiKey,
         }),
       },
-      data: {
-        script: scriptSettings,
-        source_url: imageUrl,
-        config: {
-          stitch: true,
-          driver_expressions: {
-            expressions: [
-              {
-                expression: emotion,
-                start_frame: 0,
-                intensity: movement == "lively" ? 1 : 0.5,
-              },
-            ],
-          },
-        },
-      } as DIDTalkRequestData,
+      data: talkPayload,
     };
 
     // Test D-ID API key by first making a GET request to check authentication
@@ -592,9 +603,6 @@ export async function generateDIDVideo(
         error: `D-ID API authentication failed: ${authErrorDetails}. Please check your API key or Basic Auth in profile settings.`,
       };
     }
-
-    // Always skip webhook URLs and use polling instead
-    console.log("Skipping webhook URL - using polling for status updates");
 
     console.log(
       "Axios request config prepared:",

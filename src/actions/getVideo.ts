@@ -1,7 +1,7 @@
 "use server";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { VIDEO_COLLECTION } from "@/libs/constants";
-import { getCurrentUser } from "./getCurrentUser";
+import { getCurrentUser } from "./auth";
 import { getDIDVideo } from "./getDIDVideo";
 import { syncVideo } from "./syncVideo";
 
@@ -17,19 +17,17 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
   const video = await videoRef.get();
   const videoData = video.data();
 
-  // Check if video exists
-  if (!videoData || !video.exists || video.data() == undefined) {
+  if (!videoData || !video.exists) {
     return { error: "Video not found" };
+  }
+
+  if (videoData.owner !== user.uid) {
+    return { error: "Unauthorized" };
   }
 
   // If video url already generated then send response
   if (videoData.video_url) {
     return { status: true, video_url: videoData.video_url };
-  }
-
-  // Check Video ownership
-  if (videoData.owner !== user.uid) {
-    return { error: "Unauthorized" };
   }
 
   // Video should have D-ID video id
