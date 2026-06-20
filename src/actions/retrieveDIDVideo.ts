@@ -322,10 +322,7 @@ export async function retrieveDIDVideo(
             };
           }
 
-          console.log(
-            "Video processing completed, downloading from URL:",
-            resultData.result_url
-          );
+          console.log("Video processing completed, downloading result.");
 
           // Download the video from the provided result URL
           const videoResponse = await axios.get(resultData.result_url, {
@@ -348,7 +345,7 @@ export async function retrieveDIDVideo(
             action: "read",
             expires: "01-01-2124", // Set the expiration date 100 years in the future
           });
-          console.log("Generated signed URL with long expiration:", videoUrl);
+          console.log("Generated signed URL for completed video.");
 
           // Save the signed URL to Firestore
           const docRef = adminDb
