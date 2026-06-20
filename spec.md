@@ -105,7 +105,7 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 4. **Edge proxy:** Still checks cookie presence only, not cryptographic validity at edge.
 5. **Webhooks vs polling:** Webhooks active on public HTTPS deployments; localhost uses polling only.
 6. **Client-side credits:** Payment grants are server-side; profile `credits` field is read-only for clients (deduction still client-side until M6).
-7. **Open diagnostic APIs:** ID enumeration and URL fetch endpoints without auth.
+7. **Diagnostics and public proxies:** ID-list diagnostic APIs require a verified session; debug/image-access helpers are blocked on production deploys. Image proxy routes remain intentionally public so D-ID can fetch Firebase-backed images.
 8. **Partial automated tests:** Vitest covers route-protection helpers, webhook URL validation, video status helpers, and payment credit math.
 9. **README drift:** Some docs reference removed middleware and wrong proxy path names — use this file and `AGENTS.md` as authority.
 10. **Dual lockfiles:** `yarn.lock` and `package-lock.json` both present; Yarn is canonical per `packageManager`.
