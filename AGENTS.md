@@ -175,7 +175,9 @@ Use Zustand for cross-page client state; use Firestore listeners in components f
 | `src/actions/generateVideo.ts` | Owner validation enforced; uses authenticated uid |
 | `src/actions/auth.ts` | Single source for `protect()` and `getCurrentUser()` |
 | `firestore.rules` / `storage.rules` | Client credit/payment writes allowed on profile subcollections |
-| `/api/avatar-ids`, `/api/video-ids`, `/api/debug`, `/api/test-image-access` | Unauthenticated; SSRF/enumeration risk |
+| `/api/avatar-ids`, `/api/video-ids` | Authenticated ID-list diagnostics; still broad collection enumeration |
+| `/api/debug`, `/api/test-image-access`, `/api/check-did-image-access` | Non-production diagnostics; keep disabled on production deploys |
+| `/api/imageproxy/[id]`, `/api/video-image-proxy/[id]` | Intentionally public for D-ID fetches; validate URL/source changes carefully |
 | `getWebhookUrl` | Returns null on localhost; real URL on public HTTPS — polling remains fallback |
 | `CreateVideo.tsx` | Large Fabric.js surface; incomplete error/redirect TODOs |
 | `.env.local` / Firebase service account | Secrets — never commit |
