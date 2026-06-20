@@ -11,25 +11,26 @@
 
 ## Current State
 
-- Phase: Package and Dead-Code Cleanup
-- Task: T-007
-- Status: Checkpoint Ready
-- Last command: yarn build
-- Last result: passed after audit remediation, lint, typecheck, and tests passed
-- Last pushed commit: f9408f9
+- Phase: Integrator
+- Task: T-008
+- Status: Final Checkpoint Ready
+- Last command: yarn validate
+- Last result: passed
+- Last pushed commit: 89c97da
 - Branch sync: clean `dev` matches `origin/dev`.
-- Working tree: dirty only with in-scope package cleanup files/report/ledger changes.
-- Next action: Commit and push package cleanup checkpoint, then run T-008 Review/Stabilization/Integrator.
+- Working tree: dirty only with final review/stabilization/integrator reports.
+- Next action: Commit and push final report checkpoint, then confirm clean sync.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `package.json` | In-scope package config | High/critical audit remediation |
-| `yarn.lock` | In-scope lockfile | Yarn 1 dependency resolution |
-| `agent-runs/2026-06-20-codebase-pass/05-package-and-dead-code-cleanup.md` | In-scope report | T-007 cleanup evidence |
-| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | T-007 cleanup ledger update |
-| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | T-007 status update |
+| `agent-runs/2026-06-20-codebase-pass/06-review.md` | In-scope report | T-008 review evidence |
+| `agent-runs/2026-06-20-codebase-pass/07-stabilization-loop.md` | In-scope report | T-008 stabilization evidence |
+| `agent-runs/2026-06-20-codebase-pass/08-integrator.md` | In-scope report | T-008 integration evidence |
+| `agent-runs/2026-06-20-codebase-pass/final-report.md` | In-scope report | Final summary |
+| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | Final ledger update |
+| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | Final task status |
 
 ## Blockers
 
@@ -37,4 +38,6 @@
 
 ## Deferred Items
 
-- None.
+- Low/moderate dependency advisories remain after high/critical audit cleanup.
+- Broad `generateDIDVideo.ts` decomposition deferred.
+- Store/action test gaps deferred.
