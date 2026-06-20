@@ -11,25 +11,25 @@
 
 ## Current State
 
-- Phase: Execute Fixes and Improvements
-- Task: T-006
+- Phase: Package and Dead-Code Cleanup
+- Task: T-007
 - Status: Checkpoint Ready
-- Last command: yarn lint
-- Last result: passed for F-003 docs drift fix
-- Last pushed commit: bed2f17
+- Last command: yarn build
+- Last result: passed after audit remediation, lint, typecheck, and tests passed
+- Last pushed commit: f9408f9
 - Branch sync: clean `dev` matches `origin/dev`.
-- Working tree: dirty only with in-scope F-003 docs/report/ledger changes.
-- Next action: Commit and push F-003 checkpoint, then start T-007 Package and Dead-Code Cleanup.
+- Working tree: dirty only with in-scope package cleanup files/report/ledger changes.
+- Next action: Commit and push package cleanup checkpoint, then run T-008 Review/Stabilization/Integrator.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `AGENTS.md` | In-scope docs | F-003 diagnostic endpoint guidance |
-| `spec.md` | In-scope docs | F-003 diagnostic endpoint current-state note |
-| `agent-runs/2026-06-20-codebase-pass/04-execute-fixes-and-improvements.md` | In-scope report | T-006 execution evidence |
-| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | T-006 execution ledger update |
-| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | T-006 status update |
+| `package.json` | In-scope package config | High/critical audit remediation |
+| `yarn.lock` | In-scope lockfile | Yarn 1 dependency resolution |
+| `agent-runs/2026-06-20-codebase-pass/05-package-and-dead-code-cleanup.md` | In-scope report | T-007 cleanup evidence |
+| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | T-007 cleanup ledger update |
+| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | T-007 status update |
 
 ## Blockers
 
