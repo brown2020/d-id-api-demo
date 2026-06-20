@@ -11,23 +11,23 @@
 
 ## Current State
 
-- Phase: Baseline Validation
-- Task: T-002
+- Phase: Findings Backlog
+- Task: T-003
 - Status: Checkpoint Ready
-- Last command: yarn build
-- Last result: passed after local network permission; lint/typecheck/test also passed
-- Last pushed commit: 21ebc2d
+- Last command: rg/nl source inspection for findings
+- Last result: prioritized backlog written; first executable task is F-001/T-004
+- Last pushed commit: 920c11e
 - Branch sync: clean `dev` matches `origin/dev`.
-- Working tree: dirty only with in-scope baseline report and run ledger updates.
-- Next action: Commit and push baseline report, then start T-003 Findings Backlog.
+- Working tree: dirty only with in-scope findings report and queue/ledger updates.
+- Next action: Run `yarn lint`, commit and push findings checkpoint, then execute F-001/T-004.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `agent-runs/2026-06-20-codebase-pass/02-baseline-validation.md` | In-scope report | T-002 baseline evidence |
-| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | T-002 baseline ledger update |
-| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | T-002 status update |
+| `agent-runs/2026-06-20-codebase-pass/03-findings-backlog.md` | In-scope report | T-003 findings evidence |
+| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | T-003 findings ledger update |
+| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | T-003 task prioritization |
 
 ## Blockers
 
