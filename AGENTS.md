@@ -16,14 +16,14 @@ Demonstrate a full-stack D-ID integration pattern: avatar management, TTS via El
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js `^16.0.3`, React `^19`, TypeScript `^5.6` (strict) |
-| Styling | Tailwind CSS `^4`, Styled Components, Framer Motion, Lucide |
-| State | Zustand `^5` (`useAuthStore`, `useProfileStore`, `usePaymentsStore`) |
+| Framework | Next.js `^16.2.4`, React `^19.2.5`, TypeScript `^6.0.3` (strict) |
+| Styling | Tailwind CSS `^4.2.4`, Styled Components `^6.4.1`, Framer Motion `^12.38.0`, Lucide |
+| State | Zustand `^5.0.12` (`useAuthStore`, `useProfileStore`, `usePaymentsStore`) |
 | Auth | Firebase Auth (client) + Firebase Admin session cookie (`__session`) |
 | Database / storage | Firestore + Firebase Storage |
-| External APIs | D-ID, ElevenLabs (`@elevenlabs/elevenlabs-js`), Stripe |
-| Canvas editor | Fabric.js `^7` (`CreateVideo` component) |
-| Forms | React Hook Form + Yup |
+| External APIs | D-ID, ElevenLabs (`@elevenlabs/elevenlabs-js` `^2.44.0`), Stripe `^22.0.2` |
+| Canvas editor | Fabric.js `^7.3.1` (`CreateVideo` component) |
+| Forms | React Hook Form `^7.73.1` + Yup `^1.7.1` |
 | Package manager | **Yarn 1** (`packageManager` in `package.json`; use `yarn`, not npm) |
 
 ## Repository structure
@@ -92,8 +92,6 @@ yarn typecheck        # tsc --noEmit
 yarn test             # Vitest unit tests
 yarn validate         # lint + typecheck + test + build (canonical gate)
 ```
-
-No `test` or `typecheck` script is defined. TypeScript is checked during `yarn build`.
 
 ## Canonical validation / check command
 
@@ -167,7 +165,7 @@ Use Zustand for cross-page client state; use Firestore listeners in components f
 
 ## Testing expectations
 
-- Vitest unit tests in `src/**/*.test.ts` (route-protection helpers).
+- Vitest unit tests in `src/**/*.test.ts` (route protection, webhook URL, video status, and payment credit helpers).
 - Canonical gate: `yarn validate`.
 
 ## Files and systems requiring extra caution

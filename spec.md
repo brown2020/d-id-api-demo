@@ -87,7 +87,7 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 - **Next.js 16 App Router** with Server Components for pages and **server actions** for privileged operations.
 - **Edge proxy** (`src/proxy.ts`) for cookie-presence checks on a subset of routes.
 - **Zustand** for client profile/auth/payment state synced with Firestore.
-- **Polling-first** video completion; webhook handler at `/api/video-generated/[id]` ready but not wired from `generateDIDVideo`.
+- **Polling-first with webhook acceleration** for video completion; `generateVideo` builds a public webhook URL when possible, `generateDIDVideo` registers it with D-ID, and `/api/video-generated/[id]` updates Firestore/Storage on callbacks. Localhost and non-public bases use polling fallback.
 - **Image proxy API routes** expose publicly reachable URLs for D-ID.
 
 ### Existing technical constraints
@@ -106,7 +106,7 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 5. **Webhooks vs polling:** Webhooks active on public HTTPS deployments; localhost uses polling only.
 6. **Client-side credits:** Payment grants are server-side; profile `credits` field is read-only for clients (deduction still client-side until M6).
 7. **Open diagnostic APIs:** ID enumeration and URL fetch endpoints without auth.
-8. **No automated tests.**
+8. **Partial automated tests:** Vitest covers route-protection helpers, webhook URL validation, video status helpers, and payment credit math.
 9. **README drift:** Some docs reference removed middleware and wrong proxy path names — use this file and `AGENTS.md` as authority.
 10. **Dual lockfiles:** `yarn.lock` and `package-lock.json` both present; Yarn is canonical per `packageManager`.
 
