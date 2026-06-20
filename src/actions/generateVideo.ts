@@ -163,7 +163,7 @@ export async function generateVideo(
     const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
 
     if (webhookUrl) {
-      console.log(`- Webhook URL for D-ID: ${webhookUrl}`);
+      console.log("- Webhook URL for D-ID: registered");
     } else {
       console.log("- Webhook URL: not registered (private base URL); using polling");
     }

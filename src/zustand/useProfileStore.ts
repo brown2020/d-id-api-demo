@@ -81,7 +81,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
           authPhotoUrl,
           authEmailVerified,
         });
-        console.log("Profile found:", newProfile);
+        console.log("Profile found for current user.");
       } else {
         newProfile = {
           email: authEmail || "",
