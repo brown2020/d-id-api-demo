@@ -53,7 +53,10 @@ const mergeProfileWithDefaults = (
 ): ProfileType => ({
   ...defaultProfile,
   ...profile,
-  credits: profile.credits && profile.credits >= 100 ? profile.credits : 1000,
+  credits:
+    typeof profile.credits === "number" && Number.isFinite(profile.credits)
+      ? profile.credits
+      : 1000,
   email: authState.authEmail || profile.email || "",
   contactEmail: profile.contactEmail || authState.authEmail || "",
   displayName: profile.displayName || authState.authDisplayName || "",
@@ -97,9 +100,9 @@ const useProfileStore = create<ProfileState>((set, get) => ({
           selectedTalkingPhoto: "",
         };
         console.log("No profile found. Creating new profile document.");
+        await setDoc(userRef, newProfile);
       }
 
-      await setDoc(userRef, newProfile);
       set({ profile: newProfile });
     } catch (error) {
       console.error("Error fetching or creating profile:", error);
@@ -111,10 +114,17 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid) return;
     try {
       const userRef = doc(db, `users/${uid}/profile/userData`);
-      const updatedProfile = { ...get().profile, ...newProfile };
+      const clientProfileUpdates: Partial<ProfileType> = { ...newProfile };
+      delete clientProfileUpdates.credits;
+
+      const updatedProfile = { ...get().profile, ...clientProfileUpdates };
+      const clientWritableProfile: Partial<ProfileType> = {
+        ...updatedProfile,
+      };
+      delete clientWritableProfile.credits;
 
       set({ profile: updatedProfile });
-      await updateDoc(userRef, updatedProfile);
+      await updateDoc(userRef, clientWritableProfile);
       toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);

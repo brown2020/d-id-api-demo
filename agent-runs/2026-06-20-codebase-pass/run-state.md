@@ -12,26 +12,23 @@
 ## Current State
 
 - Phase: Execute Fixes and Improvements
-- Task: T-004
+- Task: T-005
 - Status: Checkpoint Ready
 - Last command: yarn test
-- Last result: passed after targeted leak search, lint, and typecheck passed
-- Last pushed commit: edd6bd6
+- Last result: passed after lint/typecheck passed
+- Last pushed commit: 4d6b169
 - Branch sync: clean `dev` matches `origin/dev`.
-- Working tree: dirty only with in-scope F-001 source/report/ledger changes.
-- Next action: Commit and push F-001 checkpoint, then execute F-002/T-005.
+- Working tree: dirty only with in-scope F-002 source/report/ledger changes.
+- Next action: Commit and push F-002 checkpoint, then execute F-003/T-006.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `src/actions/generateDIDVideo.ts` | In-scope source | F-001 secret-bearing D-ID logs |
-| `src/actions/generateVideo.ts` | In-scope source | F-001 webhook token log |
-| `src/actions/retrieveDIDVideo.ts` | In-scope source | F-001 signed/result URL logs |
-| `src/zustand/useProfileStore.ts` | In-scope source | F-001 profile API key log |
-| `agent-runs/2026-06-20-codebase-pass/04-execute-fixes-and-improvements.md` | In-scope report | T-004 execution evidence |
-| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | T-004 execution ledger update |
-| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | T-004 status update |
+| `src/zustand/useProfileStore.ts` | In-scope source | F-002 profile credit hydration and update payload |
+| `agent-runs/2026-06-20-codebase-pass/04-execute-fixes-and-improvements.md` | In-scope report | T-005 execution evidence |
+| `agent-runs/2026-06-20-codebase-pass/run-state.md` | In-scope source of truth | T-005 execution ledger update |
+| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | In-scope queue | T-005 status update |
 
 ## Blockers
 
