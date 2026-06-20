@@ -11,15 +11,15 @@
 
 This demo application showcases the integration of the D-ID API with a Next.js (App Router) application. The project enables users to generate and manage digital human videos, leveraging Firebase (Auth/Firestore/Storage), ElevenLabs (voice synthesis), and Stripe (payments).
 
-## Tech Stack (from `package-lock.json`)
+## Tech Stack (from `package.json` / `yarn.lock`)
 
-- **Framework**: Next.js `^16.0.3` (App Router)
-- **UI**: React `^19.0.0`, Tailwind CSS `^4.1.4`, Framer Motion `^12.4.7`, Lucide `^0.562.0`, Styled Components `^6.1.13`
-- **State**: Zustand `^5.0.1`
-- **Forms**: React Hook Form `^7.53.0` (+ `@hookform/resolvers`), Yup `^1.4.0`
-- **APIs**: D-ID (external), ElevenLabs via `@elevenlabs/elevenlabs-js` `^2.25.0`
-- **Payments**: Stripe SDK `stripe` `^20.0.0`, `@stripe/react-stripe-js` `^5.4.0`, `@stripe/stripe-js` `^8.5.2`
-- **Firebase**: `firebase` `^12.6.0` (client), `firebase-admin` `^13.0.1` (server/Admin SDK)
+- **Framework**: Next.js `^16.2.4` (App Router)
+- **UI**: React `^19.2.5`, Tailwind CSS `^4.2.4`, Framer Motion `^12.38.0`, Lucide React `1.8.0`, Styled Components `^6.4.1`
+- **State**: Zustand `^5.0.12`
+- **Forms**: React Hook Form `^7.73.1` (+ `@hookform/resolvers`), Yup `^1.7.1`
+- **APIs**: D-ID (external), ElevenLabs via `@elevenlabs/elevenlabs-js` `^2.44.0`
+- **Payments**: Stripe SDK `stripe` `^22.0.2`, `@stripe/react-stripe-js` `^6.2.0`, `@stripe/stripe-js` `^9.3.0`
+- **Firebase**: `firebase` `^12.12.1` (client), `firebase-admin` `^13.8.0` (server/Admin SDK)
 
 ## Features
 
@@ -28,8 +28,8 @@ This demo application showcases the integration of the D-ID API with a Next.js (
 - **Firebase Storage and Firestore**: Store and manage data in Firebase, including images and user details.
 - **Payment Processing**: Handle payments within the application using Stripe.
 - **Image Proxy Server**: Proxy Firebase Storage images through a custom API to address a bug in D-ID's handling of Firebase image URLs.
-- **Server Actions in Next.js 14**: Use React Server Actions in Next.js 14 to interact with the D-ID API and manage server-side logic.
-- **Polling and Webhooks**: Implement a polling mechanism to check video generation status and suggest using webhooks for more efficient real-time updates.
+- **Server Actions in Next.js 16**: Use React Server Actions in Next.js 16 to interact with the D-ID API and manage server-side logic.
+- **Polling and Webhooks**: Poll video generation status and register D-ID webhooks when the app has a public HTTPS base URL.
 
 ## Getting Started
 
@@ -179,9 +179,9 @@ yarn build
 
 ## Main Features
 
-- **Creating Digital Human Videos with Server Actions**: Demonstrates how to use React Server Actions in Next.js 14 to create digital human videos with the D-ID API. The `generateDIDVideo` server action handles video creation, allowing flexibility in using pre-recorded audio, text-to-speech, or silent video generation.
+- **Creating Digital Human Videos with Server Actions**: Demonstrates how to use React Server Actions in Next.js 16 to create digital human videos with the D-ID API. The `generateDIDVideo` server action handles video creation, allowing flexibility in using pre-recorded audio, text-to-speech, or silent video generation.
 
-- **Polling vs. Webhooks**: The `retrieveDIDVideo` function uses polling to check when a video has been processed. Although polling is effective, the project suggests using webhooks for more efficient real-time updates.
+- **Polling vs. Webhooks**: The `retrieveDIDVideo` function uses polling to check when a video has been processed. Public HTTPS deployments also register a D-ID webhook for faster callbacks, while localhost stays polling-only.
 
 ### API Routes
 
@@ -258,7 +258,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 ### Summary
 
 - **Next.js (App Router) and Server Actions**: Demonstrates the use of Next.js with the App Router and React Server Actions for D-ID API integration.
-- **Polling vs. Webhooks**: Discusses the use of polling to check video generation status and recommends webhooks for efficient real-time updates.
+- **Polling vs. Webhooks**: Uses polling as the fallback status path and D-ID webhooks when a public HTTPS callback URL is available.
 - **Production Command**: Explains the use of `yarn build` for production and emphasizes the need for Ngrok in local development.
 
 ## Contact
