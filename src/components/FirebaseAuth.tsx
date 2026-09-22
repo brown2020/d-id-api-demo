@@ -1,6 +1,6 @@
 "use client";
 
-import { auth } from "../firebase/firebaseClient";
+import { auth, isFirebaseConfigured } from "../firebase/firebaseClient";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useAuth } from "./FirebaseAuthProvider";
@@ -12,6 +12,10 @@ import { signOutUser } from "@/libs/sign-out-client";
 
 // Add a debug function to log the auth configuration
 function logAuthConfiguration() {
+  if (!isFirebaseConfigured) {
+    console.warn("Firebase auth not configured");
+    return;
+  }
   // Get the current auth configuration
   const currentConfig = auth.config;
   // Log only non-sensitive parts
@@ -38,6 +42,10 @@ export const FirebaseAuth = () => {
 
   const handleSignIn = async () => {
     try {
+      if (!isFirebaseConfigured) {
+        toast.error("Firebase is not configured in this environment.");
+        return;
+      }
       setLoading(true);
       const provider = new GoogleAuthProvider();
 

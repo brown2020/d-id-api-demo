@@ -1,6 +1,6 @@
 "use client";
 
-import { auth } from "../firebase/firebaseClient";
+import { auth, isFirebaseConfigured } from "../firebase/firebaseClient";
 import { useAuthStore } from "../zustand/useAuthStore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -37,6 +37,11 @@ export function FirebaseAuthProvider({
   useEffect(() => {
     // Safety check - only run in browser
     if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!isFirebaseConfigured) {
+      queueMicrotask(() => setLoading(false));
       return;
     }
 

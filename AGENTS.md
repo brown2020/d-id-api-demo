@@ -202,6 +202,8 @@ Use Zustand for cross-page client state; use Firestore listeners in components f
 2. `yarn validate` passes.
 3. Auth, Firestore rules, and server/client boundaries respected.
 4. No secrets committed; no lockfile manager switches.
+   - Never inline `NEXT_PUBLIC_*` / API keys in `.github/workflows/*` — use `${{ secrets.* }}` only if a future smoke job needs them.
+   - The `ci` gate job builds without client env: `firebaseClient` skips init when config is missing. Runtime (Vercel/local) still needs `.env` / project env for auth.
 5. `spec.md` updated if product behavior or roadmap materially changes.
 6. Committed to `dev` and pushed to `origin/dev` when task requires it.
 
