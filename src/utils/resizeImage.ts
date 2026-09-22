@@ -1,11 +1,10 @@
 export function resizeImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.src = objectUrl;
-    const cleanup = () => URL.revokeObjectURL(objectUrl);
-    img.onload = () => {
-      try {
+    const reader = new FileReader();
+    reader.onerror = () => reject("Failed to read image.");
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         canvas.width = 1024;
@@ -25,21 +24,16 @@ export function resizeImage(file: File): Promise<Blob> {
         ctx?.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
 
         canvas.toBlob((blob) => {
-          cleanup();
           if (blob) {
             resolve(blob);
           } else {
             reject("Failed to create blob from image.");
           }
         }, "image/png");
-      } catch (err) {
-        cleanup();
-        reject(err);
-      }
+      };
+      img.onerror = () => reject("Failed to load image.");
+      img.src = String(reader.result);
     };
-    img.onerror = () => {
-      cleanup();
-      reject("Failed to load image.");
-    };
+    reader.readAsDataURL(file);
   });
 }

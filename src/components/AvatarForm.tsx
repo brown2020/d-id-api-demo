@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import { getFileUrl } from "@/actions/getFileUrl";
 import { db, storage } from "@/firebase/firebaseClient";
 import { DEFAULT_AUDIO, DOCUMENT_COLLECTION } from "@/libs/constants";
@@ -334,12 +336,12 @@ export default function AvatarForm({
                           ElevenLabs API key in your profile.
                         </p>
                         <p className="mt-1">
-                          <a
+                          <Link
                             href="/profile"
                             className="text-blue-600 underline"
                           >
                             Go to Profile Settings
-                          </a>
+                          </Link>
                         </p>
                       </div>
                     ) : (

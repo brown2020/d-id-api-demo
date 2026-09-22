@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 import { getApiBaseUrl, saveNgrokUrl } from "@/libs/utils";
 import Image from "next/image";
@@ -202,9 +204,9 @@ export default function NgrokSetupGuide() {
           <ol className="list-decimal pl-6 space-y-3">
             <li>
               Go to{" "}
-              <a href="/test-image-access" className="text-blue-600 underline">
+              <Link href="/test-image-access" className="text-blue-600 underline">
                 Image Access Test
-              </a>{" "}
+              </Link>{" "}
               to verify your images are accessible.
             </li>
             <li>If all tests pass, try generating a video again.</li>

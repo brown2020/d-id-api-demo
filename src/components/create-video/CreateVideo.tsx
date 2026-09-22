@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { db } from "@/firebase/firebaseClient";
 import {
   AVATAR_TYPE_TEMPLATE,
@@ -1724,9 +1725,9 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         <strong>Warning:</strong> D-ID authentication is
                         missing. Please add either a D-ID API key or Basic Auth
                         in your{" "}
-                        <a href="/profile" className="text-blue-600 underline">
+                        <Link href="/profile" className="text-blue-600 underline">
                           profile settings
-                        </a>{" "}
+                        </Link>{" "}
                         to generate videos.
                       </span>
                     </p>
@@ -1740,9 +1741,9 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                       <span>
                         <strong>Warning:</strong> ElevenLabs API key is missing.
                         Please add it in your{" "}
-                        <a href="/profile" className="text-blue-600 underline">
+                        <Link href="/profile" className="text-blue-600 underline">
                           profile settings
-                        </a>{" "}
+                        </Link>{" "}
                         to enable voice generation.
                       </span>
                     </p>
