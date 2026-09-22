@@ -60,16 +60,16 @@ export default function VideosPage() {
                                         <h3 className="mb-3 text-lg font-semibold text-gray-600">My Videos</h3>
                                         <div className="grid sm:grid-cols-9 xs:grid-cols-6 md:grid-cols-12 gap-x-2 gap-y-3">
                                             {
-                                                videoList.map((video, index) => {
+                                                videoList.map((video) => {
                                                     return (
-                                                        <div onClick={() => router.push(video.d_id_status ? `/videos/${video.id}/show` : `/videos/${video.id}/edit`)} key={index} className="col-span-3 cursor-pointer group/video relative border-1 p-4 hover:bg-black border-gray-300 hover:drop-shadow-2xl rounded-xl overflow-hidden hover:-translate-y-2 transition-all duration-300">
-                                                            <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0 transition-all duration-300 hover:via-gray-900/1"></div>
+                                                        <div onClick={() => router.push(video.d_id_status ? `/videos/${video.id}/show` : `/videos/${video.id}/edit`)} key={video.id} className="col-span-3 cursor-pointer group/video relative border-1 p-4 hover:bg-black border-gray-300 hover:drop-shadow-2xl rounded-xl overflow-hidden hover:-translate-y-2 transition-colors duration-300">
+                                                            <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0 transition-colors duration-300 hover:via-gray-900/1"></div>
                                                             <div className="h-36"></div>
                                                             {
                                                                 video.thumbnail_url ?
                                                                     <Image src={video.thumbnail_url} alt="Audio play image" width={200} height={100} className="absolute inset-0 w-full h-full  object-cover" />
                                                                     :
-                                                                    <Image src={PlayVideoIcon} alt="Audio play image" width={60} height={60} className="flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover/video:w-20 group-hover/video:h-20 transition-all duration-300 object-contain justify-center items-center" />
+                                                                    <Image src={PlayVideoIcon} alt="Audio play image" width={60} height={60} className="flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover/video:w-20 group-hover/video:h-20 transition-colors duration-300 object-contain justify-center items-center" />
                                                             }
                                                             
                                                             <div className="z-10 relative text-white">

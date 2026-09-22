@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <div className="flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
       {user ? (
-        <div className="bg-white shadow-xl rounded-2xl overflow-hidden max-w-md w-full transition-all duration-300 hover:shadow-2xl">
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden max-w-md w-full transition-colors duration-300 hover:shadow-2xl">
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 py-6 px-8">
             <h2 className="text-center font-bold text-white text-2xl">
               D-ID API Demo
@@ -75,7 +75,7 @@ export default function Home() {
             {firebaseUid && (
               <div className="flex justify-center">
                 <Link href="/avatars" onClick={handleClick} className="w-full">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg py-3 px-6 text-center flex justify-center items-center gap-2 hover:shadow-lg transition-all duration-300">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg py-3 px-6 text-center flex justify-center items-center gap-2 hover:shadow-lg transition-colors duration-300">
                     {loading ? (
                       <LoaderCircle className="animate-spin" />
                     ) : (
@@ -91,7 +91,7 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div className="bg-white shadow-xl rounded-2xl overflow-hidden max-w-md w-full transition-all duration-300 hover:shadow-2xl">
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden max-w-md w-full transition-colors duration-300 hover:shadow-2xl">
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 py-6 px-8">
             <h2 className="text-center font-bold text-white text-2xl">
               Welcome to D-ID API Demo

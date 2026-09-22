@@ -9,7 +9,6 @@ export async function getAudioList(elevenlabs_api_key: string) {
         const voices = await elevenlabs.voices.getAll();
         return { status: true, voices: voices.voices };
     } catch (error) {
-        console.log("Error on fetch audio list: ", error);
         if(error instanceof ElevenLabsError){
             if(error.statusCode == 401){
                 return { error: "ElevenLabs : Invalid API key." };

@@ -1,34 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-function getNgrokInfo() {
-  if (typeof window === "undefined") {
-    return { isNgrok: false, isLocalhost: false, origin: "" };
-  }
-  const origin = window.location.origin;
-  const isNgrok =
-    origin.includes("ngrok.io") || origin.includes("ngrok-free.app");
-  const isLocalhost = origin.includes("localhost");
-
-  if (isNgrok) {
-    localStorage.setItem("ngrok_url", origin);
-  }
-
-  return { isNgrok, isLocalhost, origin };
-}
-
 export default function NgrokReminder() {
-  const [ngrokInfo] = useState(getNgrokInfo);
-  const [show, setShow] = useState(() => {
-    if (!ngrokInfo) return false;
-    const { isLocalhost, isNgrok } = ngrokInfo;
-    if (typeof window === "undefined") return false;
-    return isLocalhost && !isNgrok && !localStorage.getItem("ngrok_url");
+  const [ngrokInfo, setNgrokInfo] = useState({
+    isNgrok: false,
+    isLocalhost: false,
+    origin: "",
   });
+  const [show, setShow] = useState(false);
 
-  if (!show || !ngrokInfo) return null;
+  useEffect(() => {
+    const origin = window.location.origin;
+    const isNgrok =
+      origin.includes("ngrok.io") || origin.includes("ngrok-free.app");
+    const isLocalhost = origin.includes("localhost") || origin.includes("127.0.0.1");
+    if (isNgrok) {
+      localStorage.setItem("ngrok_url", origin);
+    }
+    setNgrokInfo({ isNgrok, isLocalhost, origin });
+    setShow(isLocalhost && !isNgrok && !localStorage.getItem("ngrok_url"));
+  }, []);
+
+  if (!show) return null;
 
   return (
     <div className="bg-amber-100 border-l-4 border-amber-500 p-4 mb-4">

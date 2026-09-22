@@ -2,7 +2,7 @@
 
 import axios, { AxiosError } from "axios";
 import { adminBucket, adminDb } from "../firebase/firebaseAdmin";
-import { protect } from "./auth";
+import { requireAuth } from "./auth";
 import { VIDEO_COLLECTION } from "../libs/constants";
 
 interface RetrieveVideoResponse {
@@ -31,17 +31,15 @@ async function fetchResult(
   authorization: string,
   maxRetries = 3
 ) {
-  await protect();
+  await requireAuth();
 
   // Use the passed authorization
-  console.log("Using provided authorization for fetching video");
   const baseUrl = "https://api.d-id.com";
 
   let lastError: unknown = null;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       // First attempt to get the specific video by ID
-      console.log(`Attempt ${attempt + 1}: Fetching video with ID: ${talkId}`);
       const specificResponse = await axios.get(`${baseUrl}/talks/${talkId}`, {
         headers: {
           accept: "application/json",
@@ -50,21 +48,15 @@ async function fetchResult(
       });
 
       if (specificResponse.status === 200) {
-        console.log("Successfully retrieved video by ID");
         return specificResponse.data;
       }
 
       // If we get here with a non-200 status
-      console.log(`Got non-200 status: ${specificResponse.status}`);
       lastError = new Error(
         `Failed to fetch result with status ${specificResponse.status}`
       );
     } catch (error: unknown) {
       // Safely log error information
-      console.log(
-        `Direct request failed:`,
-        error instanceof Error ? error.message : String(error)
-      );
 
       // Type guard for Axios errors
       if (axios.isAxiosError(error)) {
@@ -72,14 +64,9 @@ async function fetchResult(
 
         // Log more detailed error information if available
         if (axiosError.response) {
-          console.log(`Response status: ${axiosError.response.status}`);
-          console.log(`Response data:`, axiosError.response.data);
 
           // If it's a 404, try the alternative approach of listing all talks
           if (axiosError.response.status === 404) {
-            console.log(
-              "Video not found by direct ID, trying to find in list of talks"
-            );
 
             try {
               // Get list of all talks to find our video
@@ -102,19 +89,11 @@ async function fetchResult(
                   (talk: DIDTalkItem) => talk.id === talkId
                 );
                 if (foundVideo) {
-                  console.log("Found video in the list of talks");
                   return foundVideo;
                 } else {
-                  console.log("Video not found in recent talks list");
                 }
               }
-            } catch (listError: unknown) {
-              console.log(
-                "Error fetching list of talks:",
-                listError instanceof Error
-                  ? listError.message
-                  : String(listError)
-              );
+            } catch {
             }
           }
         }
@@ -126,7 +105,6 @@ async function fetchResult(
       if (attempt < maxRetries - 1) {
         // Exponential backoff: 1s, 2s, 4s, etc.
         const delay = Math.pow(2, attempt) * 1000;
-        console.log(`Waiting ${delay}ms before next attempt...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -145,28 +123,15 @@ export async function retrieveDIDVideo(
   pollInterval: number = 1000,
   basicAuth: string = ""
 ): Promise<RetrieveVideoResponse | null> {
-  await protect();
+  await requireAuth();
 
   // Use environment variable as a fallback if no API key is provided
   const finalApiKey = apiKey || process.env.DID_API_KEY || "";
   const finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
 
   // Log which API key we're using (without revealing the actual value)
-  console.log(
-    `retrieveDIDVideo API Key: ${finalApiKey ? "Present" : "Missing"}`
-  );
-  console.log(
-    `retrieveDIDVideo Basic Auth: ${finalBasicAuth ? "Present" : "Missing"}`
-  );
-  console.log(`API Key source: ${apiKey ? "Profile" : "Environment Variable"}`);
-  console.log(
-    `Basic Auth source: ${basicAuth ? "Profile" : "Environment Variable"}`
-  );
 
   if (!finalApiKey && !finalBasicAuth) {
-    console.error(
-      "No D-ID authentication available - neither API key nor Basic Auth provided"
-    );
     return {
       status: "failed",
       error:
@@ -177,47 +142,11 @@ export async function retrieveDIDVideo(
   try {
     // First, get the did_id (the actual D-ID API talk ID) from our database
     // This is crucial because our videoId is not the same as D-ID's talk ID
-    console.log(`Getting D-ID talk ID for our internal videoId: ${videoId}`);
-    console.log(`Using collection: ${VIDEO_COLLECTION}`);
 
     const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(videoId);
     const videoDoc = await videoRef.get();
 
     if (!videoDoc.exists) {
-      console.error(`Video document with ID ${videoId} not found in database`);
-
-      // Log collections and documents to help diagnose
-      try {
-        console.log("Checking all collections...");
-        const collections = await adminDb.listCollections();
-        console.log(
-          "Available collections:",
-          collections.map((col) => col.id)
-        );
-
-        // Check if we can find the document in both possible collection names
-        const manualCheck1 = await adminDb
-          .collection("videos")
-          .doc(videoId)
-          .get();
-        const manualCheck2 = await adminDb
-          .collection("generated-videos")
-          .doc(videoId)
-          .get();
-
-        console.log(
-          `Check in "videos" collection: ${
-            manualCheck1.exists ? "Found" : "Not found"
-          }`
-        );
-        console.log(
-          `Check in "generated-videos" collection: ${
-            manualCheck2.exists ? "Found" : "Not found"
-          }`
-        );
-      } catch (listError) {
-        console.error("Error checking collections:", listError);
-      }
 
       return {
         status: "failed",
@@ -227,7 +156,6 @@ export async function retrieveDIDVideo(
 
     const videoData = videoDoc.data();
     if (!videoData) {
-      console.error(`Video document with ID ${videoId} exists but has no data`);
       return {
         status: "failed",
         error: "Video data is missing",
@@ -237,23 +165,18 @@ export async function retrieveDIDVideo(
     // Get the D-ID talk ID from the document
     const didTalkId = videoData.did_id;
     if (!didTalkId) {
-      console.error(
-        `Video document with ID ${videoId} is missing the did_id field`
-      );
       return {
         status: "failed",
         error: "D-ID talk ID is missing from the video record",
       };
     }
 
-    console.log(`Found D-ID talk ID in database: ${didTalkId}`);
 
     // Define the authorization header properly based on the available auth methods
     let authHeader;
 
     // First priority: Use Basic Auth from profile if available
     if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
-      console.log("Using Basic Auth from profile");
       authHeader = finalBasicAuth;
     }
     // Second priority: Use D_ID_BASIC_AUTH environment variable
@@ -261,26 +184,18 @@ export async function retrieveDIDVideo(
       process.env.D_ID_BASIC_AUTH &&
       process.env.D_ID_BASIC_AUTH.startsWith("Basic ")
     ) {
-      console.log(
-        "Using D_ID_BASIC_AUTH environment variable for authorization"
-      );
       authHeader = process.env.D_ID_BASIC_AUTH;
     }
     // Third priority: API key starting with "Basic"
     else if (finalApiKey.startsWith("Basic ")) {
-      console.log("Using API key that already starts with 'Basic'");
       authHeader = finalApiKey;
     }
     // Fourth priority: API key with colon (username:password format)
     else if (finalApiKey.includes(":")) {
-      console.log(
-        "Using API key in username:password format, encoding to Basic Auth"
-      );
       authHeader = `Basic ${Buffer.from(finalApiKey).toString("base64")}`;
     }
     // Last resort: Assume API key is already Base64 encoded
     else {
-      console.log("Using API key as-is (assuming it's already Base64 encoded)");
       authHeader = `Basic ${finalApiKey}`;
     }
 
@@ -288,27 +203,22 @@ export async function retrieveDIDVideo(
     const maxAttempts = 12; // Maximum number of attempts
     let resultData: DIDTalkItem | null = null;
 
-    console.log(`Polling for video status...`);
-    console.log(`- Using authorization: ${authHeader ? "Present" : "Missing"}`);
 
     let attempts = 0;
     while (attempts < maxAttempts) {
       try {
-        console.log(`Poll attempt ${attempts + 1} of ${maxAttempts}`);
 
         // Use the authHeader we constructed above instead of finalApiKey
         resultData = await fetchResult(didTalkId, authHeader);
 
         // Make sure resultData is not null before accessing its properties
         if (!resultData) {
-          console.log("Received null response from fetchResult, will retry");
           continue;
         }
 
         if (resultData.status === "done") {
           // Make sure result_url exists
           if (!resultData.result_url) {
-            console.error("Video is done but result_url is missing");
 
             // Update video status in database to reflect the error
             await videoRef.update({
@@ -322,7 +232,6 @@ export async function retrieveDIDVideo(
             };
           }
 
-          console.log("Video processing completed, downloading result.");
 
           // Download the video from the provided result URL
           const videoResponse = await axios.get(resultData.result_url, {
@@ -338,14 +247,12 @@ export async function retrieveDIDVideo(
               contentType: "video/mp4",
             },
           });
-          console.log("Video uploaded to Firebase Storage.");
 
           // Generate a signed URL with a very long expiration (100 years)
           const [videoUrl] = await file.getSignedUrl({
             action: "read",
             expires: "01-01-2124", // Set the expiration date 100 years in the future
           });
-          console.log("Generated signed URL for completed video.");
 
           // Save the signed URL to Firestore
           const docRef = adminDb
@@ -359,7 +266,6 @@ export async function retrieveDIDVideo(
             thumbnail_url: resultData.thumbnail_url || null,
             created_at: new Date(),
           });
-          console.log("Video URL saved to Firestore.");
 
           // Also update our main video document
           await videoRef.update({
@@ -375,10 +281,6 @@ export async function retrieveDIDVideo(
             thumbnail_url: resultData.thumbnail_url,
           };
         } else if (resultData.status === "failed") {
-          console.error(
-            "Video processing failed:",
-            resultData.error || "No specific error provided"
-          );
 
           // Update our main video document with the error
           await videoRef.update({
@@ -398,9 +300,6 @@ export async function retrieveDIDVideo(
           resultData.status === "started" ||
           resultData.status === "created"
         ) {
-          console.log(
-            `Video is still ${resultData.status}, waiting before next check...`
-          );
 
           // Update status in our database
           await videoRef.update({
@@ -411,10 +310,6 @@ export async function retrieveDIDVideo(
         // Make sure to increment the attempts variable
         attempts++;
       } catch (error: unknown) {
-        console.log(
-          `Error checking status (attempt ${attempts + 1}/${maxAttempts}):`,
-          error instanceof Error ? error.message : String(error)
-        );
 
         // If this is an Axios error with a 404, the video might not be ready in the D-ID system yet
         if (
@@ -422,23 +317,16 @@ export async function retrieveDIDVideo(
           error.response &&
           error.response.status === 404
         ) {
-          console.log(
-            "Video not found (404) - D-ID may still be registering it. Retrying..."
-          );
         }
       }
 
       // Wait for the poll interval before the next check
       const currentDelay = pollInterval * Math.min(attempts, 5); // Increase delay up to 5x
-      console.log(`Waiting ${currentDelay}ms before next check...`);
       await new Promise((resolve) => setTimeout(resolve, currentDelay));
     }
 
     // If we've reached the maximum attempts without success, we should still consider
     // the video as being processed since we got a successful creation response
-    console.log(
-      `Reached max polling attempts (${maxAttempts}). Assuming video is processing.`
-    );
 
     // Update status in our database
     await videoRef.update({
@@ -449,11 +337,7 @@ export async function retrieveDIDVideo(
       status: "processing",
       error: "Video status is still pending. Check back later.",
     };
-  } catch (error: unknown) {
-    console.error(
-      "Error retrieving video status:",
-      error instanceof Error ? error.message : String(error)
-    );
+  } catch {
     return {
       status: "failed",
       error: "An error occurred while retrieving the video. Please try again.",

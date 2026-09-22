@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { saveNgrokUrl } from "@/libs/utils";
 
 export default function SetNgrokUrl() {
   const [ngrokUrl, setNgrokUrl] = useState("");
-  const [currentUrl, setCurrentUrl] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("ngrok_url") ?? "";
-    }
-    return "";
-  });
+  const [currentUrl, setCurrentUrl] = useState("");
+  useEffect(() => {
+    setCurrentUrl(localStorage.getItem("ngrok_url") ?? "");
+  }, []);
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {

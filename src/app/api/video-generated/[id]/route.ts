@@ -8,14 +8,12 @@ import {
 } from "@/libs/constants";
 import { addVideoToStorage } from "@/actions/addVideoToStorage";
 import { addWebhookToHistory } from "@/actions/addWebhookToHistory";
-import moment from "moment";
 
 export const POST = async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
-  console.log(`Webhook received for video ID: ${id}`);
 
   const { method, headers, url } = req;
 
@@ -49,14 +47,12 @@ export const POST = async (
   if (headers.get("content-type")?.includes("application/json")) {
     try {
       requestBody = JSON.parse(rawBody);
-    } catch (error) {
-      console.error("Error parsing request body:", error);
+    } catch {
       return new Response("Invalid JSON", { status: 400 });
     }
   }
 
   await addWebhookToHistory(curlCommand);
-  console.log("Webhook body:", JSON.stringify(requestBody, null, 2));
 
   const process = await new Promise<{ status: true } | { error: string }>(
     async (resolve) => {
@@ -64,7 +60,6 @@ export const POST = async (
         // Get token from query params
         const token = req.nextUrl.searchParams.get("token");
         if (!token) {
-          console.error("Token is missing in webhook request");
           resolve({ error: "Token is required" });
           return;
         }
@@ -81,14 +76,12 @@ export const POST = async (
           !video.exists ||
           video.data() == undefined
         ) {
-          console.error(`Video not found: ${id}`);
           resolve({ error: "Video not found" });
           return;
         }
 
         // Send response if video already exist
         if (videoData.video_url) {
-          console.log(`Video already exists: ${id}`);
           resolve({ error: "Video already exist" });
           return;
         }
@@ -96,7 +89,6 @@ export const POST = async (
         // Authenticate request with secret key
         const secret_token = videoData.secret_token;
         if (secret_token !== token) {
-          console.error("Unauthorized webhook request - token mismatch");
           resolve({ error: "Unauthorized" });
           return;
         }
@@ -104,14 +96,12 @@ export const POST = async (
         // D-ID talk id from webhook body
         const did_video_id = body.id;
         if (!did_video_id || typeof did_video_id !== "string") {
-          console.error("Missing D-ID video ID in webhook request body");
           resolve({ error: "Missing D-ID video ID" });
           return;
         }
 
         // Allow webhook to arrive before generateVideo persists did_id (race)
         if (videoData.did_id && videoData.did_id !== did_video_id) {
-          console.error("Video ID mismatch in webhook request");
           resolve({ error: "Video ID mismatch" });
           return;
         }
@@ -122,19 +112,14 @@ export const POST = async (
 
         // Find video url from request
         const result_url = body.result_url;
-        console.log(`Result URL from D-ID: ${result_url || "Not available"}`);
 
         // Get status from request
         const status = body.status;
-        console.log(`Status from D-ID: ${status}`);
 
         if (status !== "done") {
           if (status == "error") {
             const errorDetails = body.error;
             const errorMessage = body.error?.description;
-            console.error(
-              `D-ID error: ${errorMessage || JSON.stringify(errorDetails)}`
-            );
 
             await videoRef.update({
               d_id_status: status,
@@ -148,11 +133,10 @@ export const POST = async (
               status: NOTIFICATION_STATUS.UNREAD,
               video_id: id,
               user_id: videoData.owner,
-              created_at: moment().format("X"),
+              created_at: Math.floor(Date.now() / 1000).toString(),
             });
             resolve({ status: true });
           } else {
-            console.log(`D-ID status update: ${status}`);
             await videoRef.update({
               d_id_status: status,
             });
@@ -160,7 +144,6 @@ export const POST = async (
           }
         } else {
           // Download video from result_url and upload that video to firebase storage
-          console.log(`Processing completed video: ${id}`);
           const addVideoResponse = await addVideoToStorage(
             id,
             result_url,
@@ -168,43 +151,31 @@ export const POST = async (
           );
           if (addVideoResponse.status) {
             // Add new notification to notification collection
-            console.log(`Video added to storage successfully: ${id}`);
             const notificationRef = adminDb.collection(NOTIFICATION_COLLECTION);
             await notificationRef.add({
               type: NOTIFICATION_TYPE.VIDEO_GENERATED,
               status: NOTIFICATION_STATUS.UNREAD,
               video_id: id,
               user_id: videoData.owner,
-              created_at: moment().format("X"),
+              created_at: Math.floor(Date.now() / 1000).toString(),
             });
 
             resolve({ status: true });
           } else {
-            console.error(
-              `Error adding video to storage: ${
-                typeof addVideoResponse === "object" &&
-                "error" in addVideoResponse
-                  ? addVideoResponse.error
-                  : "Unknown error"
-              }`
-            );
             resolve({ error: "Error adding video to storage" });
           }
         }
 
         return;
-      } catch (error) {
-        console.error("Error processing webhook:", error);
+      } catch {
         resolve({ error: "Failed to process webhook" });
       }
     }
   );
 
   if ("error" in process) {
-    console.log(`Webhook processing error: ${process.error}`);
     return new Response(process.error, { status: 400 });
   } else {
-    console.log(`Webhook processed successfully for video: ${id}`);
     return new Response("Webhook processed successfully", { status: 200 });
   }
 };

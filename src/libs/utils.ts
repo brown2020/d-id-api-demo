@@ -10,9 +10,11 @@ export function getAudioDetails(audio_id: string) {
 export function randomString(n: number) {
   const chars =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = new Uint8Array(n);
+  crypto.getRandomValues(bytes);
   let token = "";
   for (let i = 0; i < n; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
+    token += chars[bytes[i]! % chars.length];
   }
   return token;
 }

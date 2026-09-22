@@ -25,7 +25,6 @@ export async function getFileUrl(filepath: string){
         //     fs.createReadStream(filePath).pipe(stream);
         // });
     } catch (error) {
-        console.error('Error uploading file:', error);
         throw error;
     }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
 import { DIDTalkingPhoto } from "@/types/did";
 import { collection, getDocs } from "firebase/firestore";
@@ -37,6 +37,14 @@ interface TestResult {
 }
 
 export default function TestImageAccess() {
+  const [clientEnv, setClientEnv] = useState({ local: false, href: "" });
+  useEffect(() => {
+    setClientEnv({
+      local: window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1",
+      href: window.location.href,
+    });
+  }, []);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -156,13 +164,13 @@ export default function TestImageAccess() {
         <h2 className="font-semibold">Environment Information</h2>
         <div className="mt-2 font-mono text-sm">
           <p>API Base URL: {baseUrl}</p>
-          {typeof window !== "undefined" && (
+          {clientEnv.href && (
             <>
               <p>
                 Running locally:{" "}
-                {window.location.hostname === "localhost" ? "Yes" : "No"}
+                {clientEnv.local ? "Yes" : "No"}
               </p>
-              <p>Current URL: {window.location.href}</p>
+              <p>Current URL: {clientEnv.href}</p>
             </>
           )}
         </div>
@@ -190,7 +198,7 @@ export default function TestImageAccess() {
               <h2 className="text-xl font-semibold">Test Results</h2>
 
               {testResults.map((result, i) => (
-                <div key={i} className="border rounded-lg p-4">
+                <div key={result.id ?? `result-${i}`} className="border rounded-lg p-4">
                   <h3 className="font-bold">
                     {result.avatar} ({result.id})
                   </h3>

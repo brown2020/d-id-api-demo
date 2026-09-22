@@ -1,7 +1,7 @@
 "use server";
 
 import { Emotion, Movement } from "../types/did";
-import { protect } from "./auth";
+import { requireAuth } from "./auth";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "../libs/constants";
 import { adminDb, admin } from "../firebase/firebaseAdmin";
@@ -25,7 +25,7 @@ export async function generateVideo(
   useFallbackImage: boolean = false,
   basicAuth: string | null = null
 ) {
-  const userId = await protect();
+  const userId = await requireAuth();
 
   const id = video_id ? video_id : `new-video-${Date.now()}`;
 
@@ -60,7 +60,6 @@ export async function generateVideo(
     // Generate video thumbnail
     const filename = `thumbnail-${randomString(10)}.png`;
     const filePath = `video-image/${id}/${filename}`;
-    console.log("filePath", filePath);
 
     // Add that thumbnail to firebase storage
     const bucket = admin.storage().bucket();
@@ -73,7 +72,6 @@ export async function generateVideo(
       const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
 
       if (!matches) {
-        console.error("Invalid data URL format");
         // Use a fallback instead of throwing an error
         thumbnailUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
       } else {
@@ -95,7 +93,6 @@ export async function generateVideo(
       }
     } else {
       // If it's already a URL, just use it directly
-      console.log("Using existing URL for thumbnail:", thumbnail_url);
       thumbnailUrl = thumbnail_url;
     }
 
@@ -116,36 +113,22 @@ export async function generateVideo(
     if (useFallbackImage) {
       // Use the permanent public URL for the fallback image
       imageUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
-      console.log("Using fallback image as explicitly requested:", imageUrl);
     } else if (isLocalhost) {
       // For localhost without explicit fallback image request, warn but proceed
-      console.warn(
-        "Running in localhost environment without fallback image selected."
-      );
-      console.warn(
-        "This may cause issues with D-ID API as it requires publicly accessible images."
-      );
 
       // Use the local proxy URL but prepare for potential failure
       const originalProxyUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
       imageUrl = originalProxyUrl;
-      console.log(
-        "Attempting to use localhost proxy URL (may fail):",
-        imageUrl
-      );
     } else {
       // For production, use the user's image through our proxy with HTTPS
       const originalProxyUrl = videoImageProxyUrl(baseUrl, `${id}.png`);
-      console.log("Original proxy URL:", originalProxyUrl);
 
       // On Vercel production, we'll use forced HTTPS for the image URL
       // This ensures the D-ID API can access it properly
       imageUrl = originalProxyUrl.replace("http://", "https://");
       if (imageUrl !== originalProxyUrl) {
-        console.log("Updated to HTTPS proxy URL:", imageUrl);
       }
 
-      console.log("Using image URL (via proxy):", imageUrl);
 
       try {
         const didAccessResult = await checkDidImageAccess(imageUrl);
@@ -163,9 +146,7 @@ export async function generateVideo(
     const webhookUrl = getWebhookUrl(baseUrl, id, secret_token);
 
     if (webhookUrl) {
-      console.log("- Webhook URL for D-ID: registered");
     } else {
-      console.log("- Webhook URL: not registered (private base URL); using polling");
     }
 
     const response = await generateDIDVideo(
@@ -205,9 +186,6 @@ export async function generateVideo(
           updated_at: admin.firestore.Timestamp.now(),
         });
 
-        console.log(
-          `Successfully updated video document with D-ID ID: ${response.id}`
-        );
 
         return {
           status: true,
@@ -240,7 +218,6 @@ export async function generateVideo(
       };
     }
 
-    console.error("Error in generateVideo:", errorMessage, errorDetails);
     await addErrorReport("generateDIDVideo", errorDetails);
 
     // Try to update the video document with error information
@@ -251,8 +228,7 @@ export async function generateVideo(
         errorMessage: errorMessage,
         updated_at: admin.firestore.Timestamp.now(),
       });
-    } catch (updateError) {
-      console.error("Failed to update video document with error:", updateError);
+    } catch {
     }
 
     return {

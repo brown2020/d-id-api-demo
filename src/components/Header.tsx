@@ -17,12 +17,29 @@ import {
 import { AlignJustify, Bell } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import moment from "moment";
 import { useRouter } from "next/navigation";
 import logo from "@/assets/images/logo.png";
 import { useAuth } from "./FirebaseAuthProvider";
 import { FirebaseAuth } from "./FirebaseAuth";
 import { UserProfile } from "./UserProfile";
+
+const relativeTimeFormatter = new Intl.RelativeTimeFormat(undefined, {
+  numeric: "auto",
+});
+
+function formatRelativeUnix(unixSeconds: string | number): string {
+  const then = Number(unixSeconds) * 1000;
+  const diffSec = Math.round((then - Date.now()) / 1000);
+  const abs = Math.abs(diffSec);
+  if (abs < 60) return relativeTimeFormatter.format(diffSec, "second");
+  const diffMin = Math.round(diffSec / 60);
+  if (Math.abs(diffMin) < 60) return relativeTimeFormatter.format(diffMin, "minute");
+  const diffHr = Math.round(diffMin / 60);
+  if (Math.abs(diffHr) < 24) return relativeTimeFormatter.format(diffHr, "hour");
+  const diffDay = Math.round(diffHr / 24);
+  return relativeTimeFormatter.format(diffDay, "day");
+}
+
 
 export default function Header() {
   const { user } = useAuth();
@@ -117,11 +134,11 @@ export default function Header() {
           ? notificationMessage[value.type]()
           : "Message";
       return (
-        <div key={index} className="py-1 px-2 flex gap-2">
+        <div key={value.id ?? `notification-${index}`} className="py-1 px-2 flex gap-2">
           <div className="">
             <p className="text-lg font-bold">{message}</p>
             <p className="text-sm text-gray-500">
-              {moment(value.created_at, "X").fromNow()}
+              {formatRelativeUnix(value.created_at)}
             </p>
           </div>
           <div>
@@ -252,7 +269,7 @@ export default function Header() {
             <div
               className={`absolute shadow-md z-9998 bg-white rounded-b-lg ${
                 isMenuOpen ? "max-h-96" : "max-h-0"
-              } overflow-hidden transition-all duration-300 w-full left-0`}
+              } overflow-hidden transition-colors duration-300 w-full left-0`}
             >
               <div className="flex flex-col p-2">
                 <Link

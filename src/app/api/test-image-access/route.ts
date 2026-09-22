@@ -43,7 +43,6 @@ export async function GET(req: Request) {
       contentType,
     });
   } catch (error) {
-    console.error("Error testing image access:", error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),

@@ -1,7 +1,7 @@
 "use server";
 
 import { DIDVideoStatus, Emotion, Movement } from "../types/did";
-import { protect } from "./auth";
+import { requireAuth } from "./auth";
 import axios from "axios";
 import { addErrorReport } from "./addErrorReport";
 
@@ -26,14 +26,8 @@ export async function generateDIDVideo(
   movement: Movement = "neutral",
   basicAuth: string | null = null
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
-  await protect();
+  await requireAuth();
 
-  console.log("generateDIDVideo request started", {
-    hasProfileApiKey: !!apiKey,
-    hasProfileBasicAuth: !!basicAuth,
-    hasProfileElevenLabsKey: !!elevenlabsApiKey,
-    hasWebhook: !!webhookUrl,
-  });
 
   // Use environment variables as fallbacks for the API keys
   const finalApiKey = apiKey || process.env.DID_API_KEY || "";
@@ -43,9 +37,6 @@ export async function generateDIDVideo(
 
   // Check if we have either API key or Basic Auth
   if (!finalApiKey && !finalBasicAuth) {
-    console.error(
-      "No D-ID authentication available - neither API key nor Basic Auth provided"
-    );
     return {
       error:
         "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings.",
@@ -60,20 +51,12 @@ export async function generateDIDVideo(
     !finalApiKey.includes(":") &&
     !finalApiKey.startsWith("Basic ")
   ) {
-    console.error(
-      "API key format appears to be invalid - missing colon separator"
-    );
     return {
       error:
         "D-ID API key format is invalid. It should be in the format 'username:password'. Please check your API key in profile settings.",
     };
   }
 
-  console.log("D-ID credential sources selected", {
-    did: apiKey ? "profile" : "environment",
-    elevenlabs: elevenlabsApiKey ? "profile" : "environment",
-    hasElevenLabsKey: !!finalElevenlabsApiKey,
-  });
 
   // Check if we're using the fallback image
   const isFallbackImage = imageUrl.includes("/assets/headshot_fallback.png");
@@ -82,24 +65,15 @@ export async function generateDIDVideo(
   // Skip this check if we're using the fallback image
   if (!isFallbackImage) {
     try {
-      console.log("Testing if image is accessible...");
-      console.log(`Full image URL: ${imageUrl}`);
 
       // Add more validation of the URL format
       try {
         const imageUrlObj = new URL(imageUrl);
-        console.log(`Image URL protocol: ${imageUrlObj.protocol}`);
-        console.log(`Image URL host: ${imageUrlObj.host}`);
-        console.log(`Image URL pathname: ${imageUrlObj.pathname}`);
 
         // Check if URL uses HTTPS (D-ID API requires HTTPS)
         if (imageUrlObj.protocol !== "https:") {
-          console.warn(
-            "Image URL doesn't use HTTPS - D-ID API requires HTTPS URLs"
-          );
         }
-      } catch (urlError) {
-        console.error("Invalid image URL format:", urlError);
+      } catch {
         return {
           error: `Invalid image URL format: ${imageUrl}. Please use a valid HTTPS URL.`,
         };
@@ -113,17 +87,7 @@ export async function generateDIDVideo(
         });
 
         if (headResponse.ok) {
-          console.log("Image URL is accessible via HEAD request ✓");
-          console.log(`HEAD response status: ${headResponse.status}`);
-          console.log(
-            `HEAD response headers: ${JSON.stringify([
-              ...headResponse.headers.entries(),
-            ])}`
-          );
         } else {
-          console.log(
-            `HEAD request failed with status ${headResponse.status}, trying GET request...`
-          );
 
           // Method 2: GET request (more reliable, fallback)
           const getResponse = await fetch(imageUrl, {
@@ -132,37 +96,24 @@ export async function generateDIDVideo(
           });
 
           if (!getResponse.ok) {
-            console.error(
-              `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
-            );
             return {
               error: `The image URL is not accessible (status ${getResponse.status}).`,
             };
           } else {
-            console.log("Image URL is accessible via GET request ✓");
           }
         }
-      } catch (headError) {
-        console.error("HEAD request failed, trying GET request...", headError);
+      } catch {
 
         // Fallback to GET request
         try {
           const getResponse = await fetch(imageUrl);
           if (!getResponse.ok) {
-            console.error(
-              `Image URL isn't accessible: GET request failed with status ${getResponse.status}`
-            );
             return {
               error: `The image URL is not accessible.`,
             };
           } else {
-            console.log("Image URL is accessible via GET request ✓");
           }
         } catch (getError) {
-          console.error(
-            "Error testing image accessibility with GET:",
-            getError
-          );
           return {
             error: `Failed to access the image URL: ${
               getError instanceof Error ? getError.message : String(getError)
@@ -171,7 +122,6 @@ export async function generateDIDVideo(
         }
       }
     } catch (imgError) {
-      console.error("Error testing image accessibility:", imgError);
       return {
         error: `Failed to verify image accessibility: ${
           imgError instanceof Error ? imgError.message : String(imgError)
@@ -179,7 +129,6 @@ export async function generateDIDVideo(
       };
     }
   } else {
-    console.log("Using fallback image - skipping accessibility check ✓");
   }
 
   try {
@@ -187,13 +136,11 @@ export async function generateDIDVideo(
 
     // Determine script settings based on available inputs
     if (audioUrl) {
-      console.log("Audio URL provided. Using pre-recorded audio.");
       scriptSettings = {
         type: "audio",
         url: audioUrl,
       };
     } else if (voiceId && inputText) {
-      console.log("Voice ID and script provided. Using text-to-speech.");
       scriptSettings = {
         type: "text",
         input: inputText,
@@ -203,7 +150,6 @@ export async function generateDIDVideo(
         },
       };
     } else {
-      console.log("No audio or script provided. Defaulting to silent video");
       scriptSettings = {
         type: "text",
         input: "Hello, this is a silent example",
@@ -246,7 +192,6 @@ export async function generateDIDVideo(
     }
 
     if (finalApiKey && finalApiKey.length > 1) {
-      console.log("Using DID API Key for authentication");
 
       // Check if it's already in Basic format
       if (finalApiKey.startsWith("Basic ")) {
@@ -254,18 +199,15 @@ export async function generateDIDVideo(
       }
       // Check if it looks like raw credentials (username:password)
       else if (finalApiKey.includes(":")) {
-        console.log("Converting raw credentials to Basic auth format");
         // Convert raw credentials to basic auth format
         const base64Credentials = Buffer.from(finalApiKey).toString("base64");
         authHeader = `Basic ${base64Credentials}`;
       }
       // Assume it's already base64 encoded but missing the "Basic " prefix
       else {
-        console.log("Adding Basic prefix to credentials");
         authHeader = `Basic ${finalApiKey}`;
       }
     } else if (finalBasicAuth && finalBasicAuth.length > 1) {
-      console.log("Using DID Basic Auth for authentication");
 
       // Check if finalBasicAuth already has the "Basic " prefix
       if (finalBasicAuth.startsWith("Basic ")) {
@@ -273,21 +215,18 @@ export async function generateDIDVideo(
       } else {
         // Check if it looks like raw credentials (username:password)
         if (finalBasicAuth.includes(":")) {
-          console.log("Converting raw credentials to Basic auth format");
           // Convert raw credentials to basic auth format
           const base64Credentials =
             Buffer.from(finalBasicAuth).toString("base64");
           authHeader = `Basic ${base64Credentials}`;
         } else {
           // Assume it's already base64 encoded but missing the "Basic " prefix
-          console.log("Adding Basic prefix to credentials");
           authHeader = `Basic ${finalBasicAuth}`;
         }
       }
     } else {
       const errorMessage =
         "No valid authentication method provided. Please check your profile settings.";
-      console.error(errorMessage);
       return {
         error: errorMessage,
       } as GenerateVideoFailResponse;
@@ -295,7 +234,6 @@ export async function generateDIDVideo(
 
     // Add validation to ensure the authHeader is properly formatted
     if (!authHeader) {
-      console.error("FATAL ERROR: Authorization header is empty");
       return {
         error:
           "Authentication error: Authorization header could not be constructed. Please check your API key or Basic Auth.",
@@ -308,13 +246,11 @@ export async function generateDIDVideo(
     }
 
     if (!authHeader.startsWith("Basic ")) {
-      console.error("Malformed authorization header generated");
 
       // Attempt to fix the header if possible
       if (authHeader.includes(":")) {
         authHeader = `Basic ${Buffer.from(authHeader).toString("base64")}`;
       } else if (!/^[A-Za-z0-9+/=]+$/.test(authHeader)) {
-        console.error("Header is not valid Base64, cannot fix automatically");
 
         // Last-ditch fallback: try to use finalBasicAuth directly if it looks valid
         if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
@@ -349,11 +285,7 @@ export async function generateDIDVideo(
 
     if (webhookUrl) {
       talkPayload.webhook = webhookUrl;
-      console.log("Registering D-ID webhook for status updates.");
     } else {
-      console.log(
-        "No public webhook URL available — client will poll for status updates"
-      );
     }
 
     const config = {
@@ -372,10 +304,8 @@ export async function generateDIDVideo(
 
     // Test D-ID API key by first making a GET request to check authentication
     try {
-      console.log("Testing D-ID API authentication first...");
-      console.log("Auth test endpoint: https://api.d-id.com/talks?limit=1");
 
-      const testResponse = await axios.get(
+      await axios.get(
         "https://api.d-id.com/talks?limit=1",
         {
           headers: {
@@ -384,23 +314,14 @@ export async function generateDIDVideo(
           },
         }
       );
-      console.log(
-        `Authentication test successful: ${testResponse.status} ${testResponse.statusText}`
-      );
     } catch (authError) {
-      console.error(
-        "Authentication test failed:",
-        authError instanceof Error ? authError.message : String(authError)
-      );
 
       // Enhanced error reporting for auth failures
       let authErrorDetails = "Unknown authentication error";
       if (axios.isAxiosError(authError) && authError.response) {
         const status = authError.response.status;
-        const responseData = JSON.stringify(authError.response.data, null, 2);
+        void JSON.stringify(authError.response.data, null, 2);
 
-        console.error(`Auth test failed with status: ${status}`);
-        console.error(`Auth test response data: ${responseData}`);
 
         if (status === 401) {
           authErrorDetails =
@@ -418,30 +339,17 @@ export async function generateDIDVideo(
       };
     }
 
-    console.log("D-ID video request prepared", {
-      hasAudioUrl: !!audioUrl,
-      hasInputText: !!inputText,
-      hasWebhook: !!webhookUrl,
-    });
 
     const response = await axios.request(config);
 
-    console.log(
-      "Response received from D-ID API:",
-      response.status,
-      response.statusText
-    );
 
     if (response.status === 429) {
-      console.warn("API rate limit exceeded. Please try again later.");
       return {
         error: "Rate limit exceeded. Please try again later.",
       };
     }
 
     if (response.status >= 400) {
-      console.error("API request failed with status:", response.status);
-      console.error("Error response data:", response.data);
       return {
         error: `Failed with status ${response.status}: ${response.statusText}`,
       };
@@ -450,13 +358,11 @@ export async function generateDIDVideo(
     const id = response.data?.id;
     const status = response.data?.status;
     if (!id) {
-      console.error("No ID found in API response data:", response.data);
       return {
         error: "Failed to retrieve ID from the response. Please try again.",
       };
     }
 
-    console.log("Video generation successful. Video ID:", id);
     return { id, status };
   } catch (error: unknown) {
     /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -480,14 +386,12 @@ export async function generateDIDVideo(
     let errorMessage: string = "";
 
     if (axios.isAxiosError(error)) {
-      console.error("Error during video generation:", error.message);
 
       if (error.response) {
         const responseError = {
           status: error.response.status,
           data: JSON.stringify(error.response.data, null, 2),
         };
-        console.error("Error response from API:", responseError);
         errorDetails["responseError"] = responseError;
 
         if (error.response.status === 429) {
@@ -497,9 +401,6 @@ export async function generateDIDVideo(
             "Your account is out of credits. Please add more credits to generate video.";
         } else if (error.response.status === 500) {
           // Check if this might be an image issue
-          console.log(
-            "Received 500 error - checking if this might be an image issue"
-          );
           errorMessage =
             "D-ID server error. This may be due to an issue with the image URL or server load. Please try again or use a different image.";
         } else if (
@@ -515,7 +416,6 @@ export async function generateDIDVideo(
               "Something went wrong while validating your video generation request.";
           } else if (error.response.data.kind === "CelebrityDetectedError") {
             // Specific handling for celebrity detection
-            console.log("Celebrity detected in image:", error.response.data);
 
             let celebrityName = "unknown";
             if (error.response.data.details?.celebrity) {
@@ -531,16 +431,12 @@ export async function generateDIDVideo(
           }
         }
       } else if (error.request) {
-        console.error("No response received from D-ID API");
         errorMessage =
           "Cannot connect to D-ID API. Please check your internet connection and firewall settings.";
       } else {
-        console.error("Unexpected error during API call:", error.message);
       }
     } else if (error instanceof Error) {
-      console.error("Unexpected error occurred:", error.message);
     } else {
-      console.error("An unknown error occurred.");
     }
     await addErrorReport("generateDIDVideo", errorDetails);
 

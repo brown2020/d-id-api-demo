@@ -8,7 +8,6 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  console.log(`Image proxy request for ID: ${id}`);
 
   // Extract the Firestore document ID (remove .png extension)
   const docId = id.replace(".png", "");
@@ -19,7 +18,6 @@ export async function GET(
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      console.error(`Document not found: ${docId}`);
       return NextResponse.json(
         { error: "Document not found" },
         {
@@ -35,7 +33,6 @@ export async function GET(
     const data = docSnap.data();
 
     if (!data?.preview_image_url) {
-      console.error(`Image URL not found in document: ${docId}`);
       return NextResponse.json(
         { error: "Image URL not found" },
         {
@@ -49,7 +46,6 @@ export async function GET(
     }
 
     const imageUrl = data.preview_image_url;
-    console.log(`Fetching image from: ${imageUrl}`);
 
     try {
       const response = await fetch(imageUrl, {
@@ -60,9 +56,6 @@ export async function GET(
       });
 
       if (!response.ok) {
-        console.error(
-          `Failed to fetch image: ${response.status} ${response.statusText}`
-        );
         return NextResponse.json(
           {
             error: `Failed to fetch the image: ${response.status} ${response.statusText}`,
@@ -81,9 +74,6 @@ export async function GET(
       const contentType = response.headers.get("content-type") || "image/png";
       const imageBuffer = await response.arrayBuffer();
 
-      console.log(
-        `Successfully fetched image (${contentType}, ${imageBuffer.byteLength} bytes)`
-      );
 
       return new NextResponse(imageBuffer, {
         headers: {
@@ -95,7 +85,6 @@ export async function GET(
         },
       });
     } catch (error) {
-      console.error("Error fetching image:", error);
       return NextResponse.json(
         {
           error: "Failed to fetch the image",
@@ -112,7 +101,6 @@ export async function GET(
       );
     }
   } catch (error) {
-    console.error("Error in image proxy:", error);
     return NextResponse.json(
       {
         error: "Server error",

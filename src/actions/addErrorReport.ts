@@ -1,6 +1,5 @@
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { ERROR_REPORT_COLLECTION } from "@/libs/constants";
-import moment from "moment";
 import { v4 as uuidv4 } from 'uuid';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -10,7 +9,7 @@ export async function addErrorReport(from: string, data: Record<string, any>) {
     await webhookHistoryRef.doc(uuidv4()).set({
         from: from,
         data: data,
-        requested_at: moment().format('X')
+        requested_at: Math.floor(Date.now() / 1000).toString()
     });
 
 }

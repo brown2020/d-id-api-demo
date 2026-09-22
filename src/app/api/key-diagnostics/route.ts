@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { protect } from "../../../actions/auth";
+import { requireAuth } from "../../../actions/auth";
 
 export async function GET() {
   try {
-    await protect();
+    await requireAuth();
 
     // Get the D-ID API key from environment variables for comparison
     const envApiKey = process.env.DID_API_KEY || "";
@@ -87,8 +87,7 @@ export async function GET() {
       recommendations,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error("Error in key diagnostics:", error);
+  } catch {
     return NextResponse.json(
       {
         error: "Authentication required",

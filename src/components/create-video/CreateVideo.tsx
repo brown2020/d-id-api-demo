@@ -1375,7 +1375,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     <div className="px-4 max-h-full h-full flex flex-col video-create">
       <ol className="flex items-center w-full gap-4">
         {steps.map((step, index) => (
-          <li key={index} className="flex-1 ">
+          <li key={step.code ?? step.title ?? `step-${index}`} className="flex-1 ">
             <button
               disabled={processing}
               onClick={() => {
@@ -1488,7 +1488,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                             <ul className="items-center w-full text-sm font-medium grid grid-cols-2 gap-1">
                               {emotions.map((emotion, index) => (
                                 <li
-                                  key={index}
+                                  key={emotion.code ?? emotion.label ?? `emotion-${index}`}
                                   onClick={() => {
                                     selectAvatarForm.setValue(
                                       "emotion",
@@ -1523,24 +1523,24 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                             <label className="label">Movements</label>
 
                             <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-2 gap-1 ">
-                              {movements.map((movements, index) => (
+                              {movements.map((movement, index) => (
                                 <li
-                                  key={index}
+                                  key={movement.code ?? movement.label ?? `movement-${index}`}
                                   onClick={() => {
                                     selectAvatarForm.setValue(
                                       "movement",
-                                      movements.code
+                                      movement.code
                                     );
                                   }}
                                   className={`p-2 rounded-md cursor-pointer ${
-                                    field.value == movements.code
+                                    field.value == movement.code
                                       ? "bg-slate-600 text-white"
                                       : "bg-white border text-gray-900"
                                   }`}
                                 >
                                   <div className="flex items-center">
                                     <label className="w-full ms-2 text-sm font-medium cursor-pointer">
-                                      {movements.label}
+                                      {movement.label}
                                     </label>
                                   </div>
                                 </li>
@@ -1563,7 +1563,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                             <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-1 gap-1 ">
                               {frames.map((frame, index) => (
                                 <li
-                                  key={index}
+                                  key={frame.code ?? frame.label ?? `frame-${index}`}
                                   onClick={() => {
                                     selectAvatarForm.setValue(
                                       "frame",
@@ -1594,7 +1594,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-5 gap-1 ">
                           {colors.map((color, index) => (
                             <li
-                              key={index}
+                              key={color.color ?? `color-${index}`}
                               onClick={() => {
                                 setBackgroundColor(color.color);
                               }}
@@ -1632,7 +1632,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         <label className="label">Background Image</label>
                         <div className="grid grid-cols-2 gap-2 w-full text-sm font-medium border-gray-200 h-96 overflow-auto scrolls">
                           {Background_Images.map((data, index) => (
-                            <div key={index} className="p-2">
+                            <div key={data.image?.src ?? `bg-${index}`} className="p-2">
                               <div
                                 className={`relative w-full h-48 
                                                             ${

@@ -23,8 +23,7 @@ export async function GET() {
         },
       }
     );
-  } catch (error) {
-    console.error("Error fetching video IDs:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch video IDs" },
       { status: 500 }

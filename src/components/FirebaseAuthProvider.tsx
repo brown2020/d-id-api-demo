@@ -4,7 +4,7 @@ import { auth } from "../firebase/firebaseClient";
 import { useAuthStore } from "../zustand/useAuthStore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState , useMemo} from "react";
 import { Timestamp, serverTimestamp } from "firebase/firestore";
 import { usePathname } from "next/navigation";
 import { isProtectedPathname } from "@/libs/auth-constants";
@@ -83,8 +83,10 @@ export function FirebaseAuthProvider({
     };
   }, [setAuthDetails, clearAuthDetails, router, isProtectedRoute]);
 
+  const value = useMemo(() => ({ user, loading }), [user, loading]);
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -62,8 +62,7 @@ export async function createDIDAvatarProfile(
       status: true,
       avatar,
     };
-  } catch (error) {
-    console.error("Error creating avatar profile:", error);
+  } catch {
     return {
       status: false,
       error: "An unexpected error occurred while creating your avatar.",

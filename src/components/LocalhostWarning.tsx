@@ -1,32 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface LocalhostWarningProps {
   onUseFallback: () => void;
 }
 
-function getEnvironmentInfo() {
-  if (typeof window === "undefined") {
-    return { isLocalhost: false, isNgrok: false, isVercel: false, origin: "" };
-  }
-  const origin = window.location.origin;
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
-  const isNgrok = origin.includes("ngrok");
-  const isVercel = origin.includes("vercel.app");
-  return { isLocalhost, isNgrok, isVercel, origin };
-}
-
 export default function LocalhostWarning({
   onUseFallback,
 }: LocalhostWarningProps) {
-  const [environmentInfo] = useState(getEnvironmentInfo);
-  const [show, setShow] = useState(() => {
-    const { isLocalhost, isNgrok, isVercel } = environmentInfo;
-    return isLocalhost || (!isNgrok && !isVercel);
+  const [show, setShow] = useState(false);
+  const [environmentInfo, setEnvironmentInfo] = useState({
+    isLocalhost: false,
+    isNgrok: false,
+    isVercel: false,
+    origin: "",
   });
+
+  useEffect(() => {
+    const origin = window.location.origin;
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+    const isNgrok = origin.includes("ngrok");
+    const isVercel = origin.includes("vercel.app");
+    setEnvironmentInfo({ isLocalhost, isNgrok, isVercel, origin });
+    setShow(isLocalhost || (!isNgrok && !isVercel));
+  }, []);
 
   if (!show) return null;
 
@@ -48,7 +48,7 @@ export default function LocalhostWarning({
           </svg>
         </div>
         <div className="ml-3">
-          <p className="text-sm text-orange-700">
+          <div className="text-sm text-orange-700">
             <strong>Image Accessibility Warning:</strong>{" "}
             {environmentInfo.isLocalhost
               ? "You're using localhost, but the D-ID API requires a publicly accessible URL for images."
@@ -84,6 +84,7 @@ export default function LocalhostWarning({
               )}
               <li>
                 <button
+                  type="button"
                   onClick={onUseFallback}
                   className="text-blue-600 underline hover:text-blue-800 font-medium"
                 >
@@ -117,7 +118,7 @@ export default function LocalhostWarning({
                 Run Diagnostics
               </Link>
             </div>
-          </p>
+          </div>
         </div>
         <div className="ml-auto pl-3">
           <div className="-mx-1.5 -my-1.5">

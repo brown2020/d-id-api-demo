@@ -96,42 +96,52 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
     };
 
     useEffect(() => {
-        if (canvas) {
-            canvas.on('selection:created', (event) => {
-                setSelectedObject(event.selected[0]);
-                setFontSize((event.selected[0] as fabric.IText).fontSize ? (event.selected[0] as fabric.IText).fontSize : 16);
-                setColor((event.selected[0] as fabric.IText).fill?.toString() || "#000000");
-                setSelectedFont((event.selected[0] as fabric.IText).fontFamily || '');
-                setTextStyle({
-                    bold: (event.selected[0] as fabric.IText).fontWeight === 'bold',
-                    italic: (event.selected[0] as fabric.IText).fontStyle === 'italic',
-                    underline: (event.selected[0] as fabric.IText).underline || false,
-                    strikethrough: (event.selected[0] as fabric.IText).linethrough || false,
-                });
-            });
+        if (!canvas) return;
 
-            canvas.on('selection:updated', (event) => {
-                setSelectedObject(event.selected[0]);
-                setFontSize((event.selected[0] as fabric.IText).fontSize ? (event.selected[0] as fabric.IText).fontSize : 16);
-                setColor((event.selected[0] as fabric.IText).fill?.toString() || "#000000");
-                setSelectedFont((event.selected[0] as fabric.IText).fontFamily || '');
-                setTextStyle({
-                    bold: (event.selected[0] as fabric.IText).fontWeight === 'bold',
-                    italic: (event.selected[0] as fabric.IText).fontStyle === 'italic',
-                    underline: (event.selected[0] as fabric.IText).underline || false,
-                    strikethrough: (event.selected[0] as fabric.IText).linethrough || false,
-                });
+        const onCreated = (event: { selected?: fabric.FabricObject[] }) => {
+            const obj = event.selected?.[0];
+            if (!obj) return;
+            setSelectedObject(obj);
+            setFontSize((obj as fabric.IText).fontSize ? (obj as fabric.IText).fontSize : 16);
+            setColor((obj as fabric.IText).fill?.toString() || "#000000");
+            setSelectedFont((obj as fabric.IText).fontFamily || '');
+            setTextStyle({
+                bold: (obj as fabric.IText).fontWeight === 'bold',
+                italic: (obj as fabric.IText).fontStyle === 'italic',
+                underline: (obj as fabric.IText).underline || false,
+                strikethrough: (obj as fabric.IText).linethrough || false,
             });
+        };
 
-            canvas.on('selection:cleared', () => {
-                setSelectedObject(null);
-                clearSettings();
-            });
+        const onUpdated = onCreated;
 
-            canvas.on('object:modified', (event) => { setSelectedObject(event.target) });
-            canvas.on('object:scaling', (event) => { handleObjectSelection(event.target) });
-            canvas.renderAll();
-        }
+        const onCleared = () => {
+            setSelectedObject(null);
+            clearSettings();
+        };
+
+        const onModified = (event: { target?: fabric.FabricObject }) => {
+            if (event.target) setSelectedObject(event.target);
+        };
+
+        const onScaling = (event: { target?: fabric.FabricObject }) => {
+            if (event.target) handleObjectSelection(event.target);
+        };
+
+        canvas.on('selection:created', onCreated);
+        canvas.on('selection:updated', onUpdated);
+        canvas.on('selection:cleared', onCleared);
+        canvas.on('object:modified', onModified);
+        canvas.on('object:scaling', onScaling);
+        canvas.renderAll();
+
+        return () => {
+            canvas.off('selection:created', onCreated);
+            canvas.off('selection:updated', onUpdated);
+            canvas.off('selection:cleared', onCleared);
+            canvas.off('object:modified', onModified);
+            canvas.off('object:scaling', onScaling);
+        };
     }, [canvas]);
 
     const textAlignOptions: TextAlignConfig = {
@@ -326,8 +336,8 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                             onChange={handleFontFamilyChange}
                         >
                             <option value="">Select a font</option>
-                            {fontFamilies.map((font, index) => (
-                                <option key={index} value={font} style={{ fontFamily: font }}>
+                            {fontFamilies.map((font) => (
+                                <option key={font} value={font} style={{ fontFamily: font }}>
                                     {font}
                                 </option>
                             ))}

@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
@@ -23,13 +23,11 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   // const [isDirty, setIsDirty] = useState(false);
   // const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uid = useAuthStore((state) => state.uid);
-  const [isLocalhost] = useState(() => {
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      return hostname === "localhost" || hostname === "127.0.0.1";
-    }
-    return false;
-  });
+  const [isLocalhost, setIsLocalhost] = useState(false);
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    setIsLocalhost(hostname === "localhost" || hostname === "127.0.0.1");
+  }, []);
 
   const toggleFavorite = async () => {
     toast.promise(
@@ -116,7 +114,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   };
 
   return (
-    <article className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-all hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
+    <article className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-colors hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
       {renderAvatar()}
 
       <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>

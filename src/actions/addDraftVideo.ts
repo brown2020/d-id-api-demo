@@ -1,7 +1,7 @@
 "use server";
 
 import { CanvasObject } from "../types/did";
-import { protect } from "./auth";
+import { requireAuth } from "./auth";
 import { VIDEO_COLLECTION } from "../libs/constants";
 import { adminDb } from "../firebase/firebaseAdmin";
 
@@ -14,9 +14,8 @@ export async function addDraftVideo(
   },
   avatar_id: string
 ) {
+  const userId = await requireAuth();
   try {
-    // Get user ID from the auth check
-    const userId = await protect();
 
     const id = `new-video-${Date.now()}`;
 
@@ -43,7 +42,6 @@ export async function addDraftVideo(
       id: id,
     };
   } catch (error) {
-    console.error("Error adding draft video:", error);
     return {
       status: false,
       message:

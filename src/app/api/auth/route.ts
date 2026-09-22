@@ -32,8 +32,7 @@ export async function POST(request: NextRequest) {
     cookieStore.set(options);
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error("Error creating session:", error);
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -53,8 +52,7 @@ export async function DELETE() {
     });
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error("Error signing out:", error);
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

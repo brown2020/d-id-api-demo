@@ -13,7 +13,7 @@ class AuthError extends Error {
 }
 
 // Function to protect server actions - replacement for Clerk's auth.protect()
-export async function protect() {
+export async function requireAuth() {
   const cookieStore = await cookies();
   const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
@@ -30,11 +30,12 @@ export async function protect() {
     );
 
     return decodedClaims.uid;
-  } catch (error) {
-    console.error("Error verifying session:", error);
+  } catch {
     throw new AuthError("Invalid or expired session");
   }
 }
+
+export const protect = requireAuth;
 
 // Function to get the current user from the session
 export async function getCurrentUser() {
@@ -58,8 +59,7 @@ export async function getCurrentUser() {
       displayName: user.displayName,
       photoURL: user.photoURL,
     };
-  } catch (error) {
-    console.error("Error verifying session:", error);
+  } catch {
     return null;
   }
 }

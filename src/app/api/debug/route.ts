@@ -24,7 +24,6 @@ export async function GET(req: Request) {
 
     return NextResponse.json(info, { status: 200 });
   } catch (error) {
-    console.error("Debug error:", error);
     return NextResponse.json(
       { error: "Debug error", details: String(error) },
       { status: 500 }

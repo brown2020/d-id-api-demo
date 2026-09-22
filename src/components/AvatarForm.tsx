@@ -432,7 +432,7 @@ export default function AvatarForm({
 
   return (
     <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-      <div className="relative transform px-4 pb-4 pt-5 sm:p-4 sm:pb-4 rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
+      <div className="relative transform px-4 pb-4 pt-5 sm:p-4 sm:pb-4 rounded-lg bg-white text-left shadow-xl transition-colors sm:my-8 sm:w-full sm:max-w-xl">
         <div className="grid grid-cols-3">
           <div className="relative">
             <div className="relative h-full w-full bg-white rounded-md border border-dashed border-gray-400">

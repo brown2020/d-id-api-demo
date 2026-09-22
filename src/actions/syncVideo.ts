@@ -3,6 +3,7 @@
 import { DIDVideoStatus } from "../types/did";
 import { VIDEO_COLLECTION, NOTIFICATION_COLLECTION } from "../libs/constants";
 import { adminDb } from "../firebase/firebaseAdmin";
+import { requireAuth } from "./auth";
 import { Timestamp } from "firebase-admin/firestore";
 
 interface SyncVideoParams {
@@ -24,6 +25,7 @@ interface VideoUpdateData {
 }
 
 export async function syncVideo(params: SyncVideoParams) {
+  await requireAuth();
   try {
     const {
       video_id,
@@ -66,8 +68,7 @@ export async function syncVideo(params: SyncVideoParams) {
     });
 
     return { success: true, video_url };
-  } catch (error) {
-    console.error("Error syncing video:", error);
+  } catch {
     return { error: "Failed to sync video" };
   }
 }

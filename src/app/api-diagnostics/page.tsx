@@ -125,8 +125,8 @@ export default function ApiDiagnosticsPage() {
 
           <h2 className="text-xl font-bold mb-4">Recommendations</h2>
           <ul className="list-disc pl-5 mb-6">
-            {diagnostics.recommendations.map((rec: string, i: number) => (
-              <li key={i} className="mb-2">
+            {diagnostics.recommendations.map((rec: string) => (
+              <li key={rec} className="mb-2">
                 {rec}
               </li>
             ))}

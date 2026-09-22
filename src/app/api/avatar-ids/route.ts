@@ -15,8 +15,7 @@ export async function GET() {
     const avatarIds = snapshot.docs.map((doc) => doc.id);
 
     return NextResponse.json({ avatarIds }, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching avatar IDs:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch avatar IDs" },
       { status: 500 }
