@@ -253,9 +253,9 @@ export default function AvatarForm({
                   {create ? "Create" : "Edit"} Avatar
                 </h3>
                 <div className="w-full mt-4 mb-5">
-                  <label className="block mb-2 text-sm text-slate-600">
+                  <p className="block mb-2 text-sm text-slate-600" id="avatar-form-loading">
                     Loading...
-                  </label>
+                  </p>
                   <div className="flex items-center space-x-2 text-slate-500">
                     <div className="w-4 h-4 rounded-full border-2 border-slate-300 border-t-slate-500 animate-spin"></div>
                     <span>Loading form data...</span>
@@ -281,7 +281,7 @@ export default function AvatarForm({
                 {create ? "Create" : "Edit"} Avatar
               </h3>
               <div className="w-full mt-4 mb-5">
-                <label className="block mb-2 text-sm text-slate-600">
+                <label htmlFor="avatar-name" className="block mb-2 text-sm text-slate-600">
                   Avatar Name
                 </label>
                 <Controller
@@ -296,6 +296,7 @@ export default function AvatarForm({
                   render={({ field }) => (
                     <input
                       {...field}
+                      id="avatar-name"
                       value={field.value || ""}
                       className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-hidden focus:border-slate-400 hover:border-slate-300 shadow-xs focus:shadow-sm"
                       placeholder="Type name..."
@@ -313,7 +314,7 @@ export default function AvatarForm({
               </div>
 
               <div className="w-full mt-4 mb-5">
-                <label className="block mb-2 text-sm text-slate-600">
+                <label htmlFor="avatar-voice" className="block mb-2 text-sm text-slate-600">
                   Audio
                 </label>
                 <Controller
@@ -451,7 +452,7 @@ export default function AvatarForm({
                     className="absolute inset-0 h-full w-full object-cover"
                   />
                 ) : null}
-                <button
+                <button type="button"
                   onClick={() => {
                     if (fileInputRef.current) fileInputRef.current.click();
                   }}

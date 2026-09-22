@@ -136,7 +136,7 @@ export const FirebaseAuth = () => {
 
   if (user) {
     return (
-      <button
+      <button type="button"
         onClick={handleSignOut}
         className="text-white bg-gray-600 h-full px-4 py-2 rounded-lg flex items-center justify-center"
         disabled={loading}
@@ -147,7 +147,7 @@ export const FirebaseAuth = () => {
   }
 
   return (
-    <button
+    <button type="button"
       onClick={handleSignIn}
       className="text-white bg-blue-500 h-full px-4 py-2 rounded-lg flex items-center justify-center"
       disabled={loading}

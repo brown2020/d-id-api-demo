@@ -180,7 +180,7 @@ export default function NgrokSetupGuide() {
                   placeholder="https://your-tunnel.ngrok-free.app"
                   className="flex-1 p-2 border rounded-sm"
                 />
-                <button
+                <button type="button"
                   onClick={handleSaveNgrokUrl}
                   className={`px-4 py-2 rounded ${
                     saved

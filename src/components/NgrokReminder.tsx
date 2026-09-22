@@ -61,7 +61,7 @@ export default function NgrokReminder() {
         </div>
         <div className="ml-auto pl-3">
           <div className="-mx-1.5 -my-1.5">
-            <button
+            <button type="button"
               onClick={() => setShow(false)}
               className="inline-flex rounded-md p-1.5 text-amber-500 hover:bg-amber-200 focus:outline-hidden"
             >

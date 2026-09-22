@@ -121,7 +121,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
       <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">
         {avatar?.talking_photo_name}
       </h3>
-      <button
+      <button type="button"
         onClick={toggleFavorite}
         className="transition duration-300 absolute top-3 left-3 p-2 rounded-full"
       >
@@ -167,7 +167,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
         )}
       </button>
       {avatar?.type == AVATAR_TYPE_PERSONAL ? (
-        <button
+        <button type="button"
           onClick={() => {
             if (edit) edit();
           }}

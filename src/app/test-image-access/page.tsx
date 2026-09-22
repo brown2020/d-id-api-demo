@@ -184,7 +184,7 @@ export default function TestImageAccess() {
         <>
           <div className="mb-6">
             <p>Found {avatars.length} avatars in database</p>
-            <button
+            <button type="button"
               onClick={testImageAccess}
               disabled={testInProgress}
               className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"

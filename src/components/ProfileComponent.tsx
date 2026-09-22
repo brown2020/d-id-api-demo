@@ -139,7 +139,7 @@ export default function ProfileComponent() {
             placeholder="Enter your ElevenLabs API Key"
           />
         </div>
-        <button
+        <button type="button"
           onClick={handleApiKeyChange}
           disabled={
             didApiKey === profile.did_api_key &&

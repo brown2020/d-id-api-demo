@@ -13,39 +13,51 @@ import backgroundImage12 from "@/assets/images/background/12.jpeg";
 
 export const Background_Images = [
     {
+        id: "bg-01",
         image: backgroundImage1
     },
     {
+        id: "bg-02",
         image: backgroundImage2
     },
     {
+        id: "bg-03",
         image: backgroundImage3
     },
     {
+        id: "bg-04",
         image: backgroundImage4
     },
     {
+        id: "bg-05",
         image: backgroundImage5
     },
     {
+        id: "bg-06",
         image: backgroundImage6
     },
     {
+        id: "bg-07",
         image: backgroundImage7
     },
     {
+        id: "bg-08",
         image: backgroundImage8
     },
     {
+        id: "bg-09",
         image: backgroundImage9
     },
     {
+        id: "bg-10",
         image: backgroundImage10
     },
     {
+        id: "bg-11",
         image: backgroundImage11
     },
     {
+        id: "bg-12",
         image: backgroundImage12
     }
 ];

@@ -1376,7 +1376,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
       <ol className="flex items-center w-full gap-4">
         {steps.map((step, index) => (
           <li key={step.code ?? step.title ?? `step-${index}`} className="flex-1 ">
-            <button
+            <button type="button"
               disabled={processing}
               onClick={() => {
                 setActiveStep(step.code);
@@ -1440,7 +1440,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                               layout="fill"
                             />
                             <div>
-                              <button
+                              <button type="button"
                                 onClick={() => {
                                   setReplaceAvatarModel(true);
                                 }}
@@ -1631,8 +1631,8 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                       <div>
                         <label className="label">Background Image</label>
                         <div className="grid grid-cols-2 gap-2 w-full text-sm font-medium border-gray-200 h-96 overflow-auto scrolls">
-                          {Background_Images.map((data, index) => (
-                            <div key={data.image?.src ?? `bg-${index}`} className="p-2">
+                          {Background_Images.map((data) => (
+                            <div key={data.id} className="p-2">
                               <div
                                 className={`relative w-full h-48 
                                                             ${
@@ -1689,7 +1689,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                 </div>
               </div>
               <div>
-                <button
+                <button type="button"
                   disabled={!stepOneCompeted}
                   onClick={() => {
                     setActiveStep("write-script");

@@ -142,7 +142,7 @@ export default function Header() {
             </p>
           </div>
           <div>
-            <button
+            <button type="button"
               onClick={() => {
                 openNotification(value);
               }}
@@ -174,7 +174,7 @@ export default function Header() {
             </Link>
             <div className="hidden sm:flex items-center">
               <div className="relative" ref={notificationRef}>
-                <button
+                <button type="button"
                   className="px-2 py-1 bg-white relative"
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                 >
@@ -230,7 +230,7 @@ export default function Header() {
               <div className="flex justify-end">
                 <div className="flex gap-3 items-center">
                   <div className="relative" ref={notificationRef}>
-                    <button
+                    <button type="button"
                       className="px-2 py-1 bg-white relative"
                       onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                     >

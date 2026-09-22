@@ -74,7 +74,7 @@ export default function BasicAuthGenerator() {
           </p>
         </div>
 
-        <button
+        <button type="button"
           onClick={generateBasicAuth}
           className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
         >
@@ -89,7 +89,7 @@ export default function BasicAuthGenerator() {
             <pre className="text-sm whitespace-pre-wrap">{result}</pre>
 
             {result.startsWith("Basic ") && (
-              <button
+              <button type="button"
                 onClick={copyToClipboard}
                 className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs py-1 px-2 rounded"
               >

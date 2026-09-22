@@ -379,19 +379,19 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             ) : (
                 <div>
                     <div className="flex flex-col gap-2">
-                        <button
+                        <button type="button"
                             className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-2xl font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             onClick={() => handleText('headline')}
                         >
                             Add a headline
                         </button>
-                        <button
+                        <button type="button"
                             className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-lg font-semibold text-neutral-800 hover:bg-neutral-300 hover:text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             onClick={() => handleText('subTitle')}
                         >
                             Add a subtitle
                         </button>
-                        <button
+                        <button type="button"
                             className="w-full text-start pl-2 rounded-md bg-neutral-200 py-2 text-sm hover:bg-neutral-300 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             onClick={() => handleText('body')}
                         >

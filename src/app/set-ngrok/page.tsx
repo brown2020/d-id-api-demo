@@ -60,7 +60,7 @@ export default function SetNgrokUrl() {
         />
       </div>
 
-      <button
+      <button type="button"
         onClick={handleSave}
         className={`px-4 py-2 rounded ${
           saved

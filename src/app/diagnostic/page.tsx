@@ -161,7 +161,7 @@ export default function DiagnosticPage() {
                   Your stored base URL doesn&apos;t match your current URL. This
                   may cause issues with image proxying.
                 </p>
-                <button
+                <button type="button"
                   onClick={() => {
                     saveNgrokUrl();
                     setEnvironment({

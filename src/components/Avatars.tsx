@@ -114,13 +114,13 @@ export default function Avatars() {
       <div className="sticky xs:h-0 max-xs:w-full top-0 bg-transparent z-10 right-0 float-end">
         <div className="flex justify-between items-center">
           <div className="flex gap-2 max-xs:justify-between w-full">
-            <button
+            <button type="button"
               onClick={() => setShowFavorites(!showFavorites)}
               className="bg-gray-200 text-gray-700 max-xs:text-sm px-3 py-2 rounded-md"
             >
               {showFavorites ? "Show All" : "Show Favorites"}
             </button>
-            <button
+            <button type="button"
               onClick={createNewTalkingPhoto}
               className="bg-green-500 text-white px-3 py-2 rounded-md hover:opacity-50"
             >

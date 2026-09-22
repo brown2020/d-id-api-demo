@@ -134,7 +134,7 @@ export default function TestVideoImageProxy() {
                   </option>
                 ))}
               </select>
-              <button
+              <button type="button"
                 onClick={testDirectFetch}
                 disabled={!selectedVideo}
                 className="bg-blue-500 text-white px-4 py-2 rounded-sm disabled:bg-gray-300"

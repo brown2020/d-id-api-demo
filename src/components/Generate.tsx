@@ -246,7 +246,7 @@ export default function Generate() {
           video generation)
         </label>
 
-        <button
+        <button type="button"
           onClick={() => window.open("/test-image-access", "_blank")}
           className="ml-3 text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
         >
@@ -267,7 +267,7 @@ export default function Generate() {
             onChange={(e) => setScript(e.target.value)}
             className="border rounded-sm p-2 resize-none"
           />
-          <button
+          <button type="button"
             onClick={handleGenerate}
             className="bg-blue-500 text-white px-4 py-2 h-10 rounded-md flex items-center justify-center"
             disabled={isGenerating}

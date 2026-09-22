@@ -34,7 +34,7 @@ export const UserProfile = () => {
 
   return (
     <div className="relative">
-      <button
+      <button type="button"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         className="flex items-center focus:outline-hidden"
       >
@@ -61,13 +61,13 @@ export const UserProfile = () => {
             <p className="font-medium">{user.displayName}</p>
             <p className="text-xs truncate">{user.email}</p>
           </div>
-          <button
+          <button type="button"
             onClick={handleProfileClick}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Profile
           </button>
-          <button
+          <button type="button"
             onClick={handleSignOut}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
