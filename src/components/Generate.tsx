@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import useProfileStore from "@/zustand/useProfileStore";
 import { retrieveDIDVideo } from "@/actions/retrieveDIDVideo";
@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { formatVideoGenerationError } from "@/libs/video-status";
 
-export default function Generate() {
+export function useGenerate() {
   const profile = useProfileStore((state) => state.profile);
   const router = useRouter();
   const [itemDetails, setItemDetails] = useState<DIDTalkingPhoto | null>(null);
@@ -31,42 +31,35 @@ export default function Generate() {
   const [useFallbackImage, setUseFallbackImage] = useState(false);
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      const selectedId = profile.selectedTalkingPhoto;
-      if (!selectedId) {
-        console.log("No selectedTalkingPhoto found.");
-        setFetchError("No avatar selected. Please select an avatar first.");
-        setLoading(false);
-        return;
-      }
+    const selectedId = profile.selectedTalkingPhoto;
+    if (!selectedId) {
+      setFetchError("No avatar selected. Please select an avatar first.");
+      setLoading(false);
+      setItemDetails(null);
+      return;
+    }
 
-      try {
-        console.log("Fetching details for selectedTalkingPhoto:", selectedId);
-        const docRef = doc(db, "didTalkingPhotos", selectedId);
-        const docSnap = await getDoc(docRef);
-
+    setLoading(true);
+    setFetchError(null);
+    const docRef = doc(db, "didTalkingPhotos", selectedId);
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as DIDTalkingPhoto; // Cast data to the correct type
-          console.log("Document found:", data);
-          setItemDetails(data);
+          setItemDetails(docSnap.data() as DIDTalkingPhoto);
           setFetchError(null);
         } else {
-          console.error("No such document found in Firestore!");
-          setFetchError(
-            "The selected avatar could not be found. Please select a different avatar."
-          );
+          setItemDetails(null);
+          setFetchError("Selected avatar not found.");
         }
-      } catch (error) {
-        console.error("Error fetching document from Firestore:", error);
-        setFetchError(
-          "There was an error loading the avatar details. Please try again later."
-        );
-      } finally {
+        setLoading(false);
+      },
+      () => {
+        setFetchError("Failed to load avatar details.");
         setLoading(false);
       }
-    };
-
-    fetchDetails();
+    );
+    return () => unsubscribe();
   }, [profile.selectedTalkingPhoto]);
 
   const handleUseFallback = () => {
@@ -323,4 +316,8 @@ export default function Generate() {
       <PreviousVideos talkingPhotoId={profile.selectedTalkingPhoto} />
     </div>
   );
+}
+
+export default function Generate() {
+  return useGenerate();
 }

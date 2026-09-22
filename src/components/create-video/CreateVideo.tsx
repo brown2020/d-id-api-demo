@@ -62,7 +62,7 @@ import SurprisedIcon from "@/assets/icons/suprised-emoji.svg";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { formatVideoGenerationError } from "@/libs/video-status";
 // import { useRouter } from "next/router";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -200,10 +200,11 @@ const schema = Yup.object().shape({
     .oneOf(frames.map((frame) => frame.code)),
 });
 
-export default function CreateVideo({ video_id }: { video_id: string | null }) {
+export function useCreateVideo({ video_id }: { video_id: string | null }) {
   const uid = useAuthStore((state) => state.uid);
   // const profile = useProfileStore((state) => state.profile);
   const router = useRouter();
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const profile = useProfileStore((state) => state.profile);
   // const routerSecond = useRouterSecond();
   const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<
@@ -305,20 +306,21 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
   const handleChangeAvatar = useCallback(
     async (avatar: DIDTalkingPhoto) => {
-      console.log("Avatar Changed", avatar);
-
       setProcessing(true);
       setSelectedAvatar(avatar);
       setReplaceAvatarModel(false);
-      let _audio = null;
-      if (avatar.voiceId) {
-        const audio = await findVoice(avatar.voiceId);
-        if (audio.status && audio.voice) {
-          _audio = audio.voice;
+      try {
+        let _audio = null;
+        if (avatar.voiceId) {
+          const audio = await findVoice(avatar.voiceId);
+          if (audio.status && audio.voice) {
+            _audio = audio.voice;
+          }
         }
+        setAudioDetail(_audio);
+      } finally {
+        setProcessing(false);
       }
-      setAudioDetail(_audio);
-      setProcessing(false);
     },
     [findVoice]
   );
@@ -335,7 +337,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
         if (!snapshot.exists()) {
           toast.error("Video not found");
-          router.replace("/videos");
+          setRedirectTo("/videos");
           return;
         } else {
           // Set avatar selected
@@ -346,7 +348,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
           );
           if (!avatar) {
             toast.error("Selected avatar not found");
-            router.replace("/videos");
+            setRedirectTo("/videos");
             return;
           } else {
             handleChangeAvatar(avatar);
@@ -849,7 +851,6 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
 
         if (response.status) {
           videoIdRef.current = response.id;
-          // router.replace(`/videos/${videoIdRef.current}/edit`, undefined, {});
         }
       }
       completedProcessesRef.current += 1;
@@ -1372,31 +1373,61 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
     );
   }, [selectedAvatar, audioDetail]);
 
-  return (
-    <div className="px-4 max-h-full h-full flex flex-col video-create">
-      <ol className="flex items-center w-full gap-4">
-        {steps.map((step, index) => (
-          <li key={step.code ?? step.title ?? `step-${index}`} className="flex-1 ">
-            <button type="button"
-              disabled={processing}
-              onClick={() => {
-                setActiveStep(step.code);
-              }}
-              className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${
-                activeStep == step.code && "active"
-              }`}
-            >
-              <span className="w-8 h-8 bg-gray-600  rounded-full flex justify-center items-center mr-3 text-sm text-white lg:w-10 lg:h-10">
-                <step.icon />
-              </span>
-              <h4 className="text-base  text-gray-600">{step.title}</h4>
-            </button>
-          </li>
-        ))}
-      </ol>
+  if (redirectTo) {
+    redirect(redirectTo);
+  }
 
-      <div className="py-4 px-1 grow overflow-hidden">
-        <div
+  return {
+    activeStep,
+    audioDetail,
+    canvas,
+    canvasContainerRef,
+    canvasRef,
+    fetchingImage,
+    handleChangeAvatar,
+    handleGenerateVideo,
+    handleImageUpload,
+    handleSetBackground,
+    handleText,
+    landscape,
+    personalTalkingPhotos,
+    processing,
+    profile,
+    replaceAvatarModel,
+    selectAvatarForm,
+    selectedAvatar,
+    setActiveStep,
+    setBackgroundColor,
+    setReplaceAvatarModel,
+    stepOneCompeted,
+    writeScriptForm
+  };
+}
+
+function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof useCreateVideo> }) {
+  const {
+  activeStep,
+  audioDetail,
+  canvas,
+  canvasContainerRef,
+  canvasRef,
+  fetchingImage,
+  handleChangeAvatar,
+  handleImageUpload,
+  handleSetBackground,
+  handleText,
+  landscape,
+  personalTalkingPhotos,
+  replaceAvatarModel,
+  selectAvatarForm,
+  selectedAvatar,
+  setActiveStep,
+  setBackgroundColor,
+  setReplaceAvatarModel,
+  stepOneCompeted
+  } = model;
+  return (
+    <div
           className={`flex w-full max-h-full h-full gap-4 overflow-auto ${
             activeStep == "select-avatar" ? "" : "hidden"
           }`}
@@ -1448,16 +1479,16 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                 className="flex hover:bg-gray-200 gap-2 absolute items-center bottom-0 right-0 bg-white p-2 rounded-md mr-2 mb-2"
                               >
                                 <Repeat2 size={22} />
-                                <label className="cursor-pointer font-medium text-sm ">
+                                <span className="cursor-pointer font-medium text-sm ">
                                   Replace
-                                </label>
+                                </span>
                               </button>
                             </div>
                           </div>
                         )}
                       </div>
                       <div>
-                        <label className="label">Audio</label>
+                        <p className="label">Audio</p>
                         {audioDetail ? (
                           <div className="flex flex-col w-full gap-4">
                             <CustomAudioOption2 data={audioDetail} />
@@ -1484,29 +1515,30 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         name="emotion"
                         render={({ field }) => (
                           <div>
-                            <label className="label">Emotions</label>
+                            <p className="label">Emotions</p>
 
                             <ul className="items-center w-full text-sm font-medium grid grid-cols-2 gap-1">
-                              {emotions.map((emotion, index) => (
-                                <li
-                                  key={emotion.code ?? emotion.label ?? `emotion-${index}`}
-                                  onClick={() => {
-                                    selectAvatarForm.setValue(
-                                      "emotion",
-                                      emotion.code
-                                    );
-                                  }}
-                                  className={`p-2 rounded-md cursor-pointer w-full ${
-                                    field.value == emotion.code
-                                      ? "bg-slate-600 text-white"
-                                      : "bg-white border text-gray-900"
-                                  }`}
-                                >
-                                  <div className="flex items-center">
-                                    <label className="w-full ms-2 text-sm font-medium cursor-pointer">
+                              {emotions.map((emotion) => (
+                                <li key={String(emotion.code)} className="w-full">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      selectAvatarForm.setValue(
+                                        "emotion",
+                                        emotion.code
+                                      );
+                                    }}
+                                    className={`p-2 rounded-md cursor-pointer w-full text-left ${
+                                      field.value == emotion.code
+                                        ? "bg-slate-600 text-white"
+                                        : "bg-white border text-gray-900"
+                                    }`}
+                                    aria-pressed={field.value == emotion.code}
+                                  >
+                                    <span className="w-full ms-2 text-sm font-medium">
                                       {emotion.label}
-                                    </label>
-                                  </div>
+                                    </span>
+                                  </button>
                                 </li>
                               ))}
                             </ul>
@@ -1521,29 +1553,30 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         }}
                         render={({ field }) => (
                           <div>
-                            <label className="label">Movements</label>
+                            <p className="label">Movements</p>
 
                             <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-2 gap-1 ">
-                              {movements.map((movement, index) => (
-                                <li
-                                  key={movement.code ?? movement.label ?? `movement-${index}`}
-                                  onClick={() => {
-                                    selectAvatarForm.setValue(
-                                      "movement",
-                                      movement.code
-                                    );
-                                  }}
-                                  className={`p-2 rounded-md cursor-pointer ${
-                                    field.value == movement.code
-                                      ? "bg-slate-600 text-white"
-                                      : "bg-white border text-gray-900"
-                                  }`}
-                                >
-                                  <div className="flex items-center">
-                                    <label className="w-full ms-2 text-sm font-medium cursor-pointer">
+                              {movements.map((movement) => (
+                                <li key={String(movement.code)}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      selectAvatarForm.setValue(
+                                        "movement",
+                                        movement.code
+                                      );
+                                    }}
+                                    className={`p-2 rounded-md cursor-pointer w-full text-left ${
+                                      field.value == movement.code
+                                        ? "bg-slate-600 text-white"
+                                        : "bg-white border text-gray-900"
+                                    }`}
+                                    aria-pressed={field.value == movement.code}
+                                  >
+                                    <span className="w-full ms-2 text-sm font-medium">
                                       {movement.label}
-                                    </label>
-                                  </div>
+                                    </span>
+                                  </button>
                                 </li>
                               ))}
                             </ul>
@@ -1559,29 +1592,30 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                         }}
                         render={({ field }) => (
                           <div>
-                            <label className="label">Frame</label>
+                            <p className="label">Frame</p>
 
                             <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-1 gap-1 ">
-                              {frames.map((frame, index) => (
-                                <li
-                                  key={frame.code ?? frame.label ?? `frame-${index}`}
-                                  onClick={() => {
-                                    selectAvatarForm.setValue(
-                                      "frame",
-                                      frame.code
-                                    );
-                                  }}
-                                  className={`p-2 rounded-md cursor-pointer ${
-                                    field.value == frame.code
-                                      ? "bg-slate-600 text-white"
-                                      : "bg-white border text-gray-900"
-                                  }`}
-                                >
-                                  <div className="flex items-center">
-                                    <label className="w-full ms-2 text-sm font-medium cursor-pointer">
+                              {frames.map((frame) => (
+                                <li key={String(frame.code)}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      selectAvatarForm.setValue(
+                                        "frame",
+                                        frame.code
+                                      );
+                                    }}
+                                    className={`p-2 rounded-md cursor-pointer w-full text-left ${
+                                      field.value == frame.code
+                                        ? "bg-slate-600 text-white"
+                                        : "bg-white border text-gray-900"
+                                    }`}
+                                    aria-pressed={field.value == frame.code}
+                                  >
+                                    <span className="w-full ms-2 text-sm font-medium">
                                       {frame.label}
-                                    </label>
-                                  </div>
+                                    </span>
+                                  </button>
                                 </li>
                               ))}
                             </ul>
@@ -1590,26 +1624,29 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                       />
 
                       <div>
-                        <label className="label">Background Color</label>
+                        <p className="label">Background Color</p>
 
                         <ul className="items-center w-full text-sm font-medium border-gray-200 grid grid-cols-5 gap-1 ">
-                          {colors.map((color, index) => (
-                            <li
-                              key={color.color ?? `color-${index}`}
-                              onClick={() => {
-                                setBackgroundColor(color.color);
-                              }}
-                              className={`p-2 rounded-md cursor-pointer`}
-                              style={{ background: color.color }}
-                            >
-                              <div className="flex items-center h-3"></div>
+                          {colors.map((color) => (
+                            <li key={String(color.color)}>
+                              <button
+                                type="button"
+                                aria-label={`Background color ${color.color}`}
+                                onClick={() => {
+                                  setBackgroundColor(color.color);
+                                }}
+                                className="p-2 rounded-md cursor-pointer w-full"
+                                style={{ background: color.color }}
+                              >
+                                <span className="flex items-center h-3" />
+                              </button>
                             </li>
                           ))}
                         </ul>
                       </div>
 
                       <div className="flex flex-col items-start space-y-2">
-                        <label className="label">My Background</label>
+                        <p className="label">My Background</p>
                         <div className="relative">
                           <input
                             type="file"
@@ -1630,7 +1667,7 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                       </div>
 
                       <div>
-                        <label className="label">Background Image</label>
+                        <p className="label">Background Image</p>
                         <div className="grid grid-cols-2 gap-2 w-full text-sm font-medium border-gray-200 h-96 overflow-auto scrolls">
                           {Background_Images.map((data) => (
                             <div key={data.id} className="p-2">
@@ -1653,26 +1690,26 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
                                                             }
                                                         `}
                               >
-                                <Image
-                                  className="rounded-md cursor-pointer object-cover"
-                                  src={data.image}
-                                  onClick={(
-                                    e: React.MouseEvent<HTMLImageElement>
-                                  ) =>
-                                    handleSetBackground(
-                                      (e.target as HTMLImageElement).src
-                                    )
-                                  }
-                                  alt="background"
-                                  layout="fill"
-                                />
+                                <button
+                                  type="button"
+                                  className="absolute inset-0 w-full h-full"
+                                  aria-label="Set background image"
+                                  onClick={() => handleSetBackground(typeof data.image === "string" ? data.image : data.image.src)}
+                                >
+                                  <Image
+                                    className="rounded-md cursor-pointer object-cover"
+                                    src={data.image}
+                                    alt="background"
+                                    layout="fill"
+                                  />
+                                </button>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="label">Add a text box</label>
+                        <p className="label">Add a text box</p>
                         <TextBox handleText={handleText} canvas={canvas} />
                       </div>
                     </div>
@@ -1706,7 +1743,25 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
           )}
         </div>
 
-        {activeStep == "write-script" ? (
+        
+  );
+}
+
+function CreateVideoWriteScriptPanel({ model }: { model: ReturnType<typeof useCreateVideo> }) {
+  const {
+  activeStep,
+  audioDetail,
+  handleGenerateVideo,
+  processing,
+  profile,
+  selectedAvatar,
+  setActiveStep,
+  stepOneCompeted,
+  writeScriptForm
+  } = model;
+  return (
+    <>
+    {activeStep == "write-script" ? (
           <div className="grow bg-gray-50 rounded-lg px-4 pt-6 pb-4 h-full flex flex-col">
             <form onSubmit={handleGenerateVideo}>
               <div>
@@ -1821,7 +1876,50 @@ export default function CreateVideo({ video_id }: { video_id: string | null }) {
         ) : (
           <Fragment />
         )}
+    </>
+  );
+}
+
+function CreateVideoLayout(model: ReturnType<typeof useCreateVideo>) {
+  const { activeStep, setActiveStep, processing } = model;
+  return (
+
+    <div className="px-4 max-h-full h-full flex flex-col video-create">
+      <ol className="flex items-center w-full gap-4">
+        {steps.map((step) => (
+          <li key={String(step.code)} className="flex-1 ">
+            <button type="button"
+              disabled={processing}
+              onClick={() => {
+                setActiveStep(step.code);
+              }}
+              className={`disabled:cursor-not-allowed flex items-center font-medium px-4 py-5 w-full create-video-step ${
+                activeStep == step.code && "active"
+              }`}
+            >
+              <span className="w-8 h-8 bg-gray-600  rounded-full flex justify-center items-center mr-3 text-sm text-white lg:w-10 lg:h-10">
+                <step.icon />
+              </span>
+              <h4 className="text-base  text-gray-600">{step.title}</h4>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <div className="py-4 px-1 grow overflow-hidden">
+        {useCreateVideoSelectAvatarPanel({ model })}
+        <CreateVideoWriteScriptPanel model={model} />
       </div>
     </div>
   );
+}
+
+function useCreateVideoView(model: ReturnType<typeof useCreateVideo>) {
+  return <CreateVideoLayout {...model} />;
+}
+
+
+export default function CreateVideo({ video_id }: { video_id: string | null }) {
+  const model = useCreateVideo({ video_id });
+  return useCreateVideoView(model);
 }

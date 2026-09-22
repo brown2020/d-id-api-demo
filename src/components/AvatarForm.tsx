@@ -29,7 +29,7 @@ import CustomAudioOption2 from "./CustomAudioOption2";
 import { createDIDAvatarProfile } from "@/actions/createDIDAvatarProfile";
 import useProfileStore from "@/zustand/useProfileStore";
 
-export default function AvatarForm({
+export function useAvatarForm({
   submit,
   create,
   avatarDetail,
@@ -102,7 +102,10 @@ export default function AvatarForm({
   });
 
   const [processing, setProcessing] = useState<boolean>(false);
-  const [avatarId, setAvatarId] = useState<string>("");
+  const [avatarIdState, setAvatarId] = useState<string>("");
+  const avatarId = create
+    ? avatarIdState
+    : avatarDetail?.talking_photo_id || avatarIdState;
   const uid = useAuthStore((state) => state.uid);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -156,57 +159,28 @@ export default function AvatarForm({
         setAvatarId(_avatarId);
       }
     } else if (avatarDetail !== null) {
-      if (avatarId !== avatarDetail.talking_photo_id) {
+      const currentId = watch("talking_photo_id");
+      if (currentId !== avatarDetail.talking_photo_id) {
         reset({
           voiceId: avatarDetail.voiceId || "",
           name: avatarDetail.talking_photo_name || "",
           preview_image_url: avatarDetail.preview_image_url || "",
           talking_photo_id: avatarDetail.talking_photo_id || "",
         });
-        setAvatarId(avatarDetail.talking_photo_id);
       }
     }
-  }, [create, avatarDetail, reset, avatarId, fetchingAudio]);
+  }, [create, avatarDetail, reset, avatarId, fetchingAudio, watch]);
 
   const voiceId = watch("voiceId") || "";
   const previewImageUrl = watch("preview_image_url") || "";
 
-  // Add these refs to prevent re-renders
-  const previousFetchingState = useRef(fetchingAudio);
-  const initialLoad = useRef(true);
-
-  // Add a state variable to store memoized options
-  const [stableOptions, setStableOptions] = useState<ElevenLabs.Voice[]>([]);
-
-  // Update our approach to voice options memoization
-  useEffect(() => {
-    // Skip the effect on first render to avoid re-render loop
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      return;
-    }
-
-    // Only update if fetchingAudio transitions from true to false
-    // This prevents re-renders during the loading process
-    if (previousFetchingState.current && !fetchingAudio) {
-      previousFetchingState.current = fetchingAudio;
-      // Update stable options once loading is complete
-      setStableOptions(options);
-    } else {
-      previousFetchingState.current = fetchingAudio;
-    }
-  }, [fetchingAudio, options]);
-
-  // Update our lookups to use stable options if available, otherwise use original options
   const voiceDetail = useMemo(() => {
-    const optionsToUse = stableOptions.length > 0 ? stableOptions : options;
-    return optionsToUse.find((audio) => audio.voiceId === voiceId);
-  }, [voiceId, options, stableOptions]);
+    return options.find((audio) => audio.voiceId === voiceId);
+  }, [voiceId, options]);
 
   const voiceValue = useMemo(() => {
-    const optionsToUse = stableOptions.length > 0 ? stableOptions : options;
-    return optionsToUse.find((option) => option.voiceId === voiceId);
-  }, [voiceId, options, stableOptions]);
+    return options.find((option) => option.voiceId === voiceId);
+  }, [voiceId, options]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -245,7 +219,7 @@ export default function AvatarForm({
   // Replace formElements memoization with more optimized version by adding a check for loading state
   const formElements = useMemo(() => {
     // During initial loading, use an empty or minimal UI to avoid re-renders
-    if (initialLoad.current && fetchingAudio) {
+    if (fetchingAudio) {
       return (
         <form>
           <div className="bg-white">
@@ -430,7 +404,6 @@ export default function AvatarForm({
     voiceDetail,
     setValue,
     errorMessage,
-    initialLoad,
   ]);
 
   return (
@@ -455,6 +428,7 @@ export default function AvatarForm({
                   />
                 ) : null}
                 <button type="button"
+                  aria-label="Upload avatar image"
                   onClick={() => {
                     if (fileInputRef.current) fileInputRef.current.click();
                   }}
@@ -503,4 +477,8 @@ export default function AvatarForm({
       </div>
     </div>
   );
+}
+
+export default function AvatarForm(props: Parameters<typeof useAvatarForm>[0]) {
+  return useAvatarForm(props);
 }

@@ -14,31 +14,33 @@ const AvatarGallery: React.FC<AvatarGalleryProps> = ({
 }) => {
   return (
     <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
-      {personalTalkingPhotos.map((avatar, index) => (
-        <article
-          key={avatar.talking_photo_id ?? `avatar-${index}`}
-          onClick={() => handleChangeAvatar(avatar)}
-          className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-colors cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full"
-        >
-          {avatar.preview_image_url &&
-          avatar.preview_image_url.trim() !== "" ? (
-            <Image
-              src={avatar.preview_image_url}
-              alt={avatar.talking_photo_name}
-              width={512}
-              height={512}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
-              <span className="text-gray-400">No image</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>
-          <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">
-            {avatar.talking_photo_name}
-          </h3>
-        </article>
+      {personalTalkingPhotos.map((avatar) => (
+        <li key={avatar.talking_photo_id} className="list-none">
+          <button
+            type="button"
+            onClick={() => handleChangeAvatar(avatar)}
+            className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-colors cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full text-left"
+          >
+            {avatar.preview_image_url &&
+            avatar.preview_image_url.trim() !== "" ? (
+              <Image
+                src={avatar.preview_image_url}
+                alt={avatar.talking_photo_name}
+                width={512}
+                height={512}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-400">No image</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>
+            <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">
+              {avatar.talking_photo_name}
+            </h3>
+          </button>
+        </li>
       ))}
     </ul>
   );

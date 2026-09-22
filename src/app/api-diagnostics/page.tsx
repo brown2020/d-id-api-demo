@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useProfileStore from "../../zustand/useProfileStore";
 import Link from "next/link";
 
@@ -35,12 +35,12 @@ interface Diagnostics {
 
 export default function ApiDiagnosticsPage() {
   const [diagnostics, setDiagnostics] = useState<Diagnostics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const profile = useProfileStore((state) => state.profile);
 
-  useEffect(() => {
-    async function fetchDiagnostics() {
+  const loadDiagnostics = () => {
+    void (async () => {
       try {
         setLoading(true);
         const response = await fetch("/api/key-diagnostics");
@@ -57,14 +57,13 @@ export default function ApiDiagnosticsPage() {
       } finally {
         setLoading(false);
       }
-    }
-
-    fetchDiagnostics();
-  }, []);
+    })();
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-8">
       <h1 className="text-3xl font-bold mb-6">API Key Diagnostics</h1>
+      <button type="button" className="mb-4 px-3 py-2 bg-blue-600 text-white rounded" onClick={loadDiagnostics}>Run diagnostics</button>
 
       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
         <h2 className="font-semibold">Your Profile API Keys</h2>

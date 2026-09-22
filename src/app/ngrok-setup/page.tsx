@@ -8,7 +8,7 @@ import Image from "next/image";
 
 export default function NgrokSetupGuide() {
   const [ngrokUrl, setNgrokUrl] = useState("");
-  const [currentUrl, setCurrentUrl] = useState(getApiBaseUrl());
+  const [currentUrl, setCurrentUrl] = useState(() => getApiBaseUrl());
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 

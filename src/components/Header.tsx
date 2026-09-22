@@ -23,25 +23,23 @@ import { useAuth } from "./FirebaseAuthProvider";
 import { FirebaseAuth } from "./FirebaseAuth";
 import { UserProfile } from "./UserProfile";
 
-const relativeTimeFormatter = new Intl.RelativeTimeFormat(undefined, {
-  numeric: "auto",
-});
-
 function formatRelativeUnix(unixSeconds: string | number): string {
   const then = Number(unixSeconds) * 1000;
-  const diffSec = Math.round((then - Date.now()) / 1000);
+  const diffSec = Math.round((Date.now() - then) / 1000);
   const abs = Math.abs(diffSec);
-  if (abs < 60) return relativeTimeFormatter.format(diffSec, "second");
-  const diffMin = Math.round(diffSec / 60);
-  if (Math.abs(diffMin) < 60) return relativeTimeFormatter.format(diffMin, "minute");
+  const ago = diffSec >= 0;
+  const suffix = ago ? "ago" : "from now";
+  if (abs < 60) return `${abs}s ${suffix}`;
+  const diffMin = Math.round(abs / 60);
+  if (diffMin < 60) return `${diffMin}m ${suffix}`;
   const diffHr = Math.round(diffMin / 60);
-  if (Math.abs(diffHr) < 24) return relativeTimeFormatter.format(diffHr, "hour");
+  if (diffHr < 24) return `${diffHr}h ${suffix}`;
   const diffDay = Math.round(diffHr / 24);
-  return relativeTimeFormatter.format(diffDay, "day");
+  return `${diffDay}d ${suffix}`;
 }
 
 
-export default function Header() {
+export function useHeader() {
   const { user } = useAuth();
   const uid = useAuthStore((state) => state.uid);
   const [notifications, setNotifications] = useState<NotificationDetail[]>([]);
@@ -128,13 +126,13 @@ export default function Header() {
   );
 
   const notificationList = useMemo(() => {
-    return notifications.map((value, index) => {
+    return notifications.map((value) => {
       const message =
         value.type in notificationMessage
           ? notificationMessage[value.type]()
           : "Message";
       return (
-        <div key={value.id ?? `notification-${index}`} className="py-1 px-2 flex gap-2">
+        <div key={value.id} className="py-1 px-2 flex gap-2">
           <div className="">
             <p className="text-lg font-bold">{message}</p>
             <p className="text-sm text-gray-500">
@@ -156,13 +154,39 @@ export default function Header() {
     });
   }, [notifications, notificationMessage, openNotification]);
 
+  return {
+    user,
+    isMenuOpen,
+    isNotificationOpen,
+    notificationList,
+    notificationRef,
+    notifications,
+    processing,
+    setIsMenuOpen,
+    setIsNotificationOpen
+  };
+}
+
+function HeaderGuestBar() {
   return (
-    <>
-      {!user ? (
         <div className="flex items-center justify-end px-4 py-3 border-b shadow-md z-30">
           <FirebaseAuth />
         </div>
-      ) : (
+      
+  );
+}
+
+function HeaderUserBar({
+  isMenuOpen,
+  isNotificationOpen,
+  notificationList,
+  notificationRef,
+  notifications,
+  processing,
+  setIsMenuOpen,
+  setIsNotificationOpen,
+}: Omit<ReturnType<typeof useHeader>, "user">) {
+  return (
         <>
           <div className="flex items-center justify-between px-4 py-3 border-b shadow-md z-999">
             <Link href="/">
@@ -304,7 +328,29 @@ export default function Header() {
             </div>
           </div>
         </>
-      )}
-    </>
+      
   );
+}
+
+function HeaderView(model: ReturnType<typeof useHeader>) {
+  if (!model.user) {
+    return <HeaderGuestBar />;
+  }
+  return (
+    <HeaderUserBar
+      isMenuOpen={model.isMenuOpen}
+      isNotificationOpen={model.isNotificationOpen}
+      notificationList={model.notificationList}
+      notificationRef={model.notificationRef}
+      notifications={model.notifications}
+      processing={model.processing}
+      setIsMenuOpen={model.setIsMenuOpen}
+      setIsNotificationOpen={model.setIsNotificationOpen}
+    />
+  );
+}
+
+
+export default function Header() {
+  return <HeaderView {...useHeader()} />;
 }

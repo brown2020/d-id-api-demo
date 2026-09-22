@@ -13,7 +13,7 @@ import { notFound, useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
-export default function VideoDetail() {
+export function useVideoDetail() {
   const params = useParams();
   const uid = useAuthStore((state) => state.uid);
   const profile = useProfileStore((state) => state.profile);
@@ -106,13 +106,59 @@ export default function VideoDetail() {
     (isVideoProcessing(videoData) || isPolling) &&
     videoData.d_id_status !== "error";
 
-  return (
-    <div className="p-4 bg-white min-h-[60vh]">
-      {loading ? (
+  return {
+    isPolling,
+    loading,
+    showProcessingState,
+    videoData
+  };
+}
+
+function VideoDetailView({
+  isPolling,
+  loading,
+  showProcessingState,
+  videoData
+}: ReturnType<typeof useVideoDetail>) {
+  if (loading) {
+    return (
+      <div className="p-4 bg-white min-h-[60vh]">
         <p className="text-2xl font-bold animate-pulse" role="status">
           Fetching video...
         </p>
-      ) : videoData ? (
+      </div>
+    );
+  }
+  if (!videoData) {
+    return (
+      <div className="p-4 bg-white min-h-[60vh]">
+        <p className="text-2xl font-bold" role="status">
+          Video not found.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <VideoDetailReady
+      isPolling={isPolling}
+      showProcessingState={showProcessingState}
+      videoData={videoData}
+    />
+  );
+}
+
+function VideoDetailReady({
+  isPolling,
+  showProcessingState,
+  videoData,
+}: {
+  isPolling: boolean;
+  showProcessingState: boolean;
+  videoData: NonNullable<ReturnType<typeof useVideoDetail>["videoData"]>;
+}) {
+  return (
+    <div className="p-4 bg-white min-h-[60vh]">
+
         <div className="flex flex-col gap-4 h-full">
           <h1 className="text-2xl font-bold">
             {videoData.title ?? "Untitled Video"}
@@ -182,11 +228,11 @@ export default function VideoDetail() {
             </p>
           ) : null}
         </div>
-      ) : (
-        <p className="text-lg font-semibold text-gray-600" role="status">
-          Video is not available
-        </p>
-      )}
+      
     </div>
   );
+}
+
+export default function VideoDetail() {
+  return <VideoDetailView {...useVideoDetail()} />;
 }

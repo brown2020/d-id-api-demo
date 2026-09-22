@@ -21,17 +21,23 @@ export default function PaymentCheckoutPage({ amount }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function initializePayment() {
-      try {
-        const secret = await createPaymentIntent(convertToSubcurrency(amount));
-        if (secret) setClientSecret(secret);
-      } catch (error) {
-        console.error("Payment initialization error:", error); // Log the error
-        setErrorMessage("Failed to initialize payment. Please try again.");
-      }
-    }
-
-    initializePayment();
+    let cancelled = false;
+    createPaymentIntent(convertToSubcurrency(amount))
+      .then((secret) => {
+        if (!cancelled && secret) {
+          queueMicrotask(() => setClientSecret(secret));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          queueMicrotask(() =>
+            setErrorMessage("Failed to initialize payment. Please try again.")
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [amount]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -44,11 +50,9 @@ export default function PaymentCheckoutPage({ amount }: Props) {
     setLoading(true);
 
     try {
-      // Confirm the Payment
       const { error: submitError } = await elements.submit();
       if (submitError) {
         setErrorMessage(submitError.message || "Payment failed");
-        setLoading(false);
         return;
       }
 
@@ -61,22 +65,13 @@ export default function PaymentCheckoutPage({ amount }: Props) {
       });
 
       if (confirmError) {
-        // This point is only reached if there's an immediate error when
-        // confirming the payment. Show the error to the user
-        // For example, the card was declined
         setErrorMessage(confirmError.message || "Payment failed");
-        console.log("Payment failed:", confirmError.message);
-      } else {
-        console.log("Payment successful!!!!!!!!!");
-        // The payment UI automatically closes with a success animation
-        // User is redirected to the return_url
       }
-    } catch (error) {
+    } catch {
       setErrorMessage("Payment validation failed. Please try again.");
-      console.error("Payment validation error:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (!clientSecret || !stripe || !elements) {

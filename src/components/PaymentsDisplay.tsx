@@ -4,11 +4,6 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { usePaymentsStore } from "@/zustand/usePaymentsStore";
 import { useEffect, useMemo } from "react";
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
 export default function PaymentsDisplay() {
   const uid = useAuthStore((state) => state.uid);
   const { payments, paymentsLoading, paymentsError, fetchPayments } =
@@ -27,7 +22,7 @@ export default function PaymentsDisplay() {
         amount: payment.amount / 100,
         status: payment.status,
         createdLabel: payment.createdAt
-          ? dateFormatter.format(payment.createdAt.toDate())
+          ? payment.createdAt.toDate().toISOString()
           : "N/A",
       })),
     [payments]

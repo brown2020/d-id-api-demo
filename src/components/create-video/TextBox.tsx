@@ -54,7 +54,7 @@ interface TextBox {
     alt: string;
   }
 
-export default function TextBox({ handleText, canvas }: TextBoxProps) {
+export function useTextBox({ handleText, canvas }: TextBoxProps) {
     const [color, setColor] = useState("#000000");
     const [fontSize, setFontSize] = useState(16);
     const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
@@ -304,7 +304,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
             {selectedObject && selectedObject.type === 'i-text' ? (
                 <div className="flex flex-col gap-4 p-2 border rounded-md mb-2">
                     <div className="flex items-center justify-between gap-2">
-                        <p className="block text-sm font-medium text-gray-500 mb-2">Font Size</p>
+                        <label htmlFor="font-size" className="block text-sm font-medium text-gray-500 mb-2">Font Size</label>
                         <select
                             id="font-size"
                             value={fontSize}
@@ -319,7 +319,7 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                         </select>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                        <p className="block text-sm font-medium text-gray-500 mb-2">Text Color</p>
+                        <label htmlFor="color-picker" className="block text-sm font-medium text-gray-500 mb-2">Text Color</label>
                         <input
                             id="color-picker"
                             type="color"
@@ -329,8 +329,9 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                         />
                     </div>
                     <div className="w-full max-h-36">
-                        <label className="block text-sm font-medium text-gray-500 mb-2">Select Font Family</label>
+                        <label htmlFor="font-family" className="block text-sm font-medium text-gray-500 mb-2">Select Font Family</label>
                         <select
+                            id="font-family"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                             value={selectedFont}
                             onChange={handleFontFamilyChange}
@@ -344,34 +345,38 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-2">
+                        <p className="block text-sm font-medium text-gray-500 mb-2">
                             {textAlignOptions.label}
-                        </label>
+                        </p>
                         <div className="flex gap-5">
                             {textStyleConfig.options.map((option) => (
-                                <div
+                                <button
+                                    type="button"
                                     key={option.value}
+                                    aria-label={option.value}
                                     className={`cursor-pointer border rounded-md p-1 ${option.styles(textStyle)}`}
                                     onClick={() => handleTextStyleToggle(option.value)}
                                 >
                                     <option.icon size={24} />
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-500 mb-2">
+                        <p className="block text-sm font-medium text-gray-500 mb-2">
                             {textAlignOptions.label}
-                        </label>
+                        </p>
                         <div className="flex gap-5">
                             {textAlignOptions.options.map((option) => (
-                                <div
+                                <button
+                                    type="button"
                                     key={option.value}
+                                    aria-label={option.value}
                                     className={`cursor-pointer border rounded-md p-1 ${option.styles(textAlign)}`}
                                     onClick={() => handleTextAlign(option.value)}
                                 >
                                     <option.icon size={24} />
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -400,17 +405,23 @@ export default function TextBox({ handleText, canvas }: TextBoxProps) {
                     </div>
                     <div className='mt-5 grid grid-cols-3 gap-2 justify-items-center'>
                         {textBoxes.map((textBox) => (
-                            <div
+                            <button
+                                type="button"
                                 key={textBox.id}
                                 onClick={() => textBox.onClick(canvas)}
                                 className='border bg-white rounded-md cursor-pointer'
+                                aria-label={textBox.alt}
                             >
                                 <Image src={textBox.src} alt={textBox.alt} height={100} width={100}/>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </div>
             )}
         </div>
     );
+}
+
+export default function TextBox(props: TextBoxProps) {
+  return useTextBox(props);
 }

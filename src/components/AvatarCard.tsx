@@ -122,6 +122,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
         {avatar?.talking_photo_name}
       </h3>
       <button type="button"
+        aria-label="Toggle favorite"
         onClick={toggleFavorite}
         className="transition duration-300 absolute top-3 left-3 p-2 rounded-full"
       >
@@ -168,6 +169,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
       </button>
       {avatar?.type == AVATAR_TYPE_PERSONAL ? (
         <button type="button"
+          aria-label="Edit avatar"
           onClick={() => {
             if (edit) edit();
           }}

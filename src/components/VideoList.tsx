@@ -1,5 +1,6 @@
-'use client'
+"use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react"
 import { db } from "@/firebase/firebaseClient"
 import { collection, DocumentData, onSnapshot, query, where } from 'firebase/firestore';
@@ -8,7 +9,6 @@ import PlayVideoIcon from '@/assets/images/play-video-1.png'
 import Image from "next/image";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { AVATAR_TYPE_PERSONAL } from "@/libs/constants";
-import { useRouter } from "next/navigation";
 
 export default function VideosPage() {
 
@@ -16,8 +16,6 @@ export default function VideosPage() {
     const [videoList, setVideoList] = useState<DocumentData[]>([]);
 
     const uid = useAuthStore((state) => state.uid);
-    const router = useRouter();
-
     useEffect(() => {
         queueMicrotask(() => setFetching(true));
         const videoCollection = query(
@@ -62,7 +60,7 @@ export default function VideosPage() {
                                             {
                                                 videoList.map((video) => {
                                                     return (
-                                                        <div onClick={() => router.push(video.d_id_status ? `/videos/${video.id}/show` : `/videos/${video.id}/edit`)} key={video.id} className="col-span-3 cursor-pointer group/video relative border-1 p-4 hover:bg-black border-gray-300 hover:drop-shadow-2xl rounded-xl overflow-hidden hover:-translate-y-2 transition-colors duration-300">
+                                                        <Link href={video.d_id_status ? `/videos/${video.id}/show` : `/videos/${video.id}/edit`} key={video.id} className="col-span-3 cursor-pointer group/video relative border-1 p-4 hover:bg-black border-gray-300 hover:drop-shadow-2xl rounded-xl overflow-hidden hover:-translate-y-2 transition-colors duration-300">
                                                             <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0 transition-colors duration-300 hover:via-gray-900/1"></div>
                                                             <div className="h-36"></div>
                                                             {
@@ -90,7 +88,7 @@ export default function VideosPage() {
                                                                     : <></>
                                                                 }
                                                             </div>
-                                                        </div>
+                                                        </Link>
                                                     )
                                                 })
                                             }

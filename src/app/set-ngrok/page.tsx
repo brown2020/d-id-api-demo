@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { saveNgrokUrl } from "@/libs/utils";
 
 export default function SetNgrokUrl() {
   const [ngrokUrl, setNgrokUrl] = useState("");
   const [currentUrl, setCurrentUrl] = useState("");
-  useEffect(() => {
-    setCurrentUrl(localStorage.getItem("ngrok_url") ?? "");
-  }, []);
   const [saved, setSaved] = useState(false);
+  const loadCurrentUrl = () => {
+    setCurrentUrl(localStorage.getItem("ngrok_url") ?? "");
+  };
 
   const handleSave = () => {
     if (!ngrokUrl) return;
@@ -38,6 +38,9 @@ export default function SetNgrokUrl() {
   return (
     <div className="max-w-md mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Set ngrok URL</h1>
+      <button type="button" className="mb-4 px-3 py-2 bg-gray-700 text-white rounded" onClick={loadCurrentUrl}>
+        Load saved URL
+      </button>
 
       {currentUrl && (
         <div className="mb-6 p-4 bg-gray-100 rounded-sm">

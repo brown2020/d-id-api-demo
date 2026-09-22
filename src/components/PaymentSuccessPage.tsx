@@ -3,7 +3,7 @@
 import { fulfillPayment } from "@/actions/paymentActions";
 import useProfileStore from "@/zustand/useProfileStore";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 type Props = {
   payment_intent: string;
@@ -12,7 +12,7 @@ type Props = {
 export default function PaymentSuccessPage({ payment_intent }: Props) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [created, setCreated] = useState(0);
+  const [created, setCreated] = useState("");
   const [id, setId] = useState("");
   const [amount, setAmount] = useState(0);
   const [status, setStatus] = useState("");
@@ -27,35 +27,43 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
       return;
     }
 
-    const handlePaymentSuccess = async () => {
-      try {
-        const data = await fulfillPayment(payment_intent);
-
-        setId(data.id);
-        setAmount(data.amount);
-        setCreated(data.created * 1000);
-        setStatus(data.status);
-        setCreditsAdded(data.creditsAdded);
-
-        if (data.alreadyFulfilled) {
-          setMessage("Payment has already been processed.");
-        } else {
-          setMessage("Payment successful");
-        }
-
+    let cancelled = false;
+    fulfillPayment(payment_intent)
+      .then(async (data) => {
+        if (cancelled) return;
+        startTransition(() => {
+          setId(data.id);
+          setAmount(data.amount);
+          setCreated(new Date(data.created * 1000).toISOString());
+          setStatus(data.status);
+          setCreditsAdded(data.creditsAdded);
+          setMessage(
+            data.alreadyFulfilled
+              ? "Payment has already been processed."
+              : "Payment successful"
+          );
+        });
         await fetchProfile();
-      } catch (error) {
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "Error handling payment success"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        startTransition(() => {
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "Error handling payment success"
+          );
+        });
+      })
+      .finally(() => {
+        if (!cancelled) {
+          startTransition(() => setLoading(false));
+        }
+      });
 
-    void handlePaymentSuccess();
+    return () => {
+      cancelled = true;
+    };
   }, [payment_intent, fetchProfile]);
 
   return (
@@ -71,12 +79,10 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
           <div className="bg-white p-2 rounded-md my-5 text-4xl font-bold mx-auto">
             ${amount / 100}
           </div>
-          <p className="text-lg">
-            {creditsAdded.toLocaleString()} credits added to your profile
-          </p>
+          <p className="text-lg">{creditsAdded} credits added to your profile</p>
           <div className="text-sm text-gray-600 mt-4 space-y-1">
             <div>Payment ID: {id}</div>
-            <div>Created: {new Date(created).toLocaleString()}</div>
+            <div>Created: {created}</div>
             <div>Status: {status}</div>
           </div>
           {message ? (

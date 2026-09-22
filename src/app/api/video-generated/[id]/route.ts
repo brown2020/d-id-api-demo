@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest } from "next/server";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import {
@@ -8,6 +9,25 @@ import {
 } from "@/libs/constants";
 import { addVideoToStorage } from "@/actions/addVideoToStorage";
 import { addWebhookToHistory } from "@/actions/addWebhookToHistory";
+
+
+function verifyWebhookSignature(
+  rawBody: string,
+  secret: string,
+  token: string | null,
+  signatureHeader: string | null
+): boolean {
+  if (signatureHeader) {
+    const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+    const a = Buffer.from(expected);
+    const b = Buffer.from(signatureHeader);
+    return a.length === b.length && timingSafeEqual(a, b);
+  }
+  if (!token) return false;
+  const a = Buffer.from(token);
+  const b = Buffer.from(secret);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 export const POST = async (
   req: NextRequest,
@@ -86,9 +106,14 @@ export const POST = async (
           return;
         }
 
-        // Authenticate request with secret key
+        // Authenticate request with secret key / webhook signature
         const secret_token = videoData.secret_token;
-        if (secret_token !== token) {
+        const signatureHeader =
+          headers.get("x-did-signature") ?? headers.get("x-webhook-signature");
+        if (
+          !secret_token ||
+          !verifyWebhookSignature(rawBody, secret_token, token, signatureHeader)
+        ) {
           resolve({ error: "Unauthorized" });
           return;
         }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getApiBaseUrl, saveNgrokUrl } from "@/libs/utils";
 import Link from "next/link";
 
@@ -22,42 +22,33 @@ export default function DiagnosticPage() {
   const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(
     null
   );
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function detectEnvironment() {
-      try {
-        const baseUrl = getApiBaseUrl();
-        const hostname = window.location.hostname;
-        const origin = window.location.origin;
-        const isNgrok = origin.includes("ngrok");
-        const isLocalhost = hostname === "localhost";
+  const detectEnvironment = () => {
+    const baseUrl = getApiBaseUrl();
+    const hostname = window.location.hostname;
+    const origin = window.location.origin;
+    setEnvironment({
+      baseUrl,
+      isNgrok: origin.includes("ngrok"),
+      isLocalhost: hostname === "localhost",
+      hostname,
+      origin,
+    });
+  };
 
-        setEnvironment({
-          baseUrl,
-          isNgrok,
-          isLocalhost,
-          hostname,
-          origin,
-        });
-
-        // Also fetch debug info
-        const response = await fetch("/api/debug");
-        if (response.ok) {
-          const data = await response.json();
-          setDebugInfo(data);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        console.error("Error detecting environment:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    detectEnvironment();
-  }, []);
+  const loadDebugInfo = () => {
+    setError(null);
+    fetch("/api/debug")
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((data) => setDebugInfo(data))
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : String(err))
+      );
+  };
 
   const getStatusIndicator = (condition: boolean, text: string) => (
     <div
@@ -74,10 +65,6 @@ export default function DiagnosticPage() {
     </div>
   );
 
-  if (loading) {
-    return <div className="p-8">Loading diagnostic information...</div>;
-  }
-
   if (error) {
     return <div className="p-8 text-red-500">Error: {error}</div>;
   }
@@ -86,6 +73,7 @@ export default function DiagnosticPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-8">
+      <button type="button" className="mb-4 px-3 py-2 bg-blue-600 text-white rounded" onClick={detectEnvironment}>Detect environment</button>
       <h1 className="text-3xl font-bold mb-6">D-ID API Demo Diagnostics</h1>
 
       <div className="mb-8 p-4 rounded-lg bg-gray-50 border">
@@ -226,18 +214,23 @@ export default function DiagnosticPage() {
           </div>
         </div>
 
-        {debugInfo && (
-          <div>
-            <h2 className="text-xl font-bold mb-3">
-              Detailed Debug Information
-            </h2>
+        <div>
+          <h2 className="text-xl font-bold mb-3">Detailed Debug Info</h2>
+          <button
+            type="button"
+            className="mb-2 px-3 py-1 bg-blue-600 text-white rounded"
+            onClick={loadDebugInfo}
+          >
+            Load debug info
+          </button>
+          {debugInfo ? (
             <div className="overflow-auto bg-gray-100 p-4 rounded-lg">
               <pre className="text-xs font-mono">
                 {JSON.stringify(debugInfo, null, 2)}
               </pre>
             </div>
-          </div>
-        )}
+          ) : null}
+        </div>
 
         <div>
           <h2 className="text-xl font-bold mb-3">Common Issues & Solutions</h2>

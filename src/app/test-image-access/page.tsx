@@ -1,290 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
-import { DIDTalkingPhoto } from "@/types/did";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase/firebaseClient";
-import { DOCUMENT_COLLECTION } from "@/libs/constants";
+import Link from "next/link";
+import { useState } from "react";
 
-interface TestResult {
-  avatar: string;
-  id: string;
-  originalUrl?: {
-    url: string;
-    success: boolean;
-    status?: number;
-    statusText?: string;
-    contentType?: string | null;
-    timeMs?: number;
-    error?: string;
-  };
-  proxyUrl?: {
-    url: string;
-    success: boolean;
-    status?: number;
-    statusText?: string;
-    contentType?: string | null;
-    timeMs?: number;
-    error?: string;
-  };
-  serverTest?: {
-    success: boolean;
-    contentType?: string | null;
-    error?: string;
-  };
-  error?: string;
-}
+export default function TestImageAccessPage() {
+  const [url, setUrl] = useState("");
+  const [result, setResult] = useState<string>("");
 
-export default function TestImageAccess() {
-  const [clientEnv, setClientEnv] = useState({ local: false, href: "" });
-  useEffect(() => {
-    setClientEnv({
-      local: window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1",
-      href: window.location.href,
-    });
-  }, []);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [avatars, setAvatars] = useState<DIDTalkingPhoto[]>([]);
-  const [testInProgress, setTestInProgress] = useState(false);
-
-  const baseUrl = getApiBaseUrl();
-
-  useEffect(() => {
-    async function fetchAvatars() {
-      try {
-        const querySnapshot = await getDocs(
-          collection(db, DOCUMENT_COLLECTION)
-        );
-        const avatars = querySnapshot.docs.map(
-          (doc) => doc.data() as DIDTalkingPhoto
-        );
-        setAvatars(avatars);
-      } catch (err) {
-        setError(
-          "Failed to fetch avatars: " +
-            (err instanceof Error ? err.message : String(err))
-        );
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchAvatars();
-  }, []);
-
-  const testImageAccess = async () => {
-    setTestInProgress(true);
-    setTestResults([]);
-
-    const results = [];
-
-    // 1. Test direct image access
-    for (const avatar of avatars.slice(0, 3)) {
-      // Test max 3 avatars
-      try {
-        const imgUrl = avatar.preview_image_url;
-        const proxyUrl = imageProxyUrl(
-          baseUrl,
-          `${avatar.talking_photo_id}.png`
-        );
-
-        // Test 1: Original image URL
-        const originalResult = await testFetch(imgUrl);
-
-        // Test 2: Proxy URL
-        const proxyResult = await testFetch(proxyUrl);
-
-        // Test 3: Server-side proxy test
-        const serverTest = await fetch(
-          `/api/test-image-access?url=${encodeURIComponent(proxyUrl)}`
-        );
-        const serverResult = await serverTest.json();
-
-        results.push({
-          avatar: avatar.talking_photo_name,
-          id: avatar.talking_photo_id,
-          originalUrl: {
-            url: imgUrl,
-            ...originalResult,
-          },
-          proxyUrl: {
-            url: proxyUrl,
-            ...proxyResult,
-          },
-          serverTest: serverResult,
-        });
-      } catch (error) {
-        results.push({
-          avatar: avatar.talking_photo_name,
-          id: avatar.talking_photo_id,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-
-    setTestResults(results);
-    setTestInProgress(false);
-  };
-
-  const testFetch = async (url: string) => {
-    try {
-      const startTime = Date.now();
-      const response = await fetch(url, { method: "HEAD" });
-      const endTime = Date.now();
-
-      return {
-        success: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        contentType: response.headers.get("content-type"),
-        timeMs: endTime - startTime,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+  const runCheck = () => {
+    setResult("Checking...");
+    const target = `/api/test-image-access?url=${encodeURIComponent(url)}`;
+    fetch(target)
+      .then(async (response) => {
+        const text = await response.text();
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+        setResult(text);
+      })
+      .catch((err: unknown) => {
+        setResult(err instanceof Error ? err.message : String(err));
+      });
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Image Accessibility Test</h1>
-      <p className="mb-4 text-gray-600">
-        This tool tests if images are accessible for the D-ID API, which can
-        help diagnose video generation issues.
+    <div className="max-w-2xl mx-auto p-8 space-y-4">
+      <h1 className="text-2xl font-bold">Test Image Access</h1>
+      <p className="text-sm text-gray-600">
+        Dev-only helper to HEAD-check whether an image URL is reachable by this
+        app. Prefer allowlisted https hosts.
       </p>
-
-      <div className="p-4 bg-blue-50 rounded-lg mb-6">
-        <h2 className="font-semibold">Environment Information</h2>
-        <div className="mt-2 font-mono text-sm">
-          <p>API Base URL: {baseUrl}</p>
-          {clientEnv.href && (
-            <>
-              <p>
-                Running locally:{" "}
-                {clientEnv.local ? "Yes" : "No"}
-              </p>
-              <p>Current URL: {clientEnv.href}</p>
-            </>
-          )}
-        </div>
-      </div>
-
-      {loading ? (
-        <p>Loading avatars...</p>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : (
-        <>
-          <div className="mb-6">
-            <p>Found {avatars.length} avatars in database</p>
-            <button type="button"
-              onClick={testImageAccess}
-              disabled={testInProgress}
-              className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
-            >
-              {testInProgress ? "Testing..." : "Test Image Access"}
-            </button>
-          </div>
-
-          {testResults.length > 0 && (
-            <div className="space-y-8">
-              <h2 className="text-xl font-semibold">Test Results</h2>
-
-              {testResults.map((result, i) => (
-                <div key={result.id ?? `result-${i}`} className="border rounded-lg p-4">
-                  <h3 className="font-bold">
-                    {result.avatar} ({result.id})
-                  </h3>
-
-                  {result.error ? (
-                    <p className="text-red-500 mt-2">{result.error}</p>
-                  ) : (
-                    <div className="mt-4 space-y-4">
-                      <div className="bg-gray-50 p-3 rounded-sm">
-                        <h4 className="font-semibold">Original Image URL</h4>
-                        <p className="text-xs mt-1 font-mono break-all">
-                          {result.originalUrl?.url}
-                        </p>
-                        {result.originalUrl?.success ? (
-                          <p className="mt-2 text-green-600">
-                            ✓ Accessible ({result.originalUrl.timeMs}ms) -{" "}
-                            {result.originalUrl.contentType}
-                          </p>
-                        ) : (
-                          <p className="mt-2 text-red-600">
-                            ✗ Not accessible -{" "}
-                            {result.originalUrl?.error ||
-                              `${result.originalUrl?.status} ${result.originalUrl?.statusText}`}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="bg-gray-50 p-3 rounded-sm">
-                        <h4 className="font-semibold">Proxy Image URL</h4>
-                        <p className="text-xs mt-1 font-mono break-all">
-                          {result.proxyUrl?.url}
-                        </p>
-                        {result.proxyUrl?.success ? (
-                          <p className="mt-2 text-green-600">
-                            ✓ Accessible from browser ({result.proxyUrl.timeMs}
-                            ms) - {result.proxyUrl.contentType}
-                          </p>
-                        ) : (
-                          <p className="mt-2 text-red-600">
-                            ✗ Not accessible from browser -{" "}
-                            {result.proxyUrl?.error ||
-                              `${result.proxyUrl?.status} ${result.proxyUrl?.statusText}`}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="bg-gray-50 p-3 rounded-sm">
-                        <h4 className="font-semibold">Server-Side Test</h4>
-                        {result.serverTest?.success ? (
-                          <p className="mt-2 text-green-600">
-                            ✓ Accessible from server -{" "}
-                            {result.serverTest.contentType}
-                          </p>
-                        ) : (
-                          <p className="mt-2 text-red-600">
-                            ✗ Not accessible from server -{" "}
-                            {result.serverTest?.error}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              <div className="p-4 border-t mt-6">
-                <h3 className="font-semibold">What This Means</h3>
-                <ul className="list-disc pl-6 mt-2 space-y-2">
-                  <li>
-                    If images are accessible in the browser but not from the
-                    server, you likely need to use ngrok.
-                  </li>
-                  <li>
-                    If proxy URLs aren&apos;t accessible at all, there&apos;s an
-                    issue with your proxy implementation.
-                  </li>
-                  <li>
-                    For D-ID API to work, the images must be accessible from
-                    external servers.
-                  </li>
-                </ul>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <label htmlFor="image-url" className="block text-sm font-medium">
+        Image URL
+      </label>
+      <input
+        id="image-url"
+        className="w-full border rounded px-3 py-2"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="https://..."
+      />
+      <button
+        type="button"
+        className="px-4 py-2 bg-blue-600 text-white rounded"
+        onClick={runCheck}
+      >
+        Check access
+      </button>
+      {result ? (
+        <pre className="bg-gray-100 p-3 rounded text-xs overflow-auto">{result}</pre>
+      ) : null}
+      <Link href="/diagnostic" className="text-blue-600 underline text-sm">
+        Back to diagnostics
+      </Link>
     </div>
   );
 }
