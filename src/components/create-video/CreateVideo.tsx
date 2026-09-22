@@ -1694,7 +1694,7 @@ function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof u
                                   type="button"
                                   className="absolute inset-0 w-full h-full"
                                   aria-label="Set background image"
-                                  onClick={() => handleSetBackground(typeof data.image === "string" ? data.image : data.image.src)}
+                                  onClick={() => handleSetBackground(typeof data.image === "string" ? data.image : String((data.image as { src: string }).src))}
                                 >
                                   <Image
                                     className="rounded-md cursor-pointer object-cover"
