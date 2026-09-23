@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function NgrokReminder() {
+  const [mounted, setMounted] = useState(false);
   const [ngrokInfo, setNgrokInfo] = useState({
     isNgrok: false,
     isLocalhost: false,
@@ -12,6 +13,7 @@ export default function NgrokReminder() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const origin = window.location.origin;
     const isNgrok =
       origin.includes("ngrok.io") || origin.includes("ngrok-free.app");
@@ -23,7 +25,7 @@ export default function NgrokReminder() {
     setShow(isLocalhost && !isNgrok && !localStorage.getItem("ngrok_url"));
   }, []);
 
-  if (!show) return null;
+  if (!mounted || !show) return null;
 
   return (
     <div className="bg-amber-100 border-l-4 border-amber-500 p-4 mb-4">
