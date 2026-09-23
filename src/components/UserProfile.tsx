@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOutUser } from "@/libs/sign-out-client";
+import { formatFirebaseAuthErrorForLog } from "@/libs/firebaseAuthErrors";
 
 export const UserProfile = () => {
   const { user } = useAuth();
@@ -27,7 +28,7 @@ export const UserProfile = () => {
       setIsMenuOpen(false);
       window.location.href = "/";
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.warn(`[auth] Sign out failed: ${formatFirebaseAuthErrorForLog(error)}`);
       router.push("/");
     }
   };

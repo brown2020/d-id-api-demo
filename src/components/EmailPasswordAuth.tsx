@@ -10,33 +10,30 @@ import {
 } from "firebase/auth";
 import { LoaderCircle, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import toast from "react-hot-toast";
-import { FirebaseError } from "firebase/app";
 import { getSafeCallbackUrl } from "@/libs/auth-constants";
+import {
+  formatFirebaseAuthErrorForLog,
+  mapFirebaseAuthError,
+} from "@/libs/firebaseAuthErrors";
 
 type AuthMode = "signin" | "signup" | "forgot";
 
-function getFirebaseErrorMessage(code: string): string {
-  switch (code) {
-    case "auth/invalid-email":
-      return "Invalid email address format.";
-    case "auth/user-disabled":
-      return "This account has been disabled.";
-    case "auth/user-not-found":
-      return "No account found with this email.";
-    case "auth/wrong-password":
-      return "Incorrect password.";
-    case "auth/email-already-in-use":
-      return "An account with this email already exists.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters.";
-    case "auth/operation-not-allowed":
-      return "Email/password sign-in is not enabled.";
-    case "auth/too-many-requests":
-      return "Too many attempts. Please try again later.";
-    case "auth/invalid-credential":
-      return "Invalid email or password.";
-    default:
-      return "An error occurred. Please try again.";
+async function establishSession(idToken: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch("/api/auth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken }),
+    });
+  } catch {
+    throw new Error("session-network");
+  }
+
+  if (!response.ok) {
+    throw new Error(`session-http-${response.status}`);
   }
 }
 
@@ -50,7 +47,7 @@ export function EmailPasswordAuth() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isFirebaseConfigured) {
       toast.error("Firebase is not configured in this environment.");
       return;
@@ -63,20 +60,13 @@ export function EmailPasswordAuth() {
 
     try {
       setLoading(true);
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const idToken = await userCredential.user.getIdToken();
-
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create session");
-      }
+      await establishSession(idToken);
 
       toast.success("Signed in successfully");
 
@@ -85,11 +75,18 @@ export function EmailPasswordAuth() {
       );
       window.location.href = callbackUrl ?? window.location.pathname;
     } catch (error) {
-      console.error("Sign in error:", error);
-      if (error instanceof FirebaseError) {
-        toast.error(getFirebaseErrorMessage(error.code));
+      const logCode = formatFirebaseAuthErrorForLog(error);
+      console.warn(`[auth] Sign in failed: ${logCode}`);
+      if (
+        error instanceof Error &&
+        (error.message === "session-network" ||
+          error.message.startsWith("session-http-"))
+      ) {
+        toast.error("Signed in with Firebase, but session setup failed. Please try again.");
       } else {
-        toast.error("Failed to sign in. Please try again.");
+        toast.error(
+          mapFirebaseAuthError(error, "Failed to sign in. Please try again.")
+        );
       }
     } finally {
       setLoading(false);
@@ -116,8 +113,12 @@ export function EmailPasswordAuth() {
 
     try {
       setLoading(true);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
       if (displayName.trim()) {
         await updateProfile(userCredential.user, {
           displayName: displayName.trim(),
@@ -125,18 +126,7 @@ export function EmailPasswordAuth() {
       }
 
       const idToken = await userCredential.user.getIdToken();
-
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create session");
-      }
+      await establishSession(idToken);
 
       toast.success("Account created successfully");
 
@@ -145,11 +135,23 @@ export function EmailPasswordAuth() {
       );
       window.location.href = callbackUrl ?? window.location.pathname;
     } catch (error) {
-      console.error("Sign up error:", error);
-      if (error instanceof FirebaseError) {
-        toast.error(getFirebaseErrorMessage(error.code));
+      const logCode = formatFirebaseAuthErrorForLog(error);
+      console.warn(`[auth] Sign up failed: ${logCode}`);
+      if (
+        error instanceof Error &&
+        (error.message === "session-network" ||
+          error.message.startsWith("session-http-"))
+      ) {
+        toast.error(
+          "Account created, but session setup failed. Please try signing in."
+        );
       } else {
-        toast.error("Failed to create account. Please try again.");
+        toast.error(
+          mapFirebaseAuthError(
+            error,
+            "Failed to create account. Please try again."
+          )
+        );
       }
     } finally {
       setLoading(false);
@@ -175,12 +177,15 @@ export function EmailPasswordAuth() {
       toast.success("Password reset email sent. Please check your inbox.");
       setMode("signin");
     } catch (error) {
-      console.error("Password reset error:", error);
-      if (error instanceof FirebaseError) {
-        toast.error(getFirebaseErrorMessage(error.code));
-      } else {
-        toast.error("Failed to send reset email. Please try again.");
-      }
+      console.warn(
+        `[auth] Password reset failed: ${formatFirebaseAuthErrorForLog(error)}`
+      );
+      toast.error(
+        mapFirebaseAuthError(
+          error,
+          "Failed to send reset email. Please try again."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -188,11 +193,11 @@ export function EmailPasswordAuth() {
 
   const handleSubmit = (e: React.FormEvent) => {
     if (mode === "signin") {
-      handleSignIn(e);
+      void handleSignIn(e);
     } else if (mode === "signup") {
-      handleSignUp(e);
+      void handleSignUp(e);
     } else {
-      handleForgotPassword(e);
+      void handleForgotPassword(e);
     }
   };
 

@@ -8,6 +8,7 @@ import { createContext, useContext, useEffect, useState , useMemo} from "react";
 import { Timestamp, serverTimestamp } from "firebase/firestore";
 import { usePathname } from "next/navigation";
 import { isProtectedPathname } from "@/libs/auth-constants";
+import { formatFirebaseAuthErrorForLog } from "@/libs/firebaseAuthErrors";
 
 interface AuthContextType {
   user: User | null;
@@ -77,7 +78,9 @@ export function FirebaseAuthProvider({
         setLoading(false);
       });
     } catch (error) {
-      console.error("Error setting up auth state listener:", error);
+      console.warn(
+        `[auth] Auth state listener setup failed: ${formatFirebaseAuthErrorForLog(error)}`
+      );
       queueMicrotask(() => setLoading(false));
     }
 

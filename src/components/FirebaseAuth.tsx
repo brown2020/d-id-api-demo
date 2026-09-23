@@ -6,27 +6,49 @@ import { useState, useEffect } from "react";
 import { useAuth } from "./FirebaseAuthProvider";
 import { LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import { FirebaseError } from "firebase/app";
 import { getSafeCallbackUrl } from "@/libs/auth-constants";
 import { signOutUser } from "@/libs/sign-out-client";
 import { EmailPasswordAuth } from "./EmailPasswordAuth";
+import {
+  formatFirebaseAuthErrorForLog,
+  mapFirebaseAuthError,
+} from "@/libs/firebaseAuthErrors";
 
 type AuthView = "main" | "email";
 
 function logAuthConfiguration() {
   if (!isFirebaseConfigured) {
-    console.warn("Firebase auth not configured");
+    console.warn("[auth] Firebase auth not configured");
     return;
   }
   const currentConfig = auth.config;
-  console.log("Auth configuration:", {
+  console.warn("[auth] Auth configuration:", {
     apiHost: currentConfig.apiHost,
     authDomain: currentConfig.authDomain,
     apiKey: currentConfig.apiKey ? "PRESENT" : "MISSING",
   });
 
   if (typeof window !== "undefined") {
-    console.log("Current hostname:", window.location.hostname);
+    console.warn("[auth] Current hostname:", window.location.hostname);
+  }
+}
+
+async function establishSession(idToken: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch("/api/auth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idToken }),
+    });
+  } catch {
+    throw new Error("session-network");
+  }
+
+  if (!response.ok) {
+    throw new Error(`session-http-${response.status}`);
   }
 }
 
@@ -48,67 +70,14 @@ export const FirebaseAuth = () => {
       setLoading(true);
       const provider = new GoogleAuthProvider();
 
-      // Configure the provider to maximize compatibility with domain restrictions
       provider.setCustomParameters({
-        // Forces account selection even when one account is available
         prompt: "select_account",
-        // Use the exact auth domain from Firebase config to avoid domain mismatch
         auth_host_domain: auth.config.authDomain || window.location.hostname,
-        // Add additional scopes if needed for more permissions
-        // scope: 'email profile',
       });
 
-      // Try popup auth with proper error handling
-      let userCredential;
-      try {
-        userCredential = await signInWithPopup(auth, provider);
-      } catch (popupError: unknown) {
-        console.error("Popup error:", popupError);
-
-        // Type guard to ensure it's a FirebaseError before accessing properties
-        if (popupError instanceof FirebaseError) {
-          console.error("Firebase error:", popupError.code, popupError.message);
-          // If it's an unauthorized domain error, log helpful info
-          if (popupError.code === "auth/unauthorized-domain") {
-            console.error("==== DOMAIN VERIFICATION ERROR ====");
-            console.error("Current domain:", window.location.hostname);
-            console.error(
-              "Authorized domains in Firebase:",
-              auth.config.authDomain
-            );
-            console.error(
-              "Make sure the current domain is added to the Firebase Console:"
-            );
-            console.error(
-              "Firebase Console > Authentication > Settings > Authorized domains"
-            );
-            console.error("==================================");
-
-            throw new Error(
-              "This domain is not authorized for Firebase authentication. Please contact the administrator."
-            );
-          }
-          throw popupError;
-        }
-        // If it's not a FirebaseError, rethrow it
-        throw popupError;
-      }
-
-      // Get the Firebase ID token
+      const userCredential = await signInWithPopup(auth, provider);
       const idToken = await userCredential.user.getIdToken();
-
-      // Send the token to the server to create a session cookie
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create session");
-      }
+      await establishSession(idToken);
 
       toast.success("Signed in successfully");
 
@@ -117,8 +86,22 @@ export const FirebaseAuth = () => {
       );
       window.location.href = callbackUrl ?? window.location.pathname;
     } catch (error) {
-      console.error("Error signing in with Google:", error);
-      toast.error("Failed to sign in");
+      console.warn(
+        `[auth] Google sign-in failed: ${formatFirebaseAuthErrorForLog(error)}`
+      );
+      if (
+        error instanceof Error &&
+        (error.message === "session-network" ||
+          error.message.startsWith("session-http-"))
+      ) {
+        toast.error(
+          "Signed in with Google, but session setup failed. Please try again."
+        );
+      } else {
+        toast.error(
+          mapFirebaseAuthError(error, "Failed to sign in with Google.")
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -134,8 +117,10 @@ export const FirebaseAuth = () => {
       toast.success("Signed out successfully");
       window.location.href = "/";
     } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Failed to sign out");
+      console.warn(
+        `[auth] Sign out failed: ${formatFirebaseAuthErrorForLog(error)}`
+      );
+      toast.error(mapFirebaseAuthError(error, "Failed to sign out"));
     } finally {
       setLoading(false);
     }
