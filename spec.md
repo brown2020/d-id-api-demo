@@ -1,227 +1,86 @@
 # Product specification — D-ID API Demo
 
-Single source of truth for product behavior, current state, and roadmap. Inferred conclusions are labeled **(inferred)**.
+Current behavior of the `dev` branch. Next steps, known bugs, and open issues are in [roadmap.md](./roadmap.md).
 
----
+## Product
 
-## 1. Product overview
+A reference app for a D-ID talking-head workflow on Next.js: sign in, store API keys, manage avatars, generate video from a script or a canvas, pay for credits, and keep the finished file in Firebase Storage.
 
-### Product promise
+It is a demo with real integrations, not a consumer editor. Operators run it on Vercel or locally. Local image and webhook calls from D-ID need a public HTTPS origin (ngrok or a deploy).
 
-A working reference application that shows developers and evaluators how to build a D-ID-powered talking-head video workflow in Next.js: sign in, configure API keys, create avatars, generate videos with text or voice, pay for credits, and retrieve finished videos from Firebase — including workarounds for D-ID’s Firebase Storage URL limitations.
-
-### Target users
+## Users and flows
 
-- **Developers** integrating D-ID, ElevenLabs, Firebase, and Stripe into Next.js App Router apps.
-- **Technical evaluators** testing D-ID talking-photo and `/talks` API flows before building a product.
-- **Demo operators** running the app on Vercel or locally via ngrok.
+1. Sign in with Google or email/password. The client keeps a Firebase session. `POST /api/auth` sets an httpOnly `__session` cookie. Sign-out revokes refresh tokens and clears the cookie.
+2. Profile holds the D-ID key, the ElevenLabs key, and the credit balance (`users/{uid}/profile/userData`). New profiles start at 1000 credits.
+3. Create personal talking photos or favorite templates in `didTalkingPhotos`.
+4. Generate from `/generate` (one avatar, script, TTS, or uploaded audio) or from `/videos/create` (Fabric.js scenes). Each submission costs 1 credit, refunded if the D-ID call fails.
+5. The app polls D-ID. On a public HTTPS origin it also registers `/api/video-generated/{id}`. The handler copies an allowlisted D-ID result into Storage.
+6. `/videos` and `/videos/[id]/show` list and play videos. The header listens for unread notifications.
+7. `/payment-attempt` starts a Stripe PaymentIntent for the $99.99 pack (9999 cents). `/payment-success` calls `fulfillPayment`, which grants 10000 credits once.
 
-Not positioned as a consumer-facing video editor; it is a demo with real integrations and known rough edges.
-
-### Core workflows
+Protected prefixes: `/avatars`, `/generate`, `/payment-attempt`, `/payment-success`, `/profile`, `/videos`. The edge proxy checks that the session cookie exists. Server actions and sensitive API routes verify it.
 
-1. **Onboard:** Sign in with Google → open Profile → enter D-ID and ElevenLabs API keys (and optional Basic auth for Vercel) → receive starter credits **(inferred:** 1000 credits on first profile load).
-2. **Manage avatars:** Create/upload talking photos → store in Firestore `didTalkingPhotos` → favorite templates → select avatar for generation.
-3. **Generate video (simple):** `/generate` → pick avatar → script/TTS/custom audio → submit → poll status → view in library.
-4. **Generate video (advanced):** `/videos/create` → Fabric.js canvas with scenes, emotions, movements → submit → redirect to video list on success **(inferred:** redirect TODOs remain in error paths).
-5. **Monitor & playback:** `/videos` list → `/videos/[id]/show` for status and playback → notifications in header when complete.
-6. **Purchase credits:** Profile → payment flow → Stripe checkout → `/payment-success` validates intent and adds credits.
+## Features as built
 
-### Product goals
+| Feature | Behavior |
+|---------|----------|
+| Auth | Google popup and email/password. Session cookie verified with revocation check. |
+| Profile | Client can update allowlisted profile fields. `credits` is required and cannot be changed by the client. |
+| Avatars | Personal avatars are owner-scoped. Templates are readable. A personal avatar cannot be updated into a template. |
+| Simple generate | Validates keys, script, base URL, and credits, then calls D-ID. |
+| Canvas composer | Multi-scene Fabric.js editor. Save and submit go through the same generation action. |
+| Library | Owner-scoped Firestore queries. Playback uses a Storage signed URL after the result is copied. |
+| Image proxies | `/api/imageproxy/[id]` and `/api/video-image-proxy/[id]` read owned bucket objects via the Admin SDK, sniff a raster type, and do not fetch arbitrary URLs. |
+| Voice | ElevenLabs list and TTS use the profile key. Server env keys are not a fallback. |
+| Webhooks | Query token or HMAC of the raw body. History is a short redacted line. Result downloads stay on D-ID S3 hosts. |
+| Credits | Admin transaction debits 1 credit before the D-ID call and refunds that debit if submission fails. |
+| Payments | Only the 9999-cent pack can be created. Fulfillment checks `metadata.userId` and is idempotent. |
+| Notifications | `status: "unread"` and unix-seconds `created_at`. |
+| Diagnostics | `/api/debug`, `/api/key-diagnostics`, `/api/test-image-access`, and `/api/check-did-image-access` are local-development only. ID lists require a session and return that user's ids. |
+| Tests | Vitest covers route protection, webhook URL and auth, storage and app URL allowlists, video status, and credit math. |
+| CI | GitHub Actions on Node 22 runs lint, typecheck, test, and a production build with no secrets. |
 
-- Prove end-to-end D-ID integration with realistic persistence and billing hooks.
-- Make local and production behavior consistent for image URLs (proxy + public base URL).
-- Provide diagnostics for common setup failures (keys, ngrok, image reachability).
-- Stay deployable on Vercel with minimal ops.
+## Architecture
 
----
+Browser (Firebase client + Zustand) sends an ID token to `POST /api/auth`. `src/proxy.ts` redirects protected pages when the cookie is missing. Pages are mostly server components that render client UI. Privileged work is in server actions (`protect` / `getCurrentUser`) and route handlers (`requireApiSession`).
 
-## 2. Current application state
+Generation order: allowlist the app base URL, create the video document, copy the thumbnail into Storage, save `secret_token`, debit 1 credit, call D-ID. The webhook or the poller downloads the result and writes a Storage URL.
 
-### What the app currently does
+Public base URL comes from the request host, `NEXT_PUBLIC_API_BASE_URL`, or `https://didapidemo.vercel.app`. Generation image URLs must be one of those origins or the exact fallback headshot. `getWebhookUrl` returns null on localhost.
 
-Full-stack demo: Firebase-authenticated users manage API keys and credits, create and browse avatars, generate D-ID videos through two UIs (simple generate + canvas composer), poll for completion, store results in Firebase Storage, and optionally buy credits via Stripe.
+## Integrations
 
-### Current feature inventory
+| Service | Use |
+|---------|-----|
+| D-ID | `POST /talks` and `GET /talks/{id}` with the signed-in user's key |
+| ElevenLabs | Voice list and TTS through the profile key |
+| Firebase Auth | Google and email/password |
+| Firestore | Users, profiles, avatars, videos, notifications, webhook history |
+| Firebase Storage | Avatars, thumbnails, rendered video |
+| Stripe | One PaymentIntent for the credit pack. No Stripe webhook route. |
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Google Firebase auth | **Working** | Session cookie via `POST /api/auth` |
-| Profile & API keys | **Working** | Stored in `users/{uid}/profile/userData` |
-| Avatar management | **Working** | Personal + template types, favorites |
-| Simple video generation (`/generate`) | **Working** | Key validation; redirects to show page after submit |
-| Canvas video composer | **Working** | Redirects and actionable errors on submit/load failures |
-| Video library & detail | **Working** | Firestore real-time + polling |
-| Image proxy for D-ID | **Working** | Required for Firebase Storage URLs |
-| ElevenLabs voice list / TTS | **Working** | Keys from profile; forwarded to D-ID |
-| Stripe payments | **Working** | Server-side `fulfillPayment`; idempotent credit grant |
-| Notifications | **Working** | On video complete/fail |
-| D-ID webhooks | **Working** | Registered on public HTTPS; polling fallback on localhost |
-| Route protection | **Improved** | `/videos*` protected; prefix boundary matching |
-| Video ownership | **Fixed** | `generateVideo` sets `owner` to authenticated uid |
-| Automated tests | **Partial** | Vitest for auth route helpers |
-| Credit enforcement | **Partial** | `useCredits` exists; generation path unclear **(inferred)** |
+The app does not call an LLM provider. D-ID and ElevenLabs model or voice ids are whatever the user and those APIs already use. This spec does not change them.
 
-### Current user flows
+## Data and rules
 
-```
-Sign in (/) → Profile (/profile) → Avatars (/avatars) → Generate (/generate OR /videos/create)
-    → D-ID processing (poll) → Videos (/videos) → Show (/videos/[id]/show)
-Optional: Payment (/payment-attempt → /payment-success)
-Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
-```
+- Profile create must set `credits` to 1000. Updates cannot change `credits`.
+- Personal avatar delete and update require ownership. Update cannot change `type` away from `personal`.
+- Payments are written by the Admin SDK.
+- Image and video proxies stay public so D-ID can fetch them. They only serve objects whose path matches the avatar or video owner.
+- `getFileUrl` requires a session and an owned path. Those signed URLs expire in one hour. Gallery images use the same-origin proxies. Playback URLs written after an authorized copy use a long-lived Storage signature.
 
-### Existing integrations
+`firestore.rules` and `firestore.indexes.json` include composite indexes for `notifications` (`user_id`, `status`), `generated-videos` (`owner`, `type`), and `didTalkingPhotos` (`owner`, `type`). They take effect only after a Firebase deploy. `storage.rules` is unchanged by the latest security pass.
 
-| Service | Usage |
-|---------|--------|
-| **D-ID** | `POST /talks`, `GET /talks/{id}`; user API key from profile |
-| **ElevenLabs** | Voice listing; TTS via D-ID external key header |
-| **Firebase Auth** | Google sign-in |
-| **Firestore** | Users, profiles, avatars, videos, notifications, webhooks log, errors |
-| **Firebase Storage** | Avatar images, video files, thumbnails |
-| **Stripe** | Payment intents for credit purchase |
+## Constraints
 
-### Current architecture summary
+- D-ID must fetch images over the public internet.
+- Server Actions body limit is 3MB.
+- Generation does not fall back to `DID_API_KEY`, `D_ID_BASIC_AUTH`, or `ELEVENLABS_API_KEY`.
+- Missing or non-numeric credit balance is treated as zero.
+- License is AGPL-3.0-only.
+- Package manager is Yarn 1. There is no `package-lock.json`.
+- Client Firebase SDK stays on 12.x until the runtime is Node `>=24.12.0`. See [roadmap.md](./roadmap.md).
 
-- **Next.js 16 App Router** with Server Components for pages and **server actions** for privileged operations.
-- **Edge proxy** (`src/proxy.ts`) for cookie-presence checks on a subset of routes.
-- **Zustand** for client profile/auth/payment state synced with Firestore.
-- **Polling-first with webhook acceleration** for video completion; `generateVideo` builds a public webhook URL when possible, `generateDIDVideo` registers it with D-ID, and `/api/video-generated/[id]` updates Firestore/Storage on callbacks. Localhost and non-public bases use polling fallback.
-- **Image proxy API routes** expose publicly reachable URLs for D-ID.
+## Build without secrets
 
-### Existing technical constraints
-
-- D-ID must fetch avatar/thumbnail URLs over the public internet — drives proxy routes and ngrok for local dev.
-- User-supplied D-ID/ElevenLabs keys (not server-only env) are required for core flows.
-- Server Actions 3MB body limit for canvas/thumbnail payloads.
-- AGPL-3.0 license.
-
-### Known limitations
-
-1. ~~**Video ownership:**~~ **Fixed (dev):** New videos use authenticated uid; existing docs with `owner: "user"` may need migration.
-2. ~~**Split auth coverage:**~~ **Fixed (dev):** `/videos*` added to protected prefixes.
-3. **Session desync:** Sign-out paths now clear session cookie via shared `signOutUser()`.
-4. **Edge proxy:** Still checks cookie presence only, not cryptographic validity at edge.
-5. **Webhooks vs polling:** Webhooks active on public HTTPS deployments; localhost uses polling only.
-6. **Credits:** Payment grants and per-video debits both run through the Admin SDK. Profile `credits` cannot be changed by the client. Each submitted video costs 1 credit and is refunded if D-ID submission fails.
-7. **Diagnostics and public proxies:** ID-list diagnostic APIs require a verified session; debug/image-access helpers are blocked on production deploys. Image proxy routes remain intentionally public so D-ID can fetch Firebase-backed images.
-8. **Partial automated tests:** Vitest covers route-protection helpers, webhook URL validation, video status helpers, and payment credit math.
-9. **README drift:** Some docs reference removed middleware and wrong proxy path names — use this file and `AGENTS.md` as authority.
-10. **Dual lockfiles:** `yarn.lock` and `package-lock.json` both present; Yarn is canonical per `packageManager`.
-
-### Abandoned or partial systems **(inferred)**
-
-- **Real webhook delivery:** Enabled when `baseUrl` is public HTTPS (Vercel, ngrok).
-- **Clerk auth:** Removed; comments reference Firebase replacement.
-- **Ngrok URL persistence:** `saveNgrokUrl` deprecated; pages still exist for documentation.
-- **Edit existing video via `video_id`:** TODOs in `generateVideo` for validation and owner checks.
-- **`createDIDAvatarProfile`:** Builds avatar object locally without D-ID validation or Firestore save.
-
----
-
-## 3. Product roadmap
-
-Ordered by product impact and dependency. Each item is sized for one clean commit sequence on `dev`.
-
-### Milestone 1 — Fix video ownership and library trust
-
-**Status:** Largely complete on `dev` (ownership, `/videos*` protection, `getVideo` auth ordering). Remaining: migrate legacy docs with `owner: "user"`.
-
----
-
-### Milestone 2 — Reliable sign-in/sign-out and post-login redirect
-
-**Status:** Partially complete on `dev` (`signOutUser`, `callbackUrl` handling). Remaining: explicit `sameSite` verified in all environments.
-
----
-
-### Milestone 3 — Complete video generation UX (composer + simple flow)
-
-**Status:** ✅ Complete (dev)
-
-**Implementation note:** Redirects to `/videos` or `/videos/[id]/show` on composer errors/success; shared `formatVideoGenerationError` / `isVideoProcessing` helpers; Generate flow validates keys/script and redirects to show page; VideoDetail shows accessible processing/error/playback states with live Firestore updates.
-
----
-
-### Milestone 4 — Enable D-ID webhooks for faster completion
-
-**Status:** ✅ Complete (dev)
-
-**Implementation note:** `getWebhookUrl` registers `https://{public-base}/api/video-generated/{id}?token=…` when the base URL is public HTTPS; localhost stays polling-only. `generateDIDVideo` sends the webhook to D-ID when available. Webhook handler accepts early callbacks before `did_id` is persisted (race fix). Client polling in `retrieveDIDVideo` / show page remains fallback.
-
----
-
-### Milestone 5 — Server-side credit and payment fulfillment
-
-**Status:** ✅ Complete (dev)
-
-**Implementation note:** `fulfillPayment` verifies Stripe payment intent ownership, grants credits once in a Firestore transaction (Admin SDK), and records payment under `users/{uid}/payments/{paymentIntentId}`. Firestore rules block client writes to `credits` and `payments`. Payment success page calls `fulfillPayment` then `fetchProfile`.
-
-**Follow-up:** Client `useCredits` still writes credits and will fail under new rules until Milestone 6 adds server-side deduction.
-
----
-
-### Milestone 6 — Credit gating on generation
-
-**Status:** ✅ Complete (dev)
-
-**User value:** Demo billing model is visible — users understand cost per video.
-
-**Implementation note:** `generateVideo` debits `VIDEO_GENERATION_CREDIT_COST` (1) with the Admin SDK before calling D-ID and refunds that debit if submission fails. The client `useCredits` helper no longer writes Firestore. Generate and Create Video show the cost and link to `/payment-attempt` when credits are insufficient. Profile rules keep `credits` present and unchanged on client updates.
-
----
-
-### Milestone 7 — Onboarding activation checklist
-
-**User value:** New users reach first successful video faster.
-
-**Acceptance criteria:**
-- Profile page shows checklist: signed in, D-ID key set, ElevenLabs key set, at least one avatar, optional “test image access” link.
-- Block or warn on generate pages when keys missing (client + server).
-- Link to `/api-diagnostics` from checklist when keys invalid.
-
-**Implementation intent:** Small component on Profile or banner in Header driven by `useProfileStore` fields; server-side validation in `generateVideo` already partially exists — unify messages.
-
----
-
-### Milestone 8 — Lock down or gate diagnostic endpoints
-
-**Status:** ✅ Complete (dev) for the API routes. Diagnostic pages remain in the app but their API helpers are local-only.
-
-**User value:** Production demo is safer without exposing enumeration and SSRF helpers.
-
-**Implementation note:** `/api/debug`, `/api/test-image-access`, `/api/check-did-image-access`, and `/api/key-diagnostics` return 404 unless the process is local development (`VERCEL_ENV` unset or `development`, and `NODE_ENV` is not production). Preview deployments are blocked. `/api/avatar-ids` and `/api/video-ids` require a session and return only that user's document ids. Image probes allowlist this app's origin or Firebase Storage objects in the configured bucket.
-
----
-
-### Milestone 9 — Canvas editor polish (emotions, movements, preview)
-
-**User value:** Advanced composer feels intentional, not experimental.
-
-**Acceptance criteria:**
-- Emotion/movement selections persist on draft save and reload on edit.
-- Canvas preview reflects selected avatar image via proxy URL.
-- Draft save (`addDraftVideo`) loads correctly on `/videos/[id]/edit`.
-
-**Implementation intent:** Wire `addDraftVideo` + edit path through `CreateVideo` state hydration; verify Fabric v7 serialization.
-
----
-
-### Milestone 10 — First automated smoke test
-
-**User value:** Regressions in auth constants and server action exports caught in CI.
-
-**Acceptance criteria:**
-- Add minimal test runner (e.g. Vitest) with tests for `isProtectedPathname`, `getApiBaseUrl` edge cases, and one server action mock.
-- CI script documented in `AGENTS.md` as optional third check.
-
-**Implementation intent:** Product-unlock for safer iteration on Milestones 1–2; not a lint backlog.
-
----
-
-## Document maintenance
-
-- Update this file when shipping milestones or changing integrations.
-- `AGENTS.md` holds agent/workflow instructions; do not duplicate roadmap there.
-- `README.md` holds setup/install steps; link here for product and roadmap detail.
+`firebaseClient` skips initialization when the public web config is missing. `firebaseAdmin` catches a failed `initializeApp` and logs a warning. Stripe is constructed with an empty string when `STRIPE_SECRET_KEY` is unset, so the production build does not need credentials. Those paths do not perform live API calls during `next build`.

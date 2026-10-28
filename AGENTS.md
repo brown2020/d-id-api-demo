@@ -16,14 +16,14 @@ Demonstrate a full-stack D-ID integration pattern: avatar management, TTS via El
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js `^16.2.4`, React `^19.2.5`, TypeScript `^6.0.3` (strict) |
-| Styling | Tailwind CSS `^4.2.4`, Styled Components `^6.4.1`, Framer Motion `^12.38.0`, Lucide |
-| State | Zustand `^5.0.12` (`useAuthStore`, `useProfileStore`, `usePaymentsStore`) |
-| Auth | Firebase Auth (client) + Firebase Admin session cookie (`__session`) |
+| Framework | Next.js `^16.4.3`, React `^19.3.1`, TypeScript `^6.0.3` (strict) |
+| Styling | Tailwind CSS `^4.3.3`, Styled Components `^6.6.0`, Framer Motion `^14.7.1`, Lucide `^1.63.0` |
+| State | Zustand `^5.0.16` (`useAuthStore`, `useProfileStore`, `usePaymentsStore`) |
+| Auth | Firebase Auth (client `firebase` `^12.19.0`) + Firebase Admin `^14.5.0` session cookie (`__session`) |
 | Database / storage | Firestore + Firebase Storage |
-| External APIs | D-ID, ElevenLabs (`@elevenlabs/elevenlabs-js` `^2.44.0`), Stripe `^22.0.2` |
-| Canvas editor | Fabric.js `^7.3.1` (`CreateVideo` component) |
-| Forms | React Hook Form `^7.73.1` + Yup `^1.7.1` |
+| External APIs | D-ID, ElevenLabs (`@elevenlabs/elevenlabs-js` `^2.75.0`), Stripe `^23.0.1` |
+| Canvas editor | Fabric.js `^7.4.0` (`CreateVideo` component) |
+| Forms | React Hook Form `^7.91.0` + Yup `^1.7.1` |
 | Package manager | **Yarn 1** (`packageManager` in `package.json`; use `yarn`, not npm) |
 
 ## Repository structure
@@ -42,7 +42,8 @@ src/
   proxy.ts          # Edge route protection (Next.js 16 proxy, not middleware.ts)
 firestore.rules     # Firestore security rules
 storage.rules       # Storage security rules
-spec.md             # Authoritative product spec and roadmap
+spec.md             # Current product spec
+roadmap.md          # Next steps, known bugs, open issues
 ```
 
 ## Core architecture overview
@@ -230,4 +231,4 @@ Stop and report (do not guess) when:
 
 ## Product reference
 
-Authoritative product state and roadmap: **`spec.md`**.
+Authoritative product state: **`spec.md`**. Next steps and open issues: **`roadmap.md`**.

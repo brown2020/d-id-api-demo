@@ -1,75 +1,65 @@
 # D-ID API Demo
 
-Reference Next.js app for D-ID talking-head video workflows: sign in, manage avatars, generate videos (simple or Fabric.js multi-scene), synthesize voice with ElevenLabs, store assets in Firebase, and buy credits with Stripe. Demo: [https://d-id-api-demo.vercel.app](https://d-id-api-demo.vercel.app)
+Next.js demo of a D-ID talking-head workflow: sign in, manage avatars, generate videos, synthesize voice with ElevenLabs, store assets in Firebase, and buy credits with Stripe.
+
+Demo: [https://d-id-api-demo.vercel.app](https://d-id-api-demo.vercel.app)
+
+Product behavior is in [spec.md](./spec.md). Next steps and open issues are in [roadmap.md](./roadmap.md).
 
 ## Features
 
-Verified from the current codebase:
-
-- **Avatars / talking photos** — create and manage D-ID talking photos (`/avatars`)
-- **Simple generate** — `/generate` script + TTS or custom audio → poll status
-- **Advanced create** — `/videos/create` Fabric.js canvas (scenes, emotions, movements)
-- **Video library** — list, show, and edit under `/videos`
-- **ElevenLabs voices** — voice list and TTS when a profile API key is set
-- **Image / video proxies** — API routes so D-ID can fetch Firebase Storage URLs reliably
-- **Webhooks + polling** — D-ID webhook URL helpers when a public HTTPS base is available
-- **Auth & profile** — Firebase Auth; profile stores per-user D-ID / ElevenLabs keys and credits
-- **Stripe credits** — payment attempt/success flows
-- **Diagnostics** — pages/APIs for keys, image access, ngrok/base URL setup (`/api-diagnostics`, `/diagnostic`, `/ngrok-setup`, etc.)
+- Google and email/password sign-in. Server actions use an httpOnly `__session` cookie.
+- Profile stores each user's D-ID key, ElevenLabs key, and credit balance.
+- Avatar library for personal talking photos and shared templates (`/avatars`).
+- Simple generation (`/generate`) and a Fabric.js multi-scene composer (`/videos/create`, `/videos/[id]/edit`).
+- Video library and playback (`/videos`, `/videos/[id]/show`) with polling and an optional D-ID webhook.
+- Image proxies so D-ID can fetch Firebase-backed images without an open URL relay.
+- Stripe checkout for one credit pack. Credits are granted and spent on the server.
+- Local-only diagnostics for keys, image access, and ngrok (`/diagnostic`, `/api-diagnostics`, `/ngrok-setup`).
 
 ## Tech stack
 
-| Area | Choice |
-|------|--------|
-| Framework | Next.js 16 (App Router, Server Actions) |
-| UI | React 19, Tailwind CSS 4, Framer Motion, Lucide, styled-components |
-| Language | TypeScript 6 |
-| Forms | react-hook-form, Yup |
-| State | Zustand 5 |
-| Canvas | Fabric.js 7 |
-| D-ID | External REST API (`DID_API_KEY` / Basic auth) |
-| Voice | ElevenLabs JS SDK |
-| Backend | Firebase 12 + firebase-admin 13 (Auth, Firestore, Storage) |
-| Payments | Stripe |
-| HTTP | axios |
-| Toasts | react-hot-toast |
-| Package manager | **Yarn 1** (`packageManager`: `yarn@1.22.22`, lockfile `yarn.lock`) |
-| Tests | Vitest 3 |
+| Area | Package |
+|------|---------|
+| Framework | Next.js 16.4, React 19.3, TypeScript 6.0 |
+| UI | Tailwind CSS 4.3, styled-components 6.6, Framer Motion 14.7, Lucide 1.63 |
+| Forms | react-hook-form 7.91, Yup 1.7 |
+| State | Zustand 5.0 |
+| Canvas | Fabric.js 7.4 |
+| Voice | `@elevenlabs/elevenlabs-js` 2.75 |
+| Client data | `firebase` 12.19 (Auth, Firestore, Storage) |
+| Server data | `firebase-admin` 14.5 |
+| Payments | `stripe` 23, `@stripe/stripe-js` 10, `@stripe/react-stripe-js` 7 |
+| HTTP | axios 1.21 |
+| Tests | Vitest 5, Vite 8 |
+| Lint | ESLint 10, `eslint-config-next` 16.4 |
+| Package manager | Yarn 1.22 (`yarn.lock` only) |
 | Node (CI) | 22 |
 
-`.npmrc` sets `legacy-peer-deps=true` (relevant if using npm; prefer Yarn as above).
+`firebase-admin` 14 depends on `jwks-rsa` 4. This repo pins that package's `jose` dependency to 5.10.0 (see `overrides` and `resolutions` in `package.json`).
+
+The Firebase JS SDK 13 is not installed. It pulls `@firebase/ai`, which requires Node `>=24.12.0`. CI and this app stay on Node 22, so the client SDK remains on the latest 12.x release.
 
 ## Project structure
 
 ```
-d-id-api-demo/
-├── src/
-│   ├── app/              # Pages + API routes (proxies, diagnostics, webhooks helpers)
-│   ├── actions/          # Server Actions (D-ID / generation)
-│   ├── components/       # create-video, video-show, shared UI
-│   ├── firebase/         # Client + Admin Firebase setup
-│   ├── libs/             # D-ID helpers, webhooks, payments, auth constants
-│   ├── hooks/, zustand/, utils/, types/, assets/
-├── .env.example
-├── firestore.rules
-├── storage.rules
-├── cors.json
-└── .github/workflows/ci.yml
+src/
+  app/          # App Router pages and API routes
+  actions/      # Server actions (D-ID, Stripe, auth)
+  components/   # UI, including the canvas composer
+  firebase/     # Client SDK and Admin SDK setup
+  libs/         # Auth, credits, URL allowlists
+  server/       # Admin helpers that are not server actions
+  zustand/      # Client stores
+firestore.rules
+firestore.indexes.json
+storage.rules
+.github/workflows/ci.yml
 ```
 
-## Getting started
+## Setup
 
-### Prerequisites
-
-- Node.js 22+
-- Yarn 1.22.x
-- Firebase project (Auth, Firestore, Storage)
-- D-ID API key
-- ElevenLabs API key (for TTS)
-- Stripe account (for credit purchases)
-- Public HTTPS URL for D-ID webhooks in non-local use (Vercel or ngrok)
-
-### Install
+Requirements: Node.js 22, Yarn 1.22, a Firebase project (Auth, Firestore, Storage), a Stripe account for checkout, and a public HTTPS origin when D-ID must reach this app (Vercel or ngrok). Users paste their own D-ID and ElevenLabs keys into Profile.
 
 ```bash
 git clone https://github.com/brown2020/d-id-api-demo.git
@@ -77,94 +67,77 @@ cd d-id-api-demo
 git checkout dev
 yarn install
 cp .env.example .env.local
-# fill in values — never commit secrets
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). For local webhooks/image access from D-ID, use the in-app ngrok setup pages or set `NEXT_PUBLIC_API_BASE_URL` to a public HTTPS origin.
+Open [http://localhost:3000](http://localhost:3000). Fill `.env.local` from the names below. Do not commit secrets.
+
+`yarn build` succeeds when Firebase and Stripe env vars are unset. The client SDK skips init, and Admin init is caught so static generation can finish. Runtime sign-in, storage, and checkout still need the variables set.
 
 ## Environment variables
 
-| Name | Purpose | Where to get it |
-|------|---------|-----------------|
-| `NEXT_PUBLIC_FIREBASE_APIKEY` | Firebase web API key | Firebase Console → Your apps |
-| `NEXT_PUBLIC_FIREBASE_AUTHDOMAIN` | Auth domain | Same |
-| `NEXT_PUBLIC_FIREBASE_PROJECTID` | Project ID | Same |
-| `NEXT_PUBLIC_FIREBASE_STORAGEBUCKET` | Storage bucket | Same |
-| `NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID` | Messaging sender ID | Same |
-| `NEXT_PUBLIC_FIREBASE_APPID` | App ID | Same |
-| `NEXT_PUBLIC_FIREBASE_MEASUREMENTID` | Analytics ID | Optional |
-| `FIREBASE_TYPE` | Admin credential type (`service_account`) | Service account JSON |
-| `FIREBASE_PROJECT_ID` | Admin project ID | Same |
-| `FIREBASE_PRIVATE_KEY_ID` | Key ID | Same |
-| `FIREBASE_PRIVATE_KEY` | Private key | Same |
-| `FIREBASE_CLIENT_EMAIL` | Client email | Same |
-| `FIREBASE_CLIENT_ID` | Client ID | Same |
-| `FIREBASE_AUTH_URI` | OAuth auth URI | Same / Google defaults |
-| `FIREBASE_TOKEN_URI` | Token URI | Same |
-| `FIREBASE_AUTH_PROVIDER_X509_CERT_URL` | Cert URL | Same |
-| `FIREBASE_CLIENT_CERTS_URL` | Client certs URL | Same |
-| `FIREBASE_UNIVERSE_DOMAIN` | Universe domain | Same |
-| `DID_API_KEY` | Optional local diagnostic display only. Video generation uses the signed-in user's profile key | [studio.d-id.com](https://studio.d-id.com) / D-ID console |
-| `D_ID_BASIC_AUTH` | Optional local diagnostic display only. Not used as a generation fallback | Derived from D-ID key (see `/basic-auth-generator`) |
-| `ELEVENLABS_API_KEY` | Optional local diagnostic display only. Voice calls use the profile key | [elevenlabs.io](https://elevenlabs.io) |
-| `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key | Stripe Dashboard |
-| `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
-| `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Product name for credit checkout | Stripe product config |
-| `NEXT_PUBLIC_API_BASE_URL` | Public HTTPS base for proxies/webhooks | Your deploy URL or ngrok |
-| `NEXT_PUBLIC_USE_EMULATOR` | Point client at Firebase emulators | Optional |
-| `IS_LOCAL` | Local-mode flag from `.env.example` | Optional |
+| Name | Role |
+|------|------|
+| `NEXT_PUBLIC_FIREBASE_APIKEY` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_AUTHDOMAIN` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_PROJECTID` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_STORAGEBUCKET` | Firebase web config and server bucket |
+| `NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_APPID` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENTID` | Optional Analytics id |
+| `NEXT_PUBLIC_USE_EMULATOR` | When `true` in development, the client uses the Auth emulator |
+| `FIREBASE_TYPE` | Admin service account |
+| `FIREBASE_PROJECT_ID` | Admin service account |
+| `FIREBASE_PRIVATE_KEY_ID` | Admin service account |
+| `FIREBASE_PRIVATE_KEY` | Admin service account |
+| `FIREBASE_CLIENT_EMAIL` | Admin service account |
+| `FIREBASE_CLIENT_ID` | Admin service account |
+| `FIREBASE_AUTH_URI` | Admin service account |
+| `FIREBASE_TOKEN_URI` | Admin service account |
+| `FIREBASE_AUTH_PROVIDER_X509_CERT_URL` | Admin service account |
+| `FIREBASE_CLIENT_CERTS_URL` | Admin service account |
+| `FIREBASE_UNIVERSE_DOMAIN` | Admin service account (present in `.env.example`; not read by the app) |
+| `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Label stored on the PaymentIntent |
+| `NEXT_PUBLIC_API_BASE_URL` | Public HTTPS origin for webhooks and image URLs. Browser calls use the page origin when it is allowed. |
+| `DID_API_KEY` | Optional. Local diagnostics only. Generation uses the profile key. |
+| `D_ID_BASIC_AUTH` | Optional. Local diagnostics only. Not a generation fallback. |
+| `ELEVENLABS_API_KEY` | Optional. Local diagnostics only. Voice calls use the profile key. |
+| `IS_LOCAL` | Optional flag present in `.env.example`. Local vs production gating uses `NODE_ENV` and `VERCEL_ENV`. |
 
-Users store personal D-ID and ElevenLabs keys on their profile. Generation and voice listing use those keys and do not fall back to the server environment variables.
+`NODE_ENV` and `VERCEL_ENV` are set by the platform. Diagnostic API routes respond only when `VERCEL_ENV` is unset or `development`, and `NODE_ENV` is not `production`.
 
-Checkout creates a PaymentIntent only for the $99.99 credit pack (9999 cents).
+## Scripts
 
-## Firebase deploy
+| Script | What it does |
+|--------|----------------|
+| `yarn dev` | Next.js dev server |
+| `yarn build` | Production build |
+| `yarn start` | Serve the production build |
+| `yarn lint` | ESLint, zero warnings |
+| `yarn typecheck` | `tsc --noEmit` |
+| `yarn test` | Vitest once |
+| `yarn validate` | lint, typecheck, test, and build |
 
-Rules and indexes in this repo are not applied automatically. After pulling, deploy them separately:
+## CI
+
+`.github/workflows/ci.yml` runs on `dev`, `main`, and pull requests: `yarn install --frozen-lockfile`, lint, typecheck, test, and build on Node 22. No secrets are injected. The build is expected to pass without Firebase or Stripe credentials.
+
+## Firebase rules
+
+Rules and indexes in git are not deployed by CI. Apply them with the Firebase CLI when you are ready:
 
 ```bash
 firebase deploy --only firestore:rules,firestore:indexes,storage
 ```
 
-Files: `firestore.rules`, `firestore.indexes.json`, `storage.rules`. Storage rules did not change in the security pass; Firestore rules and the composite indexes did.
-
-## Firebase
-
-- Rules: `firestore.rules`, `storage.rules`
-- `cors.json` for Storage CORS when D-ID must fetch objects
-
-Deploy rules with the Firebase CLI as needed.
-
-## Scripts
-
-| Script | Description |
-|--------|-------------|
-| `yarn dev` | Next.js dev server |
-| `yarn build` | Production build |
-| `yarn start` | Serve production build |
-| `yarn lint` | ESLint (`--max-warnings 0`) |
-| `yarn typecheck` | `tsc --noEmit` |
-| `yarn test` | Vitest |
-| `yarn validate` | lint + typecheck + test + build |
-
-## Testing and CI
-
-Vitest covers libs (payment credits, video status, auth constants, webhook URL, Firebase auth errors).
-
-GitHub Actions (`.github/workflows/ci.yml`) on `dev` / `main` and PRs: `yarn install --frozen-lockfile` → lint → typecheck → test → build (Node 22). Client Firebase secrets are optional for this gate (build skips client init when unset).
+Files: `firestore.rules`, `firestore.indexes.json`, `storage.rules`. `cors.json` is the Storage CORS document for buckets D-ID must read.
 
 ## Deployment
 
-Typical host: Vercel ([https://d-id-api-demo.vercel.app](https://d-id-api-demo.vercel.app)). Set env vars in the project. Ensure `NEXT_PUBLIC_API_BASE_URL` is the production HTTPS origin so D-ID webhooks and image proxies work. `next.config.mjs` allows remote images from Firebase Storage, Google user content, and related hosts; Server Actions body size limit is 3mb.
-
-## Contributing
-
-- `main` — production
-- `dev` — integration
-
-See [AGENTS.md](./AGENTS.md) and [spec.md](./spec.md). Prefer Yarn to match the lockfile.
+The production host is Vercel. Set the env var names above in the project. Set `NEXT_PUBLIC_API_BASE_URL` to the public HTTPS origin so webhooks and image URLs match the app. Localhost uses polling only.
 
 ## License
 
-[GNU Affero General Public License v3](./LICENSE.md) (AGPL-3.0-only per `package.json`).
+[GNU Affero General Public License v3](./LICENSE.md) (`AGPL-3.0-only`).
