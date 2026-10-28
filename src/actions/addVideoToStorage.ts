@@ -1,5 +1,4 @@
-import { adminDb } from "@/firebase/firebaseAdmin";
-import { getStorage } from "firebase-admin/storage";
+import { admin, adminDb } from "@/firebase/firebaseAdmin";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import axios from "axios";
 
@@ -12,7 +11,7 @@ export async function addVideoToStorage(video_id: string, result_url: string, st
         responseType: 'stream'
     });
 
-    const bucket = getStorage().bucket();
+    const bucket = admin.storage().bucket();
     const videoPath = `videos/${video_id}.mp4`;
     const file = bucket.file(videoPath);
     const stream = file.createWriteStream({

@@ -1,10 +1,10 @@
 "use server";
 
-import { getStorage } from "firebase-admin/storage";
+import { admin } from "@/firebase/firebaseAdmin";
 
 export async function getFileUrl(filepath: string){
     try {
-        const bucket = getStorage().bucket();
+        const bucket = admin.storage().bucket();
         const file = bucket.file(filepath);
 
         // const stream = file.createWriteStream({

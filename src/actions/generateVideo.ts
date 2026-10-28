@@ -4,9 +4,7 @@ import { Emotion, Movement } from "../types/did";
 import { requireAuth } from "./auth";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "../libs/constants";
-import { adminDb } from "../firebase/firebaseAdmin";
-import { getStorage } from "firebase-admin/storage";
-import { Timestamp } from "firebase-admin/firestore";
+import { adminDb, admin } from "../firebase/firebaseAdmin";
 import { getWebhookUrl, randomString, videoImageProxyUrl } from "../libs/utils";
 import { getFileUrl } from "./getFileUrl";
 import { addErrorReport } from "./addErrorReport";
@@ -54,7 +52,7 @@ export async function generateVideo(
         title: "New Video",
         type: "personal",
         d_id_status: "created",
-        created_at: Timestamp.now(),
+        created_at: admin.firestore.Timestamp.now(),
         owner: userId,
       });
     }
@@ -64,7 +62,7 @@ export async function generateVideo(
     const filePath = `video-image/${id}/${filename}`;
 
     // Add that thumbnail to firebase storage
-    const bucket = getStorage().bucket();
+    const bucket = admin.storage().bucket();
     const file = bucket.file(filePath);
 
     let thumbnailUrl;
@@ -170,7 +168,7 @@ export async function generateVideo(
         await videoRef.update({
           d_id_status: "error",
           errorMessage: response.error,
-          updated_at: Timestamp.now(),
+          updated_at: admin.firestore.Timestamp.now(),
         });
 
         return {
@@ -185,7 +183,7 @@ export async function generateVideo(
           d_id_status: response.status,
           secret_token,
           used_fallback_image: useFallbackImage,
-          updated_at: Timestamp.now(),
+          updated_at: admin.firestore.Timestamp.now(),
         });
 
 
@@ -228,7 +226,7 @@ export async function generateVideo(
       await videoRef.update({
         d_id_status: "error",
         errorMessage: errorMessage,
-        updated_at: Timestamp.now(),
+        updated_at: admin.firestore.Timestamp.now(),
       });
     } catch {
     }
