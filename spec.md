@@ -104,7 +104,7 @@ Dev: Diagnostic (/diagnostic), API diagnostics (/api-diagnostics), ngrok pages
 3. **Session desync:** Sign-out paths now clear session cookie via shared `signOutUser()`.
 4. **Edge proxy:** Still checks cookie presence only, not cryptographic validity at edge.
 5. **Webhooks vs polling:** Webhooks active on public HTTPS deployments; localhost uses polling only.
-6. **Client-side credits:** Payment grants are server-side; profile `credits` field is read-only for clients (deduction still client-side until M6).
+6. **Credits:** Payment grants and per-video debits both run through the Admin SDK. Profile `credits` cannot be changed by the client. Each submitted video costs 1 credit and is refunded if D-ID submission fails.
 7. **Diagnostics and public proxies:** ID-list diagnostic APIs require a verified session; debug/image-access helpers are blocked on production deploys. Image proxy routes remain intentionally public so D-ID can fetch Firebase-backed images.
 8. **Partial automated tests:** Vitest covers route-protection helpers, webhook URL validation, video status helpers, and payment credit math.
 9. **README drift:** Some docs reference removed middleware and wrong proxy path names — use this file and `AGENTS.md` as authority.
@@ -164,16 +164,11 @@ Ordered by product impact and dependency. Each item is sized for one clean commi
 
 ### Milestone 6 — Credit gating on generation
 
+**Status:** ✅ Complete (dev)
+
 **User value:** Demo billing model is visible — users understand cost per video.
 
-**Prerequisite:** Milestone 5 locked client credit increments; this milestone must move **deduction** to the server as well (`useCredits` currently writes Firestore from the client and will fail under updated rules).
-
-**Acceptance criteria:**
-- Before D-ID submit, server action checks credits and decrements atomically (or rejects).
-- UI shows insufficient-credit message with link to payment.
-- Profile credits stay in sync after generation.
-
-**Implementation intent:** Call `protect()` + read profile server-side (Admin SDK); decrement in same transaction as video doc creation; surface errors to `/generate` and `CreateVideo`.
+**Implementation note:** `generateVideo` debits `VIDEO_GENERATION_CREDIT_COST` (1) with the Admin SDK before calling D-ID and refunds that debit if submission fails. The client `useCredits` helper no longer writes Firestore. Generate and Create Video show the cost and link to `/payment-attempt` when credits are insufficient. Profile rules keep `credits` present and unchanged on client updates.
 
 ---
 
@@ -192,13 +187,11 @@ Ordered by product impact and dependency. Each item is sized for one clean commi
 
 ### Milestone 8 — Lock down or gate diagnostic endpoints
 
+**Status:** ✅ Complete (dev) for the API routes. Diagnostic pages remain in the app but their API helpers are local-only.
+
 **User value:** Production demo is safer without exposing enumeration and SSRF helpers.
 
-**Acceptance criteria:**
-- `/api/avatar-ids`, `/api/video-ids`, `/api/debug`, `/api/test-image-access` require auth or are disabled when `VERCEL_ENV=production`.
-- Dev-only pages (`/test-proxy`, etc.) show warning or require sign-in in production.
-
-**Implementation intent:** Add `protect()` or env guard to API routes; keep local dev behavior via `IS_LOCAL` or `NODE_ENV`.
+**Implementation note:** `/api/debug`, `/api/test-image-access`, `/api/check-did-image-access`, and `/api/key-diagnostics` return 404 unless the process is local development (`VERCEL_ENV` unset or `development`, and `NODE_ENV` is not production). Preview deployments are blocked. `/api/avatar-ids` and `/api/video-ids` require a session and return only that user's document ids. Image probes allowlist this app's origin or Firebase Storage objects in the configured bucket.
 
 ---
 

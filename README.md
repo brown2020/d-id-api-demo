@@ -105,9 +105,9 @@ Open [http://localhost:3000](http://localhost:3000). For local webhooks/image ac
 | `FIREBASE_AUTH_PROVIDER_X509_CERT_URL` | Cert URL | Same |
 | `FIREBASE_CLIENT_CERTS_URL` | Client certs URL | Same |
 | `FIREBASE_UNIVERSE_DOMAIN` | Universe domain | Same |
-| `DID_API_KEY` | Server D-ID API key | [studio.d-id.com](https://studio.d-id.com) / D-ID console |
-| `D_ID_BASIC_AUTH` | Optional Basic auth header value for D-ID | Derived from D-ID key (see `/basic-auth-generator`) |
-| `ELEVENLABS_API_KEY` | Server fallback ElevenLabs key | [elevenlabs.io](https://elevenlabs.io) |
+| `DID_API_KEY` | Optional local diagnostic display only. Video generation uses the signed-in user's profile key | [studio.d-id.com](https://studio.d-id.com) / D-ID console |
+| `D_ID_BASIC_AUTH` | Optional local diagnostic display only. Not used as a generation fallback | Derived from D-ID key (see `/basic-auth-generator`) |
+| `ELEVENLABS_API_KEY` | Optional local diagnostic display only. Voice calls use the profile key | [elevenlabs.io](https://elevenlabs.io) |
 | `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key | Stripe Dashboard |
 | `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Product name for credit checkout | Stripe product config |
@@ -115,7 +115,19 @@ Open [http://localhost:3000](http://localhost:3000). For local webhooks/image ac
 | `NEXT_PUBLIC_USE_EMULATOR` | Point client at Firebase emulators | Optional |
 | `IS_LOCAL` | Local-mode flag from `.env.example` | Optional |
 
-Users can also store personal D-ID / ElevenLabs keys on their profile for client-side voice listing and generation flows.
+Users store personal D-ID and ElevenLabs keys on their profile. Generation and voice listing use those keys and do not fall back to the server environment variables.
+
+Checkout creates a PaymentIntent only for the $99.99 credit pack (9999 cents).
+
+## Firebase deploy
+
+Rules and indexes in this repo are not applied automatically. After pulling, deploy them separately:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,storage
+```
+
+Files: `firestore.rules`, `firestore.indexes.json`, `storage.rules`. Storage rules did not change in the security pass; Firestore rules and the composite indexes did.
 
 ## Firebase
 
