@@ -1,4 +1,4 @@
-import { admin, adminDb } from "@/firebase/firebaseAdmin";
+import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { downloadDidResultVideo } from "@/server/download-did-result";
 
@@ -10,7 +10,7 @@ export async function addVideoToStorage(
   try {
     const bytes = await downloadDidResultVideo(result_url);
     const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(video_id);
-    const bucket = admin.storage().bucket();
+    const bucket = adminBucket;
     const videoPath = `videos/${video_id}.mp4`;
     const file = bucket.file(videoPath);
 

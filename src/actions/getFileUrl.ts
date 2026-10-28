@@ -1,6 +1,6 @@
 "use server";
 
-import { admin, adminDb } from "@/firebase/firebaseAdmin";
+import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
 import { requireAuth } from "@/actions/auth";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { isCallerImagePath, isVideoThumbnailPath } from "@/libs/storage-url";
@@ -32,7 +32,7 @@ export async function getFileUrl(filepath: string) {
     throw new Error("Forbidden");
   }
 
-  const file = admin.storage().bucket().file(filepath);
+  const file = adminBucket.file(filepath);
   const [url] = await file.getSignedUrl({
     action: "read",
     expires: Date.now() + SIGNED_URL_TTL_MS,

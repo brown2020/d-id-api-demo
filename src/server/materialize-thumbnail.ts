@@ -1,5 +1,5 @@
 import { getFileUrl } from "@/actions/getFileUrl";
-import { admin, adminDb } from "@/firebase/firebaseAdmin";
+import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
 import { DOCUMENT_COLLECTION } from "@/libs/constants";
 import {
   FALLBACK_HEADSHOT_URL,
@@ -13,7 +13,7 @@ import { readBucketImage } from "@/server/read-bucket-image";
 
 async function saveThumbnail(videoId: string, bytes: Buffer, contentType: string) {
   const filePath = `video-image/${videoId}/thumbnail.png`;
-  await admin.storage().bucket().file(filePath).save(bytes, {
+  await adminBucket.file(filePath).save(bytes, {
     metadata: { contentType },
   });
   const storedUrl = await getFileUrl(filePath);

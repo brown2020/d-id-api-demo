@@ -6,7 +6,8 @@ import { Emotion, Movement } from "../types/did";
 import { requireAuth } from "./auth";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "../libs/constants";
-import { adminDb, admin } from "../firebase/firebaseAdmin";
+import { adminDb } from "../firebase/firebaseAdmin";
+import { Timestamp } from "firebase-admin/firestore";
 import { getWebhookUrl, randomString, videoImageProxyUrl } from "../libs/utils";
 import { addErrorReport } from "./addErrorReport";
 import { isEditableVideoStatus } from "../libs/auth-constants";
@@ -72,7 +73,7 @@ export async function generateVideo(
         title: "New Video",
         type: "personal",
         d_id_status: "created",
-        created_at: admin.firestore.Timestamp.now(),
+        created_at: Timestamp.now(),
         owner: userId,
       });
     }
@@ -164,7 +165,7 @@ export async function generateVideo(
         await videoRef.update({
           d_id_status: "error",
           errorMessage: response.error,
-          updated_at: admin.firestore.Timestamp.now(),
+          updated_at: Timestamp.now(),
         });
 
         await refundVideoGenerationCredits(userId);
@@ -181,7 +182,7 @@ export async function generateVideo(
           d_id_status: response.status,
           secret_token,
           used_fallback_image: useFallbackImage,
-          updated_at: admin.firestore.Timestamp.now(),
+          updated_at: Timestamp.now(),
         });
 
 
@@ -234,7 +235,7 @@ export async function generateVideo(
       await videoRef.update({
         d_id_status: "error",
         errorMessage: errorMessage,
-        updated_at: admin.firestore.Timestamp.now(),
+        updated_at: Timestamp.now(),
       });
     } catch {
     }

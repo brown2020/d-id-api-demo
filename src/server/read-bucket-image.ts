@@ -1,4 +1,4 @@
-import { admin } from "@/firebase/firebaseAdmin";
+import { adminBucket } from "@/firebase/firebaseAdmin";
 import {
   maxProxiedImageBytes,
   sniffImageContentType,
@@ -10,7 +10,7 @@ export type BucketImage =
 
 export async function readBucketImage(objectPath: string): Promise<BucketImage> {
   try {
-    const file = admin.storage().bucket().file(objectPath);
+    const file = adminBucket.file(objectPath);
     const [metadata] = await file.getMetadata();
     const size = Number(metadata.size ?? 0);
     if (!Number.isFinite(size) || size <= 0 || size > maxProxiedImageBytes()) {
