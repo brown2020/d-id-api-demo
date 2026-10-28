@@ -26,7 +26,7 @@ export const UserProfile = () => {
         sessionStorage.clear();
       }
       setIsMenuOpen(false);
-      window.location.href = "/";
+      router.push("/");
     } catch (error) {
       console.warn(`[auth] Sign out failed: ${formatFirebaseAuthErrorForLog(error)}`);
       router.push("/");

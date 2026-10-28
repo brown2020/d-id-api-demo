@@ -1,7 +1,8 @@
 // paymentActions.ts
 "use server";
 
-import { admin, adminDb } from "@/firebase/firebaseAdmin";
+import { adminDb } from "@/firebase/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 import { creditsForPaymentAmountCents } from "@/libs/payment-credits";
 import Stripe from "stripe";
 
@@ -135,7 +136,7 @@ export async function fulfillPayment(
         amount: paymentIntent.amount,
         status: paymentIntent.status,
         creditsGranted: creditsToAdd,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
     );

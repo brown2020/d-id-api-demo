@@ -8,6 +8,7 @@ import { LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { getSafeCallbackUrl } from "@/libs/auth-constants";
 import { signOutUser } from "@/libs/sign-out-client";
+import { useRouter } from "next/navigation";
 import { EmailPasswordAuth } from "./EmailPasswordAuth";
 import {
   formatFirebaseAuthErrorForLog,
@@ -54,6 +55,7 @@ async function establishSession(idToken: string): Promise<void> {
 
 export const FirebaseAuth = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<AuthView>("main");
 
@@ -115,7 +117,7 @@ export const FirebaseAuth = () => {
         sessionStorage.clear();
       }
       toast.success("Signed out successfully");
-      window.location.href = "/";
+      router.push("/");
     } catch (error) {
       console.warn(
         `[auth] Sign out failed: ${formatFirebaseAuthErrorForLog(error)}`
