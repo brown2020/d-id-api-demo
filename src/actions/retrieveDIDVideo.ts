@@ -3,7 +3,8 @@
 import axios, { AxiosError } from "axios";
 import { adminBucket, adminDb } from "../firebase/firebaseAdmin";
 import { requireAuth } from "./auth";
-import { VIDEO_COLLECTION } from "../libs/constants";
+import { DOCUMENT_COLLECTION, VIDEO_COLLECTION } from "../libs/constants";
+import { downloadDidResultVideo } from "@/server/download-did-result";
 
 interface RetrieveVideoResponse {
   status: "processing" | "completed" | "failed";
@@ -123,11 +124,10 @@ export async function retrieveDIDVideo(
   pollInterval: number = 1000,
   basicAuth: string = ""
 ): Promise<RetrieveVideoResponse | null> {
-  await requireAuth();
+  const userId = await requireAuth();
 
-  // Use environment variable as a fallback if no API key is provided
-  const finalApiKey = apiKey || process.env.DID_API_KEY || "";
-  const finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
+  const finalApiKey = apiKey.trim();
+  const finalBasicAuth = basicAuth.trim();
 
   // Log which API key we're using (without revealing the actual value)
 
@@ -162,6 +162,13 @@ export async function retrieveDIDVideo(
       };
     }
 
+    if (videoData.owner !== userId) {
+      return {
+        status: "failed",
+        error: "Unauthorized",
+      };
+    }
+
     // Get the D-ID talk ID from the document
     const didTalkId = videoData.did_id;
     if (!didTalkId) {
@@ -175,19 +182,9 @@ export async function retrieveDIDVideo(
     // Define the authorization header properly based on the available auth methods
     let authHeader;
 
-    // First priority: Use Basic Auth from profile if available
     if (finalBasicAuth && finalBasicAuth.startsWith("Basic ")) {
       authHeader = finalBasicAuth;
-    }
-    // Second priority: Use D_ID_BASIC_AUTH environment variable
-    else if (
-      process.env.D_ID_BASIC_AUTH &&
-      process.env.D_ID_BASIC_AUTH.startsWith("Basic ")
-    ) {
-      authHeader = process.env.D_ID_BASIC_AUTH;
-    }
-    // Third priority: API key starting with "Basic"
-    else if (finalApiKey.startsWith("Basic ")) {
+    } else if (finalApiKey.startsWith("Basic ")) {
       authHeader = finalApiKey;
     }
     // Fourth priority: API key with colon (username:password format)
@@ -213,10 +210,8 @@ export async function retrieveDIDVideo(
 
         // Make sure resultData is not null before accessing its properties
         if (!resultData) {
-          continue;
-        }
-
-        if (resultData.status === "done") {
+          // Counted with the other attempts below.
+        } else if (resultData.status === "done") {
           // Make sure result_url exists
           if (!resultData.result_url) {
 
@@ -233,41 +228,68 @@ export async function retrieveDIDVideo(
           }
 
 
-          // Download the video from the provided result URL
-          const videoResponse = await axios.get(resultData.result_url, {
-            responseType: "arraybuffer", // Get the video as a buffer
-          });
+          const videoBytes = await downloadDidResultVideo(resultData.result_url);
 
-          // Upload to Firebase Storage
-          const file = adminBucket.file(
-            `videos/${talkingPhotoId}/${didTalkId}.mp4`
-          );
-          await file.save(videoResponse.data, {
+          const talkingPhoto = await adminDb
+            .collection(DOCUMENT_COLLECTION)
+            .doc(talkingPhotoId)
+            .get();
+          const talkingPhotoOwner = talkingPhoto.data()?.owner;
+          const canWriteTalkingPhoto =
+            talkingPhoto.exists && talkingPhotoOwner === userId;
+
+          if (canWriteTalkingPhoto) {
+            const file = adminBucket.file(
+              `videos/${talkingPhotoId}/${didTalkId}.mp4`
+            );
+            await file.save(videoBytes, {
+              metadata: {
+                contentType: "video/mp4",
+              },
+            });
+
+            const [videoUrl] = await file.getSignedUrl({
+              action: "read",
+              expires: "01-01-2124",
+            });
+
+            const docRef = adminDb
+              .collection(DOCUMENT_COLLECTION)
+              .doc(talkingPhotoId)
+              .collection("videos")
+              .doc(didTalkId);
+
+            await docRef.set({
+              video_url: videoUrl,
+              thumbnail_url: resultData.thumbnail_url || null,
+              created_at: new Date(),
+            });
+
+            await videoRef.update({
+              video_url: videoUrl,
+              d_id_status: "done",
+              error: null,
+              errorMessage: null,
+            });
+
+            return {
+              status: "completed",
+              video_url: videoUrl,
+              thumbnail_url: resultData.thumbnail_url,
+            };
+          }
+
+          const storedFile = adminBucket.file(`videos/${videoId}.mp4`);
+          await storedFile.save(videoBytes, {
             metadata: {
               contentType: "video/mp4",
             },
           });
-
-          // Generate a signed URL with a very long expiration (100 years)
-          const [videoUrl] = await file.getSignedUrl({
+          const [videoUrl] = await storedFile.getSignedUrl({
             action: "read",
-            expires: "01-01-2124", // Set the expiration date 100 years in the future
+            expires: "01-01-2124",
           });
 
-          // Save the signed URL to Firestore
-          const docRef = adminDb
-            .collection("didTalkingPhotos")
-            .doc(talkingPhotoId)
-            .collection("videos")
-            .doc(didTalkId);
-
-          await docRef.set({
-            video_url: videoUrl,
-            thumbnail_url: resultData.thumbnail_url || null,
-            created_at: new Date(),
-          });
-
-          // Also update our main video document
           await videoRef.update({
             video_url: videoUrl,
             d_id_status: "done",
@@ -310,18 +332,17 @@ export async function retrieveDIDVideo(
         // Make sure to increment the attempts variable
         attempts++;
       } catch (error: unknown) {
-
-        // If this is an Axios error with a 404, the video might not be ready in the D-ID system yet
+        attempts++;
         if (
           axios.isAxiosError(error) &&
           error.response &&
           error.response.status === 404
         ) {
+          // Talk is not visible to this key yet; retry until maxAttempts.
         }
       }
 
-      // Wait for the poll interval before the next check
-      const currentDelay = pollInterval * Math.min(attempts, 5); // Increase delay up to 5x
+      const currentDelay = Math.max(0, pollInterval) * Math.min(Math.max(attempts, 1), 5);
       await new Promise((resolve) => setTimeout(resolve, currentDelay));
     }
 

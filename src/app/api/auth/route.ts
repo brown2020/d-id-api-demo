@@ -37,10 +37,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Clear session cookie (sign out)
+// Clear session cookie (sign out) and revoke the Firebase session.
 export async function DELETE() {
   try {
     const cookieStore = await cookies();
+    const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    if (session) {
+      try {
+        const decoded = await adminAuth.verifySessionCookie(session, true);
+        await adminAuth.revokeRefreshTokens(decoded.uid);
+      } catch {
+        // Still clear the cookie when the session is already invalid.
+      }
+    }
+
     cookieStore.set({
       name: SESSION_COOKIE_NAME,
       value: "",

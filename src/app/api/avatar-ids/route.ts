@@ -11,7 +11,10 @@ export async function GET() {
   }
 
   try {
-    const snapshot = await adminDb.collection(DOCUMENT_COLLECTION).get();
+    const snapshot = await adminDb
+      .collection(DOCUMENT_COLLECTION)
+      .where("owner", "==", auth.uid)
+      .get();
     const avatarIds = snapshot.docs.map((doc) => doc.id);
 
     return NextResponse.json({ avatarIds }, { status: 200 });

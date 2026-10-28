@@ -1,5 +1,7 @@
-import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest } from "next/server";
+
+import { addVideoToStorage } from "@/actions/addVideoToStorage";
+import { addWebhookToHistory } from "@/actions/addWebhookToHistory";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import {
   NOTIFICATION_COLLECTION,
@@ -7,26 +9,12 @@ import {
   NOTIFICATION_TYPE,
   VIDEO_COLLECTION,
 } from "@/libs/constants";
-import { addVideoToStorage } from "@/actions/addVideoToStorage";
-import { addWebhookToHistory } from "@/actions/addWebhookToHistory";
+import { isWebhookAuthorized } from "@/libs/webhook-auth";
 
-
-function verifyWebhookSignature(
-  rawBody: string,
-  secret: string,
-  token: string | null,
-  signatureHeader: string | null
-): boolean {
-  if (signatureHeader) {
-    const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
-    const a = Buffer.from(expected);
-    const b = Buffer.from(signatureHeader);
-    return a.length === b.length && timingSafeEqual(a, b);
-  }
-  if (!token) return false;
-  const a = Buffer.from(token);
-  const b = Buffer.from(secret);
-  return a.length === b.length && timingSafeEqual(a, b);
+async function recordWebhook(videoId: string, status: string) {
+  await addWebhookToHistory(
+    `video=${videoId} status=${status} at=${new Date().toISOString()}`
+  );
 }
 
 export const POST = async (
@@ -34,173 +22,114 @@ export const POST = async (
   { params }: { params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
-
-  const { method, headers, url } = req;
-
-  // Parse the URL to get the query parameters
-  const { searchParams } = new URL(url);
-
-  // Construct the base cURL command for logging
-  let curlCommand = `curl -X ${method} "${url}"`;
-
-  // Add headers to the cURL command
-  headers.forEach((value, key) => {
-    curlCommand += ` -H "${key}: ${value}"`;
-  });
-
-  // Add query parameters to the URL (if any)
-  if (Array.from(searchParams).length > 0) {
-    curlCommand = `curl -X ${method} "${url}"`;
-  }
-
   const rawBody = await req.text();
 
-  // Add the body to the cURL command if the request has one
-  if (["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {
-    if (rawBody) {
-      curlCommand += ` -d '${rawBody}'`;
-    }
-  }
-
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  let requestBody: Record<string, any> = {};
-  if (headers.get("content-type")?.includes("application/json")) {
+  let requestBody: Record<string, unknown> = {};
+  if (req.headers.get("content-type")?.includes("application/json")) {
     try {
-      requestBody = JSON.parse(rawBody);
+      const parsed: unknown = JSON.parse(rawBody);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return new Response("Invalid JSON", { status: 400 });
+      }
+      requestBody = parsed as Record<string, unknown>;
     } catch {
       return new Response("Invalid JSON", { status: 400 });
     }
   }
 
-  await addWebhookToHistory(curlCommand);
+  try {
+    const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
+    const video = await videoRef.get();
+    const videoData = video.data();
 
-  const process = await new Promise<{ status: true } | { error: string }>(
-    async (resolve) => {
-      try {
-        // Get token from query params
-        const token = req.nextUrl.searchParams.get("token");
-        if (!token) {
-          resolve({ error: "Token is required" });
-          return;
-        }
-
-        const body = requestBody;
-
-        // Find video by ID
-        const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
-        const video = await videoRef.get();
-        const videoData = video.data();
-
-        if (
-          videoData == undefined ||
-          !video.exists ||
-          video.data() == undefined
-        ) {
-          resolve({ error: "Video not found" });
-          return;
-        }
-
-        // Send response if video already exist
-        if (videoData.video_url) {
-          resolve({ error: "Video already exist" });
-          return;
-        }
-
-        // Authenticate request with secret key / webhook signature
-        const secret_token = videoData.secret_token;
-        const signatureHeader =
-          headers.get("x-did-signature") ?? headers.get("x-webhook-signature");
-        if (
-          !secret_token ||
-          !verifyWebhookSignature(rawBody, secret_token, token, signatureHeader)
-        ) {
-          resolve({ error: "Unauthorized" });
-          return;
-        }
-
-        // D-ID talk id from webhook body
-        const did_video_id = body.id;
-        if (!did_video_id || typeof did_video_id !== "string") {
-          resolve({ error: "Missing D-ID video ID" });
-          return;
-        }
-
-        // Allow webhook to arrive before generateVideo persists did_id (race)
-        if (videoData.did_id && videoData.did_id !== did_video_id) {
-          resolve({ error: "Video ID mismatch" });
-          return;
-        }
-
-        if (!videoData.did_id) {
-          await videoRef.update({ did_id: did_video_id });
-        }
-
-        // Find video url from request
-        const result_url = body.result_url;
-
-        // Get status from request
-        const status = body.status;
-
-        if (status !== "done") {
-          if (status == "error") {
-            const errorDetails = body.error;
-            const errorMessage = body.error?.description;
-
-            await videoRef.update({
-              d_id_status: status,
-              error: errorDetails,
-              errorMessage: errorMessage,
-            });
-
-            const notificationRef = adminDb.collection(NOTIFICATION_COLLECTION);
-            await notificationRef.add({
-              type: NOTIFICATION_TYPE.VIDEO_GENERATION_FAILED,
-              status: NOTIFICATION_STATUS.UNREAD,
-              video_id: id,
-              user_id: videoData.owner,
-              created_at: Math.floor(Date.now() / 1000).toString(),
-            });
-            resolve({ status: true });
-          } else {
-            await videoRef.update({
-              d_id_status: status,
-            });
-            resolve({ status: true });
-          }
-        } else {
-          // Download video from result_url and upload that video to firebase storage
-          const addVideoResponse = await addVideoToStorage(
-            id,
-            result_url,
-            status
-          );
-          if (addVideoResponse.status) {
-            // Add new notification to notification collection
-            const notificationRef = adminDb.collection(NOTIFICATION_COLLECTION);
-            await notificationRef.add({
-              type: NOTIFICATION_TYPE.VIDEO_GENERATED,
-              status: NOTIFICATION_STATUS.UNREAD,
-              video_id: id,
-              user_id: videoData.owner,
-              created_at: Math.floor(Date.now() / 1000).toString(),
-            });
-
-            resolve({ status: true });
-          } else {
-            resolve({ error: "Error adding video to storage" });
-          }
-        }
-
-        return;
-      } catch {
-        resolve({ error: "Failed to process webhook" });
-      }
+    if (!video.exists || !videoData) {
+      return new Response("Video not found", { status: 404 });
     }
-  );
 
-  if ("error" in process) {
-    return new Response(process.error, { status: 400 });
-  } else {
+    if (videoData.video_url) {
+      return new Response("Video already exist", { status: 200 });
+    }
+
+    const token = req.nextUrl.searchParams.get("token");
+    const signatureHeader =
+      req.headers.get("x-did-signature") ?? req.headers.get("x-webhook-signature");
+    const secret = typeof videoData.secret_token === "string" ? videoData.secret_token : "";
+
+    if (!isWebhookAuthorized(rawBody, secret, token, signatureHeader)) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const didVideoId = requestBody.id;
+    if (typeof didVideoId !== "string" || !didVideoId) {
+      return new Response("Missing D-ID video ID", { status: 400 });
+    }
+
+    if (videoData.did_id && videoData.did_id !== didVideoId) {
+      return new Response("Video ID mismatch", { status: 400 });
+    }
+
+    if (!videoData.did_id) {
+      await videoRef.update({ did_id: didVideoId });
+    }
+
+    const status = requestBody.status;
+    await recordWebhook(id, typeof status === "string" ? status : "unknown");
+
+    if (status !== "done") {
+      if (status === "error") {
+        const errorDetails =
+          requestBody.error && typeof requestBody.error === "object"
+            ? requestBody.error
+            : null;
+        const errorMessage =
+          errorDetails &&
+          "description" in errorDetails &&
+          typeof errorDetails.description === "string"
+            ? errorDetails.description
+            : "Video generation failed";
+
+        await videoRef.update({
+          d_id_status: status,
+          error: errorDetails,
+          errorMessage,
+        });
+
+        await adminDb.collection(NOTIFICATION_COLLECTION).add({
+          type: NOTIFICATION_TYPE.VIDEO_GENERATION_FAILED,
+          status: NOTIFICATION_STATUS.UNREAD,
+          video_id: id,
+          user_id: videoData.owner,
+          created_at: Math.floor(Date.now() / 1000).toString(),
+        });
+        return new Response("Webhook processed successfully", { status: 200 });
+      }
+
+      await videoRef.update({
+        d_id_status: typeof status === "string" ? status : "unknown",
+      });
+      return new Response("Webhook processed successfully", { status: 200 });
+    }
+
+    const resultUrl = requestBody.result_url;
+    if (typeof resultUrl !== "string" || !resultUrl) {
+      return new Response("Missing result URL", { status: 400 });
+    }
+
+    const addVideoResponse = await addVideoToStorage(id, resultUrl, status);
+    if (!addVideoResponse.status) {
+      return new Response("Error adding video to storage", { status: 400 });
+    }
+
+    await adminDb.collection(NOTIFICATION_COLLECTION).add({
+      type: NOTIFICATION_TYPE.VIDEO_GENERATED,
+      status: NOTIFICATION_STATUS.UNREAD,
+      video_id: id,
+      user_id: videoData.owner,
+      created_at: Math.floor(Date.now() / 1000).toString(),
+    });
+
     return new Response("Webhook processed successfully", { status: 200 });
+  } catch {
+    return new Response("Failed to process webhook", { status: 400 });
   }
 };

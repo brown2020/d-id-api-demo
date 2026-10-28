@@ -771,11 +771,9 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
           } else {
             canvas.remove(selectedObject);
           }
+          canvas.discardActiveObject();
+          canvas.renderAll();
         }
-        canvas.discardActiveObject();
-        canvas.renderAll();
-      } else {
-        console.log("No active selection to delete");
       }
     }
   };
@@ -1085,6 +1083,7 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
               useFallbackImage,
               profile.did_basic_auth
             );
+            void useProfileStore.getState().fetchProfile();
 
             if (response.status && response.id != undefined) {
               // Instead of just resolving with the ID, initiate polling for the video status
@@ -1467,7 +1466,7 @@ function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof u
                           <div className="relative w-full h-96">
                             <Image
                               className="rounded-md cursor-pointer object-cover"
-                              src={selectedAvatar.preview_image_url}
+                              src={`/api/imageproxy/${selectedAvatar.talking_photo_id}.png`}
                               alt="avatar"
                               layout="fill"
                             />
@@ -1871,6 +1870,12 @@ function CreateVideoWriteScriptPanel({ model }: { model: ReturnType<typeof useCr
                   )}
                 </button>
               </div>
+              <p className="mt-3 text-sm text-gray-600">
+                Uses 1 credit.{" "}
+                <Link href="/payment-attempt" className="text-blue-600 underline">
+                  Buy credits
+                </Link>
+              </p>
             </form>
           </div>
         ) : (

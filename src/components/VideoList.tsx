@@ -65,7 +65,7 @@ export default function VideosPage() {
                                                             <div className="h-36"></div>
                                                             {
                                                                 video.thumbnail_url ?
-                                                                    <Image src={video.thumbnail_url} alt="Audio play image" width={200} height={100} className="absolute inset-0 w-full h-full  object-cover" />
+                                                                    <Image src={`/api/video-image-proxy/${video.id}.png`} alt="Audio play image" width={200} height={100} className="absolute inset-0 w-full h-full  object-cover" />
                                                                     :
                                                                     <Image src={PlayVideoIcon} alt="Audio play image" width={60} height={60} className="flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover/video:w-20 group-hover/video:h-20 transition-colors duration-300 object-contain justify-center items-center" />
                                                             }

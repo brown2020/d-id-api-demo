@@ -11,7 +11,10 @@ export async function GET() {
   }
 
   try {
-    const snapshot = await adminDb.collection(VIDEO_COLLECTION).get();
+    const snapshot = await adminDb
+      .collection(VIDEO_COLLECTION)
+      .where("owner", "==", auth.uid)
+      .get();
     const videoIds = snapshot.docs.map((doc) => doc.id);
 
     return NextResponse.json(

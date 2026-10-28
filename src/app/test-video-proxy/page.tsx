@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getApiBaseUrl, imageProxyUrl } from "@/libs/utils";
+import { getApiBaseUrl, videoImageProxyUrl } from "@/libs/utils";
 import Image from "next/image";
 
 export default function TestVideoProxy() {
@@ -33,7 +33,7 @@ export default function TestVideoProxy() {
   const testDirectFetch = async () => {
     if (!selectedVideo) return;
     setDirectFetchResult("loading");
-    const proxyUrl = imageProxyUrl(baseUrl, `${selectedVideo}.png`);
+    const proxyUrl = videoImageProxyUrl(baseUrl, `${selectedVideo}.png`);
     try {
       const response = await fetch(proxyUrl);
       if (!response.ok) {
@@ -88,7 +88,7 @@ export default function TestVideoProxy() {
       {directFetchResult ? <p>Result: {directFetchResult}</p> : null}
       {selectedVideo && directFetchResult === "ok" ? (
         <Image
-          src={imageProxyUrl(baseUrl, `${selectedVideo}.png`)}
+          src={videoImageProxyUrl(baseUrl, `${selectedVideo}.png`)}
           alt="Proxy preview"
           width={256}
           height={256}

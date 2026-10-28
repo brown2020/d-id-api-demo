@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { requireNonProduction } from "@/libs/api-auth";
+import { requireLocalDevelopment } from "@/libs/api-auth";
 import { getApiBaseUrl } from "@/libs/utils";
 
 export async function GET(req: Request) {
-  const blocked = requireNonProduction();
+  const blocked = requireLocalDevelopment();
   if (blocked) {
     return blocked;
   }

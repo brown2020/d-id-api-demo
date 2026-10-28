@@ -1,15 +1,26 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { Emotion, Movement } from "../types/did";
 import { requireAuth } from "./auth";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "../libs/constants";
 import { adminDb, admin } from "../firebase/firebaseAdmin";
 import { getWebhookUrl, randomString, videoImageProxyUrl } from "../libs/utils";
-import { getFileUrl } from "./getFileUrl";
 import { addErrorReport } from "./addErrorReport";
 import { isEditableVideoStatus } from "../libs/auth-constants";
 import { checkDidImageAccess } from "../libs/did-image-access";
+import {
+  allowedAppOriginsFromHeaders,
+  isAllowedAppBaseUrl,
+} from "@/libs/app-base-url";
+import { INSUFFICIENT_CREDITS_MESSAGE } from "@/libs/video-credits";
+import {
+  debitVideoGenerationCredits,
+  refundVideoGenerationCredits,
+} from "@/server/video-credits";
+import { materializeVideoThumbnail } from "@/server/materialize-thumbnail";
 
 export async function generateVideo(
   video_id: string | null,
@@ -26,8 +37,17 @@ export async function generateVideo(
   basicAuth: string | null = null
 ) {
   const userId = await requireAuth();
+  const allowedOrigins = allowedAppOriginsFromHeaders(await headers());
+  if (!isAllowedAppBaseUrl(baseUrl, allowedOrigins)) {
+    return {
+      status: false,
+      message: "Invalid application base URL",
+      id: video_id ?? "",
+    };
+  }
 
   const id = video_id ? video_id : `new-video-${Date.now()}`;
+  let charged = false;
 
   try {
     // Create or get the video document in Firestore first, before generating
@@ -57,52 +77,28 @@ export async function generateVideo(
       });
     }
 
-    // Generate video thumbnail
-    const filename = `thumbnail-${randomString(10)}.png`;
-    const filePath = `video-image/${id}/${filename}`;
-
-    // Add that thumbnail to firebase storage
-    const bucket = admin.storage().bucket();
-    const file = bucket.file(filePath);
-
-    let thumbnailUrl;
-
-    // Check if thumbnail_url is a data URL or already a regular URL
-    if (thumbnail_url.startsWith("data:")) {
-      const matches = thumbnail_url.match(/^data:(.+);base64,(.+)$/);
-
-      if (!matches) {
-        // Use a fallback instead of throwing an error
-        thumbnailUrl = `https://didapidemo.vercel.app/assets/headshot_fallback.png`;
-      } else {
-        const mimeType = matches[1]; // e.g., 'image/png'
-        const base64Data = matches[2];
-
-        // Create a temporary file
-        const buffer = Buffer.from(base64Data, "base64");
-
-        // Save the file directly to Firebase Storage
-        await file.save(buffer, {
-          metadata: {
-            contentType: mimeType, // Set the MIME type of the file
-          },
-        });
-
-        // Create public url for that thumbnail
-        thumbnailUrl = await getFileUrl(filePath);
-      }
-    } else {
-      // If it's already a URL, just use it directly
-      thumbnailUrl = thumbnail_url;
+    const thumbnail = await materializeVideoThumbnail({
+      thumbnailUrl: useFallbackImage
+        ? "https://didapidemo.vercel.app/assets/headshot_fallback.png"
+        : thumbnail_url,
+      videoId: id,
+      userId,
+    });
+    if (!thumbnail.ok) {
+      return { status: false, message: thumbnail.message, id };
     }
 
-    // add that thumbnail id to video object
+    const secret_token = randomString(32);
     await videoRef.update({
-      thumbnail_url: thumbnailUrl,
+      thumbnail_url: thumbnail.storedUrl,
+      secret_token,
     });
 
-    // Create proxy link
-    const secret_token = randomString(32);
+    const debit = await debitVideoGenerationCredits(userId);
+    if (!debit.ok) {
+      return { status: false, message: INSUFFICIENT_CREDITS_MESSAGE, id };
+    }
+    charged = true;
 
     // Determine environment by checking the URL structure rather than relying on env vars
     const isLocalhost =
@@ -171,6 +167,8 @@ export async function generateVideo(
           updated_at: admin.firestore.Timestamp.now(),
         });
 
+        await refundVideoGenerationCredits(userId);
+        charged = false;
         return {
           status: false,
           message: response.error || "Error generating video",
@@ -192,12 +190,22 @@ export async function generateVideo(
           id: id,
         };
       }
+      await refundVideoGenerationCredits(userId);
+      charged = false;
       return { status: false, message: "Error generating video", id };
     }
 
-    // Shouldn't reach here, but handle as failure case
+    await refundVideoGenerationCredits(userId);
+    charged = false;
     return { status: false, message: "Error generating video", id };
   } catch (error) {
+    if (charged) {
+      try {
+        await refundVideoGenerationCredits(userId);
+      } catch {
+        // The original error is still reported below.
+      }
+    }
     /* eslint-disable @typescript-eslint/no-explicit-any */
     let errorDetails: Record<string, any> = {};
     let errorMessage = "Unknown error occurred during video generation";

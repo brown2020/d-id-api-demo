@@ -24,7 +24,7 @@ const AvatarGallery: React.FC<AvatarGalleryProps> = ({
             {avatar.preview_image_url &&
             avatar.preview_image_url.trim() !== "" ? (
               <Image
-                src={avatar.preview_image_url}
+                src={`/api/imageproxy/${avatar.talking_photo_id}.png`}
                 alt={avatar.talking_photo_name}
                 width={512}
                 height={512}

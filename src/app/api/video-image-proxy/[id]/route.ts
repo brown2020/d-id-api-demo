@@ -1,227 +1,92 @@
 import { NextResponse } from "next/server";
-import { VIDEO_COLLECTION } from "@/libs/constants";
+
 import { adminDb } from "@/firebase/firebaseAdmin";
+import { VIDEO_COLLECTION } from "@/libs/constants";
+import {
+  isCallerImagePath,
+  isExactFallbackImageUrl,
+  isVideoThumbnailPath,
+  maxProxiedImageBytes,
+  safeImageResponseHeaders,
+  sniffImageContentType,
+  storageObjectPathFromUrl,
+} from "@/libs/storage-url";
+import { readBucketImage } from "@/server/read-bucket-image";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+export const dynamic = "force-dynamic";
 
+function unavailable(status = 404) {
+  return NextResponse.json(
+    { error: "Image not available" },
+    { status, headers: { "Cache-Control": "no-store" } }
+  );
+}
 
-  // Extract the Firestore document ID (remove .png extension)
-  const docId = id.replace(".png", "");
-
+async function serveFallback() {
   try {
-    // Fetch the Firestore document
-    const docRef = adminDb.collection(VIDEO_COLLECTION).doc(docId);
-    const docSnap = await docRef.get();
-
-    if (!docSnap.exists) {
-      return NextResponse.json(
-        { error: "Document not found" },
-        {
-          status: 404,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Cache-Control": "no-cache",
-          },
-        }
-      );
-    }
-
-    const data = docSnap.data();
-
-    if (!data || !data.thumbnail_url) {
-      return NextResponse.json(
-        { error: "Image URL not found" },
-        {
-          status: 404,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Cache-Control": "no-cache",
-          },
-        }
-      );
-    }
-
-    const imageUrl = data.thumbnail_url;
-
-    try {
-      // Add extensive logging for troubleshooting
-
-      const response = await fetch(imageUrl, {
-        headers: {
-          Accept: "image/png,image/*;q=0.8",
-          "User-Agent": "Mozilla/5.0 D-ID-API-Proxy",
-        },
-      });
-
-
-      if (!response.ok) {
-
-        // Try using the fallback image instead of failing completely
-
-        try {
-          const fallbackUrl =
-            "https://didapidemo.vercel.app/assets/headshot_fallback.png";
-          const fallbackResponse = await fetch(fallbackUrl);
-
-          if (fallbackResponse.ok) {
-            const contentType =
-              fallbackResponse.headers.get("content-type") || "image/png";
-            const imageBuffer = await fallbackResponse.arrayBuffer();
-
-            return new NextResponse(imageBuffer, {
-              headers: {
-                "Content-Type": contentType,
-                "Cache-Control": "public, max-age=31536000, immutable",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                "X-Using-Fallback": "true",
-              },
-            });
-          }
-        } catch {
-        }
-
-        // Original image failed and fallback failed too
-        return NextResponse.json(
-          {
-            error: `Failed to fetch the image: ${response.status} ${response.statusText}`,
-            url: imageUrl,
-          },
-          {
-            status: 500,
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "GET, OPTIONS",
-              "Access-Control-Allow-Headers": "Content-Type, Authorization",
-              "Cache-Control": "no-cache",
-            },
-          }
-        );
-      }
-
-      const contentType = response.headers.get("content-type") || "image/png";
-      const imageBuffer = await response.arrayBuffer();
-
-
-      return new NextResponse(imageBuffer, {
-        headers: {
-          "Content-Type": contentType,
-          "Cache-Control": "public, max-age=31536000, immutable",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      });
-    } catch (error) {
-
-      // Try using the fallback image instead of failing completely
-
-      try {
-        const fallbackUrl =
-          "https://didapidemo.vercel.app/assets/headshot_fallback.png";
-        const fallbackResponse = await fetch(fallbackUrl);
-
-        if (fallbackResponse.ok) {
-          const contentType =
-            fallbackResponse.headers.get("content-type") || "image/png";
-          const imageBuffer = await fallbackResponse.arrayBuffer();
-
-          return new NextResponse(imageBuffer, {
-            headers: {
-              "Content-Type": contentType,
-              "Cache-Control": "public, max-age=31536000, immutable",
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "GET, OPTIONS",
-              "Access-Control-Allow-Headers": "Content-Type, Authorization",
-              "X-Using-Fallback": "true",
-            },
-          });
-        }
-      } catch {
-      }
-
-      // Both original and fallback failed
-      return NextResponse.json(
-        {
-          error: "Failed to fetch the image",
-          details: String(error),
-          url: imageUrl,
-        },
-        {
-          status: 500,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Cache-Control": "no-cache",
-          },
-        }
-      );
-    }
-  } catch (error) {
-
-    // Try using the fallback image instead of failing completely
-
-    try {
-      const fallbackUrl =
-        "https://didapidemo.vercel.app/assets/headshot_fallback.png";
-      const fallbackResponse = await fetch(fallbackUrl);
-
-      if (fallbackResponse.ok) {
-        const contentType =
-          fallbackResponse.headers.get("content-type") || "image/png";
-        const imageBuffer = await fallbackResponse.arrayBuffer();
-
-        return new NextResponse(imageBuffer, {
-          headers: {
-            "Content-Type": contentType,
-            "Cache-Control": "public, max-age=31536000, immutable",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "X-Using-Fallback": "true",
-          },
-        });
-      }
-    } catch {
-    }
-
-    return NextResponse.json(
-      {
-        error: "Server error",
-        details: String(error),
-      },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Cache-Control": "no-cache",
-        },
-      }
+    const response = await fetch(
+      "https://didapidemo.vercel.app/assets/headshot_fallback.png",
+      { redirect: "error" }
     );
+    if (!response.ok) {
+      return unavailable();
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length > maxProxiedImageBytes()) {
+      return unavailable();
+    }
+    const contentType = sniffImageContentType(bytes);
+    if (!contentType) {
+      return unavailable();
+    }
+    return new NextResponse(bytes, { headers: safeImageResponseHeaders(contentType) });
+  } catch {
+    return unavailable();
   }
 }
 
-// Add OPTIONS method to handle preflight requests
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Max-Age": "86400",
-    },
-  });
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const docId = decodeURIComponent(id).replace(/\.png$/, "");
+
+  try {
+    const docSnap = await adminDb.collection(VIDEO_COLLECTION).doc(docId).get();
+    if (!docSnap.exists) {
+      return unavailable();
+    }
+
+    const data = docSnap.data();
+    const imageUrl = data?.thumbnail_url;
+    if (typeof imageUrl !== "string" || !imageUrl) {
+      return unavailable();
+    }
+
+    if (isExactFallbackImageUrl(imageUrl)) {
+      return serveFallback();
+    }
+
+    const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGEBUCKET ?? "";
+    const objectPath = storageObjectPathFromUrl(imageUrl, bucket);
+    const owner = typeof data?.owner === "string" ? data.owner : "";
+    if (
+      !objectPath ||
+      !(isVideoThumbnailPath(objectPath, docId) || isCallerImagePath(objectPath, owner))
+    ) {
+      return unavailable();
+    }
+
+    const image = await readBucketImage(objectPath);
+    if (!image.ok) {
+      return unavailable(image.status);
+    }
+
+    return new NextResponse(new Uint8Array(image.bytes), {
+      headers: safeImageResponseHeaders(image.contentType),
+    });
+  } catch {
+    return unavailable(500);
+  }
 }

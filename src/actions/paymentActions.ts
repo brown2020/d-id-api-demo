@@ -2,7 +2,10 @@
 "use server";
 
 import { admin, adminDb } from "@/firebase/firebaseAdmin";
-import { creditsForPaymentAmountCents } from "@/libs/payment-credits";
+import {
+  creditsForPaymentAmountCents,
+  isCreditPackAmount,
+} from "@/libs/payment-credits";
 import Stripe from "stripe";
 
 import { getCurrentUser } from "./auth";
@@ -29,6 +32,9 @@ export async function createPaymentIntent(amount: number) {
   const product = process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME;
 
   try {
+    if (!isCreditPackAmount(amount)) {
+      throw new Error("Invalid payment amount");
+    }
     if (!product) throw new Error("Stripe product name is not defined");
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -44,35 +50,6 @@ export async function createPaymentIntent(amount: number) {
     return paymentIntent.client_secret;
   } catch {
     throw new Error("Failed to create payment intent");
-  }
-}
-
-/** @deprecated Prefer fulfillPayment for payment success handling. */
-export async function validatePaymentIntent(paymentIntentId: string) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-
-  try {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (paymentIntent.status === "succeeded") {
-      return {
-        id: paymentIntent.id,
-        amount: paymentIntent.amount,
-        created: paymentIntent.created,
-        status: paymentIntent.status,
-        client_secret: paymentIntent.client_secret,
-        currency: paymentIntent.currency,
-        description: paymentIntent.description,
-      };
-    }
-
-    throw new Error("Payment was not successful");
-  } catch {
-    throw new Error("Failed to validate payment intent");
   }
 }
 

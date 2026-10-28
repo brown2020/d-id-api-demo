@@ -82,13 +82,68 @@ service cloud.firestore {
 
       // Private per-user profile (API keys client-writable; credits server-only)
       match /profile/{docId} {
+        function optionalString(field, maxLen) {
+          return !(field in request.resource.data)
+            || (request.resource.data[field] is string
+              && request.resource.data[field].size() <= maxLen);
+        }
+
+        function optionalBool(field) {
+          return !(field in request.resource.data)
+            || request.resource.data[field] is bool;
+        }
+
+        function profileShape() {
+          return optionalString('email', 320)
+            && optionalString('contactEmail', 320)
+            && optionalString('displayName', 200)
+            && optionalString('photoUrl', 4000)
+            && optionalBool('emailVerified')
+            && optionalString('did_api_key', 4000)
+            && optionalString('did_basic_auth', 4000)
+            && optionalString('elevenlabs_api_key', 4000)
+            && optionalString('selectedAvatar', 200)
+            && optionalString('selectedTalkingPhoto', 200);
+        }
+
         allow read: if isSelf(userId);
 
         allow create: if isSelf(userId)
-          && (!('credits' in request.resource.data) || request.resource.data.credits == 1000);
+          && request.resource.data.keys().hasOnly([
+            'email',
+            'contactEmail',
+            'displayName',
+            'photoUrl',
+            'emailVerified',
+            'credits',
+            'did_api_key',
+            'did_basic_auth',
+            'elevenlabs_api_key',
+            'selectedAvatar',
+            'selectedTalkingPhoto'
+          ])
+          && request.resource.data.credits is number
+          && request.resource.data.credits == 1000
+          && profileShape();
 
         allow update: if isSelf(userId)
-          && (!('credits' in request.resource.data) || request.resource.data.credits == resource.data.credits);
+          && 'credits' in resource.data
+          && 'credits' in request.resource.data
+          && request.resource.data.credits is number
+          && request.resource.data.credits == resource.data.credits
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'email',
+            'contactEmail',
+            'displayName',
+            'photoUrl',
+            'emailVerified',
+            'did_api_key',
+            'did_basic_auth',
+            'elevenlabs_api_key',
+            'selectedAvatar',
+            'selectedTalkingPhoto'
+          ])
+          && profileShape();
 
         allow delete: if false;
       }
@@ -142,10 +197,14 @@ service cloud.firestore {
         && request.resource.data.type == 'personal'
         && request.resource.data.owner == request.auth.uid;
 
-      // Personal avatars: owner can fully manage
-      allow update, delete: if resource.data.type == 'personal'
+      // Personal avatars: owner can fully manage, but cannot promote them to templates.
+      allow delete: if resource.data.type == 'personal'
+        && isOwnerField(resource.data.owner);
+
+      allow update: if resource.data.type == 'personal'
         && isOwnerField(resource.data.owner)
-        && request.resource.data.owner == resource.data.owner;
+        && request.resource.data.owner == resource.data.owner
+        && request.resource.data.type == 'personal';
 
       // Template avatars: allow *only* safe favorite toggles
       allow update: if resource.data.type == 'template'

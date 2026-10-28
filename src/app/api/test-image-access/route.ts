@@ -1,31 +1,28 @@
 import { NextResponse } from "next/server";
 
-import { requireNonProduction } from "@/libs/api-auth";
+import { requireApiSession, requireLocalDevelopment } from "@/libs/api-auth";
+import {
+  isExactFallbackImageUrl,
+  storageObjectPathFromUrl,
+} from "@/libs/storage-url";
 
 function isAllowedImageUrl(raw: string): boolean {
-  try {
-    const parsed = new URL(raw);
-    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-      return false;
-    }
-    // Block obvious open-redirect style hosts; allow firebase/storage/cdn + ngrok for local demos
-    const host = parsed.hostname.toLowerCase();
-    return (
-      host.endsWith("googleapis.com") ||
-      host.endsWith("firebasestorage.app") ||
-      host.endsWith("ngrok-free.app") ||
-      host.endsWith("ngrok.io") ||
-      host === "localhost"
-    );
-  } catch {
-    return false;
+  if (isExactFallbackImageUrl(raw)) {
+    return true;
   }
+  const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGEBUCKET ?? "";
+  return storageObjectPathFromUrl(raw, bucket) !== null;
 }
 
 export async function GET(req: Request) {
-  const blocked = requireNonProduction();
+  const blocked = requireLocalDevelopment();
   if (blocked) {
     return blocked;
+  }
+
+  const auth = await requireApiSession();
+  if (auth instanceof NextResponse) {
+    return auth;
   }
 
   const url = new URL(req.url);

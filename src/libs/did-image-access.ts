@@ -18,6 +18,7 @@ export async function checkDidImageAccess(
   try {
     const headResponse = await fetch(imageUrl, {
       method: "HEAD",
+      redirect: "error",
       headers: {
         "User-Agent": "Mozilla/5.0 D-ID-API-Service",
         Accept: "image/png,image/jpeg,image/*;q=0.8",
@@ -37,6 +38,7 @@ export async function checkDidImageAccess(
 
     const getResponse = await fetch(imageUrl, {
       method: "GET",
+      redirect: "error",
       headers: {
         "User-Agent": "Mozilla/5.0 D-ID-API-Service",
         Accept: "image/png,image/jpeg,image/*;q=0.8",

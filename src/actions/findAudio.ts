@@ -1,8 +1,13 @@
 "use server";
+import { requireAuth } from "@/actions/auth";
 import { ElevenLabsClient, ElevenLabsError } from "@elevenlabs/elevenlabs-js";
 
 export async function findAudio(elevenlabs_api_key: string, voiceId: string) {
     try {
+        await requireAuth();
+        if (!elevenlabs_api_key.trim()) {
+            return { error: "ElevenLabs : Invalid API key." };
+        }
         const elevenlabs = new ElevenLabsClient({
             apiKey: elevenlabs_api_key // Defaults to process.env.ELEVENLABS_API_KEY
         })

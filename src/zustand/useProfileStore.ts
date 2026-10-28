@@ -132,26 +132,9 @@ const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   useCredits: async (amount: number) => {
-    const uid = useAuthStore.getState().uid;
-    if (!uid) return false;
-
-    const profile = get().profile;
-    if (profile.credits < amount) {
-      return false;
-    }
-
-    try {
-      const newCredits = profile.credits - amount;
-      const userRef = doc(db, `users/${uid}/profile/userData`);
-
-      await updateDoc(userRef, { credits: newCredits });
-      set({ profile: { ...profile, credits: newCredits } });
-
-      return true;
-    } catch (error) {
-      console.error("Error using credits:", error);
-      return false;
-    }
+    // Generation debits credits in the server action. Client writes are rejected by rules.
+    void amount;
+    return false;
   },
 
   addCredits: async () => {

@@ -1,8 +1,14 @@
 "use server";
 
+import { headers } from "next/headers";
+import axios from "axios";
+
+import {
+  allowedAppOriginsFromHeaders,
+  isAllowedGenerationImageUrl,
+} from "@/libs/app-base-url";
 import { DIDVideoStatus, Emotion, Movement } from "../types/did";
 import { requireAuth } from "./auth";
-import axios from "axios";
 import { addErrorReport } from "./addErrorReport";
 
 export type GenerateVideoSuccessResponse = {
@@ -28,12 +34,15 @@ export async function generateDIDVideo(
 ): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
   await requireAuth();
 
-
-  // Use environment variables as fallbacks for the API keys
-  const finalApiKey = apiKey || process.env.DID_API_KEY || "";
-  const finalElevenlabsApiKey =
-    elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "";
-  let finalBasicAuth = basicAuth || process.env.D_ID_BASIC_AUTH || "";
+  const finalApiKey = apiKey?.trim() || "";
+  const finalElevenlabsApiKey = elevenlabsApiKey?.trim() || "";
+  let finalBasicAuth = basicAuth?.trim() || "";
+  const allowedOrigins = allowedAppOriginsFromHeaders(await headers());
+  if (!isAllowedGenerationImageUrl(imageUrl, allowedOrigins)) {
+    return {
+      error: "The image URL is not an allowed application URL.",
+    };
+  }
 
   // Check if we have either API key or Basic Auth
   if (!finalApiKey && !finalBasicAuth) {
@@ -83,6 +92,7 @@ export async function generateDIDVideo(
       try {
         const headResponse = await fetch(imageUrl, {
           method: "HEAD",
+          redirect: "error",
           headers: { Accept: "image/*" },
         });
 
@@ -92,6 +102,7 @@ export async function generateDIDVideo(
           // Method 2: GET request (more reliable, fallback)
           const getResponse = await fetch(imageUrl, {
             method: "GET",
+            redirect: "error",
             headers: { Accept: "image/*" },
           });
 
@@ -106,7 +117,7 @@ export async function generateDIDVideo(
 
         // Fallback to GET request
         try {
-          const getResponse = await fetch(imageUrl);
+          const getResponse = await fetch(imageUrl, { redirect: "error" });
           if (!getResponse.ok) {
             return {
               error: `The image URL is not accessible.`,

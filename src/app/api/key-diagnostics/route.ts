@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "../../../actions/auth";
+import { requireLocalDevelopment } from "@/libs/api-auth";
 
 export async function GET() {
+  const blocked = requireLocalDevelopment();
+  if (blocked) {
+    return blocked;
+  }
+
   try {
     await requireAuth();
 

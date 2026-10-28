@@ -165,6 +165,7 @@ export function useGenerate() {
       );
     } finally {
       setIsGenerating(false);
+      void useProfileStore.getState().fetchProfile();
       console.log("Video generation process completed.");
     }
   };
@@ -271,6 +272,7 @@ export function useGenerate() {
               "Generate Video"
             )}
           </button>
+          <p className="text-sm text-gray-600">Uses 1 credit.</p>
           {error && (
             <div className="mt-2">
               {error.includes("celebrity") ? (
@@ -298,6 +300,13 @@ export function useGenerate() {
                     className="text-blue-600 underline"
                   >
                     API diagnostics
+                  </Link>
+                </p>
+              ) : null}
+              {error.includes("Not enough credits") ? (
+                <p className="mt-2 text-sm">
+                  <Link href="/payment-attempt" className="text-blue-600 underline">
+                    Buy credits
                   </Link>
                 </p>
               ) : null}

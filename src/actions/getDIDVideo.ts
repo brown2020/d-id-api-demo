@@ -1,5 +1,6 @@
 "use server";
 
+import { requireAuth } from "@/actions/auth";
 import { DIDVideoStatus } from "@/types/did";
 import axios from "axios";
 
@@ -13,19 +14,16 @@ interface GetVideoSuccessResponse {
 
 export async function getDIDVideo(d_id_api_key: string, videoId: string) {
   try {
-    // Use profile API key or fall back to environment variable
-    const finalApiKey = d_id_api_key || process.env.DID_API_KEY || "";
+    await requireAuth();
 
-    // Log API key format for debugging
-
-    // Use environment variable auth or construct from API key
-    const authorization =
-      process.env.D_ID_BASIC_AUTH ||
-      (finalApiKey
-        ? finalApiKey.includes(":")
+    const finalApiKey = d_id_api_key.trim();
+    const authorization = finalApiKey
+      ? finalApiKey.startsWith("Basic ")
+        ? finalApiKey
+        : finalApiKey.includes(":")
           ? `Basic ${Buffer.from(finalApiKey).toString("base64")}`
           : `Basic ${finalApiKey}`
-        : "");
+      : "";
 
     // Check if we have valid authorization
     if (!authorization) {

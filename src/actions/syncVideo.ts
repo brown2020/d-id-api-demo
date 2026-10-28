@@ -1,10 +1,16 @@
 "use server";
 
 import { DIDVideoStatus } from "../types/did";
-import { VIDEO_COLLECTION, NOTIFICATION_COLLECTION } from "../libs/constants";
+import {
+  NOTIFICATION_COLLECTION,
+  NOTIFICATION_STATUS,
+  NOTIFICATION_TYPE,
+  VIDEO_COLLECTION,
+} from "../libs/constants";
 import { adminDb } from "../firebase/firebaseAdmin";
 import { requireAuth } from "./auth";
 import { Timestamp } from "firebase-admin/firestore";
+import { isOwnedVideoObjectPath, storageObjectPathFromUrl } from "@/libs/storage-url";
 
 interface SyncVideoParams {
   video_id: string;
@@ -25,19 +31,28 @@ interface VideoUpdateData {
 }
 
 export async function syncVideo(params: SyncVideoParams) {
-  await requireAuth();
+  const userId = await requireAuth();
   try {
     const {
       video_id,
-      owner,
       video_url,
       status = "done",
       errorMessage,
       errorDetails,
     } = params;
 
-    // Get the video document reference
     const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(video_id);
+    const existing = await videoRef.get();
+    const existingData = existing.data();
+    if (!existing.exists || !existingData || existingData.owner !== userId) {
+      return { error: "Unauthorized" };
+    }
+
+    const bucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGEBUCKET ?? "";
+    const objectPath = storageObjectPathFromUrl(video_url, bucket);
+    if (!objectPath || !isOwnedVideoObjectPath(objectPath, video_id)) {
+      return { error: "Invalid video URL" };
+    }
 
     // Create an update object, only including fields that are defined
     const updateData: Partial<VideoUpdateData> = {
@@ -60,11 +75,14 @@ export async function syncVideo(params: SyncVideoParams) {
 
     // Create notification
     await adminDb.collection(NOTIFICATION_COLLECTION).add({
-      user_id: owner,
+      user_id: existingData.owner,
       video_id,
-      status: "UNREAD",
-      type: status === "done" ? "video_generated" : "video_generation_failed",
-      created_at: Timestamp.now(),
+      status: NOTIFICATION_STATUS.UNREAD,
+      type:
+        status === "done"
+          ? NOTIFICATION_TYPE.VIDEO_GENERATED
+          : NOTIFICATION_TYPE.VIDEO_GENERATION_FAILED,
+      created_at: Math.floor(Date.now() / 1000).toString(),
     });
 
     return { success: true, video_url };

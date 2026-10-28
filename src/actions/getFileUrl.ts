@@ -1,30 +1,41 @@
 "use server";
 
-import { admin } from "@/firebase/firebaseAdmin";
+import { admin, adminDb } from "@/firebase/firebaseAdmin";
+import { requireAuth } from "@/actions/auth";
+import { VIDEO_COLLECTION } from "@/libs/constants";
+import { isCallerImagePath, isVideoThumbnailPath } from "@/libs/storage-url";
 
-export async function getFileUrl(filepath: string){
-    try {
-        const bucket = admin.storage().bucket();
-        const file = bucket.file(filepath);
+const SIGNED_URL_TTL_MS = 60 * 60 * 1000;
 
-        // const stream = file.createWriteStream({
-        //     metadata: {
-        //         contentType: 'image/jpeg' // Adjust content type as needed
-        //     }
-        // });
+async function canReadPath(filepath: string, uid: string): Promise<boolean> {
+  if (filepath.includes("..") || filepath.includes("\\") || filepath.startsWith("/")) {
+    return false;
+  }
 
-        const [url] = await file.getSignedUrl({
-            action: "read",
-            expires: "03-17-2125",
-        });
-        return url;
-        // return new Promise((resolve, reject) => {
-        //     stream.on('error', reject);
-        //     stream.on('finish', resolve);
+  if (isCallerImagePath(filepath, uid)) {
+    return true;
+  }
 
-        //     fs.createReadStream(filePath).pipe(stream);
-        // });
-    } catch (error) {
-        throw error;
-    }
+  const thumbnail = filepath.match(/^video-image\/([^/]+)\//);
+  if (!thumbnail || !isVideoThumbnailPath(filepath, thumbnail[1])) {
+    return false;
+  }
+
+  const video = await adminDb.collection(VIDEO_COLLECTION).doc(thumbnail[1]).get();
+  return video.exists && video.data()?.owner === uid;
+}
+
+export async function getFileUrl(filepath: string) {
+  const uid = await requireAuth();
+
+  if (!(await canReadPath(filepath, uid))) {
+    throw new Error("Forbidden");
+  }
+
+  const file = admin.storage().bucket().file(filepath);
+  const [url] = await file.getSignedUrl({
+    action: "read",
+    expires: Date.now() + SIGNED_URL_TTL_MS,
+  });
+  return url;
 }

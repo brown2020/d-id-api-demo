@@ -3,6 +3,7 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 import { VIDEO_COLLECTION } from "@/libs/constants";
 import { getCurrentUser } from "./auth";
 import { getDIDVideo } from "./getDIDVideo";
+import { addVideoToStorage } from "./addVideoToStorage";
 import { syncVideo } from "./syncVideo";
 
 export async function getVideo(d_id_api_key: string, video_id: string) {
@@ -48,16 +49,23 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
   }
 
   if (response.status === "done") {
-    // Get the video url
-    const video_url = response.result_url;
+    const remoteUrl = response.result_url;
+    if (!remoteUrl) {
+      return { error: "Video URL is missing" };
+    }
     if (!videoData.video_url) {
+      const saved = await addVideoToStorage(video_id, remoteUrl, "done");
+      if (!saved.status || !saved.video_url) {
+        return { error: "Error saving video" };
+      }
       await syncVideo({
         video_id: video_id,
         owner: videoData.owner,
-        video_url: video_url,
+        video_url: saved.video_url,
       });
+      return { status: true, video_url: saved.video_url };
     }
-    return { status: true, video_url };
+    return { status: true, video_url: videoData.video_url };
   }
 
   // Return processing

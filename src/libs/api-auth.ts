@@ -3,9 +3,12 @@ import { NextResponse } from "next/server";
 
 import { adminAuth } from "@/firebase/firebaseAdmin";
 import { SESSION_COOKIE_NAME } from "@/libs/auth-constants";
+import { isLocalDevelopment } from "@/libs/deploy-env";
+
+export { isLocalDevelopment };
 
 export function isProductionDeploy(): boolean {
-  return process.env.VERCEL_ENV === "production";
+  return !isLocalDevelopment();
 }
 
 export async function requireApiSession(): Promise<
@@ -26,10 +29,15 @@ export async function requireApiSession(): Promise<
   }
 }
 
-/** Dev-only diagnostic endpoints — blocked in production deploys. */
-export function requireNonProduction(): NextResponse | null {
-  if (isProductionDeploy()) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+/** Diagnostic endpoints — available only on a local development server. */
+export function requireLocalDevelopment(): NextResponse | null {
+  if (isLocalDevelopment()) {
+    return null;
   }
-  return null;
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+
+/** @deprecated Use requireLocalDevelopment. */
+export function requireNonProduction(): NextResponse | null {
+  return requireLocalDevelopment();
 }

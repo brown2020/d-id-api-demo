@@ -104,7 +104,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
     // For non-localhost environments, show the actual image
     return (
       <Image
-        src={avatar.preview_image_url}
+        src={`/api/imageproxy/${id}.png`}
         alt={avatar.talking_photo_name}
         width={512}
         height={512}
