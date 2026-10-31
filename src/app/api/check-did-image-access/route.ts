@@ -41,6 +41,13 @@ export async function GET(req: Request) {
     });
   }
 
-  const result = await checkDidImageAccess(imageUrl);
-  return NextResponse.json(result);
+  try {
+    const result = await checkDidImageAccess(imageUrl);
+    return NextResponse.json(result);
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Could not check image access" },
+      { status: 500 }
+    );
+  }
 }

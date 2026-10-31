@@ -134,7 +134,7 @@ Or individually: `yarn lint`, `yarn typecheck`, `yarn test`, `yarn build`.
 
 - Default to **Server Components** for `page.tsx`; add `"use client"` only where hooks, Firebase client SDK, Fabric, or browser APIs are needed.
 - **Never** import `firebaseAdmin` or use `protect()` in client components.
-- API keys for D-ID/ElevenLabs are stored in user profile (Firestore) and passed from client into server actions — env vars `D_ID_API_KEY` / `ELEVENLABS_API_KEY` in `.env.example` are optional fallbacks/diagnostics, not the primary user flow.
+- API keys for D-ID/ElevenLabs are stored in user profile (Firestore) and passed from client into server actions. `DID_API_KEY` is used for generation only when the profile has no D-ID key or Basic Auth. `ELEVENLABS_API_KEY` is not a generation fallback. A missing D-ID key, or a D-ID auth, credit, or quota error, returns the bundled sample in `public/demo/`.
 - Server Actions body limit: 3MB (`next.config.mjs` `experimental.serverActions.bodySizeLimit`).
 
 ## Route-protection guidance

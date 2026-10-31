@@ -5,13 +5,13 @@ Punchlist for `dev` after the October 2026 security and maintenance passes. This
 ## Needs a human
 
 - Deploy Firestore rules and indexes. CI does not deploy them. From a machine with Firebase credentials: `firebase deploy --only firestore:rules,firestore:indexes,storage`. Files: `firestore.rules`, `firestore.indexes.json`, `storage.rules`. Storage rules did not change in the security pass; the Firestore rules and the three composite indexes did.
-- Move the runtime to Node `>=24.12.0` before upgrading the Firebase JS SDK from 12.19.0 to 13.x. Firebase 13 depends on `@firebase/ai@3`, whose engine is `node >=24.12.0`. Yarn refuses that install on Node 22, which is what `.github/workflows/ci.yml` uses. Vercel project settings were not changed. `firebase-admin` is already 14.5.0 and installs on Node 22.
+- Move the Vercel runtime to Node `>=24.12.0` before upgrading the Firebase JS SDK from 12.19.0 to 13.x. Firebase 13 depends on `@firebase/ai@3`, whose engine is `node >=24.12.0`. `.github/workflows/ci.yml` already uses Node 24. Vercel project settings were not changed. `firebase-admin` is already 14.5.0.
 - Confirm D-ID's real webhook signature header. The handler accepts the per-video query token or an HMAC-SHA256 of the raw body. An unknown signature header does not override a valid token. A vendor-specific scheme was not added because this repo does not document D-ID's header format.
 - QA the credit debit, refund, image proxies, and webhook on a real D-ID account before promoting `dev` to `main`.
 
 ## Next product work
 
-- Onboarding checklist on Profile: signed in, D-ID key, ElevenLabs key, at least one avatar, and a link to diagnostics when a key is missing. Generate pages already reject a missing key on the server.
+- Onboarding checklist on Profile: signed in, D-ID key, ElevenLabs key, at least one avatar, and a link to diagnostics when a key is missing. A missing D-ID key now plays the bundled sample instead of rejecting the request.
 - Canvas editor: persist emotion and movement on draft save, reload them on `/videos/[id]/edit`, and keep the avatar preview on the proxy URL.
 - Migrate old video documents whose `owner` is the literal `"user"` so the library and rules match the authenticated uid.
 - Replace `createDIDAvatarProfile` with a path that validates the talking photo and saves it. The current helper only builds a local object.

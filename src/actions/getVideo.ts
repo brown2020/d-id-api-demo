@@ -7,6 +7,7 @@ import { addVideoToStorage } from "./addVideoToStorage";
 import { syncVideo } from "./syncVideo";
 
 export async function getVideo(d_id_api_key: string, video_id: string) {
+  try {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -24,6 +25,16 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
 
   if (videoData.owner !== user.uid) {
     return { error: "Unauthorized" };
+  }
+
+  if (videoData.demo_mode === true) {
+    return {
+      status: true,
+      video_url:
+        typeof videoData.video_url === "string" && videoData.video_url
+          ? videoData.video_url
+          : "/demo/sample-talking-avatar.mp4",
+    };
   }
 
   // If video url already generated then send response
@@ -70,4 +81,9 @@ export async function getVideo(d_id_api_key: string, video_id: string) {
 
   // Return processing
   return { status: false, message: "Processing" };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Error getting video",
+    };
+  }
 }

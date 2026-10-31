@@ -112,6 +112,9 @@ export type VideoDetail = {
   created_at: number;
   errorMessage?: string;
   error?: Record<string, unknown>;
+  thumbnail_url?: string;
+  demo_mode?: boolean;
+  demo_notice?: string;
 };
 
 export type NotificationType = "video_generated";

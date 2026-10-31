@@ -34,11 +34,11 @@ Product behavior is in [spec.md](./spec.md). Next steps and open issues are in [
 | Tests | Vitest 5, Vite 8 |
 | Lint | ESLint 10, `eslint-config-next` 16.4 |
 | Package manager | Yarn 1.22 (`yarn.lock` only) |
-| Node (CI) | 22 |
+| Node (CI) | 24 |
 
 `firebase-admin` 14 depends on `jwks-rsa` 4. This repo pins that package's `jose` dependency to 5.10.0 (see `overrides` and `resolutions` in `package.json`).
 
-The Firebase JS SDK 13 is not installed. It pulls `@firebase/ai`, which requires Node `>=24.12.0`. CI and this app stay on Node 22, so the client SDK remains on the latest 12.x release.
+The Firebase JS SDK 13 is not installed. It pulls `@firebase/ai`, which requires Node `>=24.12.0`. The client SDK remains on the latest 12.x release. CI runs on Node 24.
 
 ## Project structure
 
@@ -59,7 +59,7 @@ storage.rules
 
 ## Setup
 
-Requirements: Node.js 22, Yarn 1.22, a Firebase project (Auth, Firestore, Storage), a Stripe account for checkout, and a public HTTPS origin when D-ID must reach this app (Vercel or ngrok). Users paste their own D-ID and ElevenLabs keys into Profile.
+Requirements: Node.js 24, Yarn 1.22, a Firebase project (Auth, Firestore, Storage), a Stripe account for checkout, and a public HTTPS origin when D-ID must reach this app (Vercel or ngrok). Users paste their own D-ID and ElevenLabs keys into Profile. With no D-ID key, or when D-ID returns an auth, credit, or quota error, generation plays the bundled sample in `public/demo/` and labels it in the UI.
 
 ```bash
 git clone https://github.com/brown2020/d-id-api-demo.git
@@ -101,7 +101,7 @@ Open [http://localhost:3000](http://localhost:3000). Fill `.env.local` from the 
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Label stored on the PaymentIntent |
 | `NEXT_PUBLIC_API_BASE_URL` | Public HTTPS origin for webhooks and image URLs. Browser calls use the page origin when it is allowed. |
-| `DID_API_KEY` | Optional. Local diagnostics only. Generation uses the profile key. |
+| `DID_API_KEY` | Optional. Used for a live D-ID call only when the signed-in profile has no D-ID key or Basic Auth. Auth, credit, and quota failures still show the bundled sample. |
 | `D_ID_BASIC_AUTH` | Optional. Local diagnostics only. Not a generation fallback. |
 | `ELEVENLABS_API_KEY` | Optional. Local diagnostics only. Voice calls use the profile key. |
 | `IS_LOCAL` | Optional flag present in `.env.example`. Local vs production gating uses `NODE_ENV` and `VERCEL_ENV`. |
@@ -122,7 +122,7 @@ Open [http://localhost:3000](http://localhost:3000). Fill `.env.local` from the 
 
 ## CI
 
-`.github/workflows/ci.yml` runs on `dev`, `main`, and pull requests: `yarn install --frozen-lockfile`, lint, typecheck, test, and build on Node 22. No secrets are injected. The build is expected to pass without Firebase or Stripe credentials.
+`.github/workflows/ci.yml` runs on `dev`, `main`, and pull requests: `yarn install --frozen-lockfile`, lint, typecheck, test, and build on Node 24. No secrets are injected. The build is expected to pass without Firebase or Stripe credentials.
 
 ## Firebase rules
 

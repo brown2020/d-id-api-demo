@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { addVideoToStorage } from "@/actions/addVideoToStorage";
 import { addWebhookToHistory } from "@/actions/addWebhookToHistory";
@@ -11,6 +11,10 @@ import {
 } from "@/libs/constants";
 import { isWebhookAuthorized } from "@/libs/webhook-auth";
 
+function jsonError(error: string, status: number) {
+  return NextResponse.json({ error }, { status });
+}
+
 async function recordWebhook(videoId: string, status: string) {
   await addWebhookToHistory(
     `video=${videoId} status=${status} at=${new Date().toISOString()}`
@@ -21,6 +25,7 @@ export const POST = async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
+  try {
   const { id } = await params;
   const rawBody = await req.text();
 
@@ -29,11 +34,11 @@ export const POST = async (
     try {
       const parsed: unknown = JSON.parse(rawBody);
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        return new Response("Invalid JSON", { status: 400 });
+        return jsonError("Invalid JSON", 400);
       }
       requestBody = parsed as Record<string, unknown>;
     } catch {
-      return new Response("Invalid JSON", { status: 400 });
+      return jsonError("Invalid JSON", 400);
     }
   }
 
@@ -43,11 +48,11 @@ export const POST = async (
     const videoData = video.data();
 
     if (!video.exists || !videoData) {
-      return new Response("Video not found", { status: 404 });
+      return jsonError("Video not found", 404);
     }
 
     if (videoData.video_url) {
-      return new Response("Video already exist", { status: 200 });
+      return NextResponse.json({ ok: true, message: "Video already exist" });
     }
 
     const token = req.nextUrl.searchParams.get("token");
@@ -56,16 +61,16 @@ export const POST = async (
     const secret = typeof videoData.secret_token === "string" ? videoData.secret_token : "";
 
     if (!isWebhookAuthorized(rawBody, secret, token, signatureHeader)) {
-      return new Response("Unauthorized", { status: 401 });
+      return jsonError("Unauthorized", 401);
     }
 
     const didVideoId = requestBody.id;
     if (typeof didVideoId !== "string" || !didVideoId) {
-      return new Response("Missing D-ID video ID", { status: 400 });
+      return jsonError("Missing D-ID video ID", 400);
     }
 
     if (videoData.did_id && videoData.did_id !== didVideoId) {
-      return new Response("Video ID mismatch", { status: 400 });
+      return jsonError("Video ID mismatch", 400);
     }
 
     if (!videoData.did_id) {
@@ -101,23 +106,23 @@ export const POST = async (
           user_id: videoData.owner,
           created_at: Math.floor(Date.now() / 1000).toString(),
         });
-        return new Response("Webhook processed successfully", { status: 200 });
+        return NextResponse.json({ ok: true });
       }
 
       await videoRef.update({
         d_id_status: typeof status === "string" ? status : "unknown",
       });
-      return new Response("Webhook processed successfully", { status: 200 });
+      return NextResponse.json({ ok: true });
     }
 
     const resultUrl = requestBody.result_url;
     if (typeof resultUrl !== "string" || !resultUrl) {
-      return new Response("Missing result URL", { status: 400 });
+      return jsonError("Missing result URL", 400);
     }
 
     const addVideoResponse = await addVideoToStorage(id, resultUrl, status);
     if (!addVideoResponse.status) {
-      return new Response("Error adding video to storage", { status: 400 });
+      return jsonError("Error adding video to storage", 400);
     }
 
     await adminDb.collection(NOTIFICATION_COLLECTION).add({
@@ -128,8 +133,11 @@ export const POST = async (
       created_at: Math.floor(Date.now() / 1000).toString(),
     });
 
-    return new Response("Webhook processed successfully", { status: 200 });
+    return NextResponse.json({ ok: true });
   } catch {
-    return new Response("Failed to process webhook", { status: 400 });
+    return jsonError("Failed to process webhook", 400);
+  }
+  } catch {
+    return jsonError("Failed to process webhook", 400);
   }
 };

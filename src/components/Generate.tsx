@@ -14,8 +14,10 @@ import { generateVideo } from "@/actions/generateVideo";
 import { DIDTalkingPhoto } from "@/types/did";
 import LocalhostWarning from "./LocalhostWarning";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { DemoModeNotice } from "@/components/DemoModeNotice";
 import { formatVideoGenerationError } from "@/libs/video-status";
 
 export function useGenerate() {
@@ -29,6 +31,7 @@ export function useGenerate() {
   const [error, setError] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [useFallbackImage, setUseFallbackImage] = useState(false);
+  const [demoNotice, setDemoNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const selectedId = profile.selectedTalkingPhoto;
@@ -72,14 +75,11 @@ export function useGenerate() {
       return;
     }
 
-    if (!profile.did_api_key?.trim() && !profile.did_basic_auth?.trim()) {
-      setError(
-        "D-ID API key or Basic Auth is missing. Add credentials in your Profile."
-      );
-      return;
-    }
+    const hasDidProfileKey = Boolean(
+      profile.did_api_key?.trim() || profile.did_basic_auth?.trim()
+    );
 
-    if (!profile.elevenlabs_api_key?.trim()) {
+    if (hasDidProfileKey && !profile.elevenlabs_api_key?.trim()) {
       setError(
         "ElevenLabs API key is missing. Add it in your Profile for voice generation."
       );
@@ -102,6 +102,7 @@ export function useGenerate() {
     console.log("Starting video generation...");
     setIsGenerating(true);
     setError(null);
+    setDemoNotice(null);
 
     try {
       const result = await generateVideo(
@@ -120,6 +121,20 @@ export function useGenerate() {
       );
 
       if (result.status && result && "id" in result && result.id) {
+        if ("demoMode" in result && result.demoMode) {
+          const notice =
+            "notice" in result && typeof result.notice === "string"
+              ? result.notice
+              : null;
+          setDemoNotice(notice);
+          if ("videoUrl" in result && typeof result.videoUrl === "string") {
+            setVideoUrl(result.videoUrl);
+          }
+          toast.success(notice ?? "Sample video is ready.");
+          router.push(`/videos/${result.id}/show`);
+          return;
+        }
+
         const statusResponse = await retrieveDIDVideo(
           profile.did_api_key || "",
           result.id,
@@ -317,7 +332,17 @@ export function useGenerate() {
 
       {videoUrl && (
         <div className="mt-8">
+          {demoNotice ? <DemoModeNotice notice={demoNotice} /> : null}
           <h3 className="text-lg font-bold mb-4">Generated Video</h3>
+          {demoNotice ? (
+            <Image
+              src="/demo/sample-talking-avatar.png"
+              alt="Sample talking avatar"
+              width={320}
+              height={180}
+              className="mb-4 max-h-48 w-auto rounded-md"
+            />
+          ) : null}
           <video controls src={videoUrl} className="w-full rounded-sm"></video>
         </div>
       )}

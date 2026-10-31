@@ -7,6 +7,12 @@ import {
   allowedAppOriginsFromHeaders,
   isAllowedGenerationImageUrl,
 } from "@/libs/app-base-url";
+import {
+  classifyDidDemoFallback,
+  demoSample,
+  type DidDemoSample,
+  resolveDidCredentials,
+} from "@/libs/did-demo";
 import { DIDVideoStatus, Emotion, Movement } from "../types/did";
 import { requireAuth } from "./auth";
 import { addErrorReport } from "./addErrorReport";
@@ -20,6 +26,20 @@ export type GenerateVideoFailResponse = {
   error: string;
 };
 
+function upstreamDemoReason(error: unknown): ReturnType<typeof classifyDidDemoFallback> {
+  if (!axios.isAxiosError(error) || !error.response) {
+    return null;
+  }
+  const data = error.response.data;
+  const bodyText =
+    typeof data === "string"
+      ? data
+      : data
+        ? JSON.stringify(data)
+        : error.message;
+  return classifyDidDemoFallback(error.response.status, bodyText);
+}
+
 export async function generateDIDVideo(
   apiKey: string | null,
   imageUrl: string,
@@ -31,24 +51,27 @@ export async function generateDIDVideo(
   emotion: Emotion = "neutral",
   movement: Movement = "neutral",
   basicAuth: string | null = null
-): Promise<GenerateVideoSuccessResponse | GenerateVideoFailResponse> {
+): Promise<
+  GenerateVideoSuccessResponse | GenerateVideoFailResponse | DidDemoSample
+> {
   await requireAuth();
 
-  const finalApiKey = apiKey?.trim() || "";
+  const resolved = resolveDidCredentials(
+    apiKey,
+    basicAuth,
+    process.env.DID_API_KEY
+  );
+  if (!resolved) {
+    return demoSample("missing_key");
+  }
+
+  const finalApiKey = resolved.apiKey;
   const finalElevenlabsApiKey = elevenlabsApiKey?.trim() || "";
-  let finalBasicAuth = basicAuth?.trim() || "";
+  let finalBasicAuth = resolved.basicAuth;
   const allowedOrigins = allowedAppOriginsFromHeaders(await headers());
   if (!isAllowedGenerationImageUrl(imageUrl, allowedOrigins)) {
     return {
       error: "The image URL is not an allowed application URL.",
-    };
-  }
-
-  // Check if we have either API key or Basic Auth
-  if (!finalApiKey && !finalBasicAuth) {
-    return {
-      error:
-        "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings.",
     };
   }
 
@@ -151,7 +174,7 @@ export async function generateDIDVideo(
         type: "audio",
         url: audioUrl,
       };
-    } else if (voiceId && inputText) {
+    } else if (voiceId && inputText && finalElevenlabsApiKey) {
       scriptSettings = {
         type: "text",
         input: inputText,
@@ -159,6 +182,11 @@ export async function generateDIDVideo(
           type: "elevenlabs",
           voice_id: voiceId,
         },
+      };
+    } else if (inputText) {
+      scriptSettings = {
+        type: "text",
+        input: inputText,
       };
     } else {
       scriptSettings = {
@@ -326,6 +354,10 @@ export async function generateDIDVideo(
         }
       );
     } catch (authError) {
+      const demoReason = upstreamDemoReason(authError);
+      if (demoReason) {
+        return demoSample(demoReason);
+      }
 
       // Enhanced error reporting for auth failures
       let authErrorDetails = "Unknown authentication error";
@@ -355,9 +387,15 @@ export async function generateDIDVideo(
 
 
     if (response.status === 429) {
-      return {
-        error: "Rate limit exceeded. Please try again later.",
-      };
+      return demoSample("quota");
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return demoSample("auth");
+    }
+
+    if (response.status === 402) {
+      return demoSample("credits");
     }
 
     if (response.status >= 400) {
@@ -376,6 +414,11 @@ export async function generateDIDVideo(
 
     return { id, status };
   } catch (error: unknown) {
+    const demoReason = upstreamDemoReason(error);
+    if (demoReason) {
+      return demoSample(demoReason);
+    }
+
     /* eslint-disable @typescript-eslint/no-explicit-any */
     let errorDetails: Record<string, any> = {};
 
@@ -405,12 +448,7 @@ export async function generateDIDVideo(
         };
         errorDetails["responseError"] = responseError;
 
-        if (error.response.status === 429) {
-          errorMessage = "Rate limit exceeded. Please try again later.";
-        } else if (error.response.status === 402) {
-          errorMessage =
-            "Your account is out of credits. Please add more credits to generate video.";
-        } else if (error.response.status === 500) {
+        if (error.response.status === 500) {
           // Check if this might be an image issue
           errorMessage =
             "D-ID server error. This may be due to an issue with the image URL or server load. Please try again or use a different image.";
@@ -449,13 +487,16 @@ export async function generateDIDVideo(
     } else if (error instanceof Error) {
     } else {
     }
-    await addErrorReport("generateDIDVideo", errorDetails);
+    try {
+      await addErrorReport("generateDIDVideo", errorDetails);
+    } catch {
+      // The caller still receives a JSON error object.
+    }
 
-    // Last fallback error message
     return {
       error:
         errorMessage ||
-        `An error occurred while generating the video. Please check your API keys in your profile settings.`,
+        "An error occurred while generating the video. Please check your API keys in your profile settings.",
     };
   }
 }

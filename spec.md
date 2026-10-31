@@ -13,7 +13,7 @@ It is a demo with real integrations, not a consumer editor. Operators run it on 
 1. Sign in with Google or email/password. The client keeps a Firebase session. `POST /api/auth` sets an httpOnly `__session` cookie. Sign-out revokes refresh tokens and clears the cookie.
 2. Profile holds the D-ID key, the ElevenLabs key, and the credit balance (`users/{uid}/profile/userData`). New profiles start at 1000 credits.
 3. Create personal talking photos or favorite templates in `didTalkingPhotos`.
-4. Generate from `/generate` (one avatar, script, TTS, or uploaded audio) or from `/videos/create` (Fabric.js scenes). Each submission costs 1 credit, refunded if the D-ID call fails.
+4. Generate from `/generate` (one avatar, script, TTS, or uploaded audio) or from `/videos/create` (Fabric.js scenes). A live D-ID submission costs 1 credit, refunded if the call fails or the bundled sample is used. A missing key shows the sample and does not debit.
 5. The app polls D-ID. On a public HTTPS origin it also registers `/api/video-generated/{id}`. The handler copies an allowlisted D-ID result into Storage.
 6. `/videos` and `/videos/[id]/show` list and play videos. The header listens for unread notifications.
 7. `/payment-attempt` starts a Stripe PaymentIntent for the $99.99 pack (9999 cents). `/payment-success` calls `fulfillPayment`, which grants 10000 credits once.
@@ -27,24 +27,24 @@ Protected prefixes: `/avatars`, `/generate`, `/payment-attempt`, `/payment-succe
 | Auth | Google popup and email/password. Session cookie verified with revocation check. |
 | Profile | Client can update allowlisted profile fields. `credits` is required and cannot be changed by the client. |
 | Avatars | Personal avatars are owner-scoped. Templates are readable. A personal avatar cannot be updated into a template. |
-| Simple generate | Validates keys, script, base URL, and credits, then calls D-ID. |
+| Simple generate | Validates the script, base URL, and credits, then calls D-ID. A missing key, or a D-ID auth, credit, or quota error, stores the bundled sample clip and image and marks the video as demo mode. |
 | Canvas composer | Multi-scene Fabric.js editor. Save and submit go through the same generation action. |
 | Library | Owner-scoped Firestore queries. Playback uses a Storage signed URL after the result is copied. |
 | Image proxies | `/api/imageproxy/[id]` and `/api/video-image-proxy/[id]` read owned bucket objects via the Admin SDK, sniff a raster type, and do not fetch arbitrary URLs. |
 | Voice | ElevenLabs list and TTS use the profile key. Server env keys are not a fallback. |
 | Webhooks | Query token or HMAC of the raw body. History is a short redacted line. Result downloads stay on D-ID S3 hosts. |
-| Credits | Admin transaction debits 1 credit before the D-ID call and refunds that debit if submission fails. |
+| Credits | Admin transaction debits 1 credit before a live D-ID call and refunds that debit if submission fails or the result is the bundled sample. A missing key does not debit. |
 | Payments | Only the 9999-cent pack can be created. Fulfillment checks `metadata.userId` and is idempotent. |
 | Notifications | `status: "unread"` and unix-seconds `created_at`. |
 | Diagnostics | `/api/debug`, `/api/key-diagnostics`, `/api/test-image-access`, and `/api/check-did-image-access` are local-development only. ID lists require a session and return that user's ids. |
 | Tests | Vitest covers route protection, webhook URL and auth, storage and app URL allowlists, video status, and credit math. |
-| CI | GitHub Actions on Node 22 runs lint, typecheck, test, and a production build with no secrets. |
+| CI | GitHub Actions on Node 24 runs lint, typecheck, test, and a production build with no secrets. |
 
 ## Architecture
 
 Browser (Firebase client + Zustand) sends an ID token to `POST /api/auth`. `src/proxy.ts` redirects protected pages when the cookie is missing. Pages are mostly server components that render client UI. Privileged work is in server actions (`protect` / `getCurrentUser`) and route handlers (`requireApiSession`).
 
-Generation order: allowlist the app base URL, create the video document, copy the thumbnail into Storage, save `secret_token`, debit 1 credit, call D-ID. The webhook or the poller downloads the result and writes a Storage URL.
+Generation order: allowlist the app base URL, create the video document, then resolve credentials. The profile D-ID key or Basic Auth is used when present. `DID_API_KEY` is used only when the profile has neither. If no key is available, the document is marked done with the bundled sample at `/demo/sample-talking-avatar.mp4` and `/demo/sample-talking-avatar.png` and `demo_notice` is `Demo mode: showing a sample video because no D-ID key is configured`. Otherwise the app copies the thumbnail into Storage, saves `secret_token`, debits 1 credit, and calls D-ID. Auth (401/403), credit (402 or a credit phrase), and quota (429 or a quota phrase) responses refund the credit and store that same sample with a demo notice. Other D-ID failures stay errors. The webhook or the poller downloads a real result into Storage.
 
 Public base URL comes from the request host, `NEXT_PUBLIC_API_BASE_URL`, or `https://didapidemo.vercel.app`. Generation image URLs must be one of those origins or the exact fallback headshot. `getWebhookUrl` returns null on localhost.
 
@@ -52,7 +52,7 @@ Public base URL comes from the request host, `NEXT_PUBLIC_API_BASE_URL`, or `htt
 
 | Service | Use |
 |---------|-----|
-| D-ID | `POST /talks` and `GET /talks/{id}` with the signed-in user's key |
+| D-ID | `POST /talks` and `GET /talks/{id}` with the signed-in user's key, or `DID_API_KEY` when the profile has no D-ID credentials |
 | ElevenLabs | Voice list and TTS through the profile key |
 | Firebase Auth | Google and email/password |
 | Firestore | Users, profiles, avatars, videos, notifications, webhook history |
@@ -75,11 +75,11 @@ The app does not call an LLM provider. D-ID and ElevenLabs model or voice ids ar
 
 - D-ID must fetch images over the public internet.
 - Server Actions body limit is 3MB.
-- Generation does not fall back to `DID_API_KEY`, `D_ID_BASIC_AUTH`, or `ELEVENLABS_API_KEY`.
+- When the profile has no D-ID key or Basic Auth, generation may call D-ID with `DID_API_KEY`. It does not fall back to `D_ID_BASIC_AUTH` or `ELEVENLABS_API_KEY`. A missing key or a D-ID auth, credit, or quota error returns the bundled sample instead of failing the request.
 - Missing or non-numeric credit balance is treated as zero.
 - License is AGPL-3.0-only.
 - Package manager is Yarn 1. There is no `package-lock.json`.
-- Client Firebase SDK stays on 12.x until the runtime is Node `>=24.12.0`. See [roadmap.md](./roadmap.md).
+- Client Firebase SDK stays on 12.x. CI runs on Node 24. See [roadmap.md](./roadmap.md).
 
 ## Build without secrets
 

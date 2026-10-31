@@ -3,11 +3,13 @@
 import { getVideo } from "@/actions/getVideo";
 import { db } from "@/firebase/firebaseClient";
 import { VIDEO_COLLECTION } from "@/libs/constants";
+import { DemoModeNotice } from "@/components/DemoModeNotice";
 import { isVideoProcessing } from "@/libs/video-status";
 import { DIDVideoStatus, VideoDetail as VideoDetailType } from "@/types/did";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import useProfileStore from "@/zustand/useProfileStore";
 import { collection, doc, onSnapshot } from "firebase/firestore";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -209,7 +211,21 @@ function VideoDetailReady({
           ) : null}
 
           {videoData.d_id_status === "done" && videoData.video_url ? (
-            <div className="flex items-center justify-center py-4">
+            <div className="flex flex-col items-center justify-center py-4 gap-4">
+              {videoData.demo_mode ? (
+                <div className="w-full max-w-3xl">
+                  <DemoModeNotice notice={videoData.demo_notice} />
+                  {videoData.thumbnail_url ? (
+                    <Image
+                      src={videoData.thumbnail_url}
+                      alt="Sample talking avatar"
+                      width={320}
+                      height={180}
+                      className="mb-4 max-h-64 w-auto rounded-md"
+                    />
+                  ) : null}
+                </div>
+              ) : null}
               <video
                 controls
                 src={videoData.video_url}

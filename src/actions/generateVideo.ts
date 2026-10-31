@@ -7,7 +7,7 @@ import { requireAuth } from "./auth";
 import { generateDIDVideo } from "./generateDIDVideo";
 import { VIDEO_COLLECTION } from "../libs/constants";
 import { adminDb } from "../firebase/firebaseAdmin";
-import { Timestamp } from "firebase-admin/firestore";
+import { DocumentReference, Timestamp } from "firebase-admin/firestore";
 import { getWebhookUrl, randomString, videoImageProxyUrl } from "../libs/utils";
 import { addErrorReport } from "./addErrorReport";
 import { isEditableVideoStatus } from "../libs/auth-constants";
@@ -22,6 +22,25 @@ import {
   refundVideoGenerationCredits,
 } from "@/server/video-credits";
 import { materializeVideoThumbnail } from "@/server/materialize-thumbnail";
+import { demoSample, isDidDemoSample, resolveDidCredentials } from "@/libs/did-demo";
+
+async function saveDemoSample(
+  videoRef: DocumentReference,
+  reason: "missing_key" | "auth" | "credits" | "quota"
+) {
+  const sample = demoSample(reason);
+  await videoRef.update({
+    did_id: "demo-sample",
+    d_id_status: "done",
+    video_url: sample.videoUrl,
+    thumbnail_url: sample.imageUrl,
+    demo_mode: true,
+    demo_notice: sample.notice,
+    errorMessage: null,
+    updated_at: Timestamp.now(),
+  });
+  return sample;
+}
 
 export async function generateVideo(
   video_id: string | null,
@@ -37,20 +56,30 @@ export async function generateVideo(
   useFallbackImage: boolean = false,
   basicAuth: string | null = null
 ) {
-  const userId = await requireAuth();
-  const allowedOrigins = allowedAppOriginsFromHeaders(await headers());
-  if (!isAllowedAppBaseUrl(baseUrl, allowedOrigins)) {
+  let userId: string;
+  try {
+    userId = await requireAuth();
+  } catch (error) {
     return {
       status: false,
-      message: "Invalid application base URL",
+      message:
+        error instanceof Error ? error.message : "Authentication required",
       id: video_id ?? "",
     };
   }
-
   const id = video_id ? video_id : `new-video-${Date.now()}`;
   let charged = false;
 
   try {
+    const allowedOrigins = allowedAppOriginsFromHeaders(await headers());
+    if (!isAllowedAppBaseUrl(baseUrl, allowedOrigins)) {
+      return {
+        status: false,
+        message: "Invalid application base URL",
+        id,
+      };
+    }
+
     // Create or get the video document in Firestore first, before generating
     const videoRef = adminDb.collection(VIDEO_COLLECTION).doc(id);
     const videoDoc = await videoRef.get();
@@ -76,6 +105,23 @@ export async function generateVideo(
         created_at: Timestamp.now(),
         owner: userId,
       });
+    }
+
+    const resolved = resolveDidCredentials(
+      apiKey,
+      basicAuth,
+      process.env.DID_API_KEY
+    );
+    if (!resolved) {
+      const sample = await saveDemoSample(videoRef, "missing_key");
+      return {
+        status: true,
+        id,
+        demoMode: true,
+        notice: sample.notice,
+        videoUrl: sample.videoUrl,
+        imageUrl: sample.imageUrl,
+      };
     }
 
     const thumbnail = await materializeVideoThumbnail({
@@ -147,7 +193,7 @@ export async function generateVideo(
     }
 
     const response = await generateDIDVideo(
-      apiKey,
+      resolved.apiKey,
       imageUrl,
       webhookUrl,
       inputText,
@@ -156,10 +202,25 @@ export async function generateVideo(
       elevenlabsApiKey,
       emotion,
       movement,
-      basicAuth
+      resolved.basicAuth
     );
 
     if (response) {
+      if (isDidDemoSample(response)) {
+        if (charged) {
+          await refundVideoGenerationCredits(userId);
+          charged = false;
+        }
+        const sample = await saveDemoSample(videoRef, response.reason);
+        return {
+          status: true,
+          id,
+          demoMode: true,
+          notice: sample.notice,
+          videoUrl: sample.videoUrl,
+          imageUrl: sample.imageUrl,
+        };
+      }
       if ("error" in response && response.error) {
         // Update the document with error information
         await videoRef.update({

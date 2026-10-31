@@ -977,14 +977,11 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
   }, [selectAvatarForm]);
 
   const handleGenerateVideo = (e?: React.BaseSyntheticEvent) => writeScriptForm.handleSubmit(() => {
-    if (!profile.did_api_key && !profile.did_basic_auth) {
-      toast.error(
-        "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings."
-      );
-      return;
-    }
+    const hasDidProfileKey = Boolean(
+      profile.did_api_key?.trim() || profile.did_basic_auth?.trim()
+    );
 
-    if (!profile.elevenlabs_api_key && selectedAvatar?.voiceId) {
+    if (hasDidProfileKey && !profile.elevenlabs_api_key && selectedAvatar?.voiceId) {
       toast.error(
         "ElevenLabs API key is missing, but is required for voice generation. Please add it in your profile settings."
       );
@@ -1086,6 +1083,16 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
             void useProfileStore.getState().fetchProfile();
 
             if (response.status && response.id != undefined) {
+              if ("demoMode" in response && response.demoMode) {
+                const notice =
+                  "notice" in response && typeof response.notice === "string"
+                    ? response.notice
+                    : "Demo mode: showing a sample video because no D-ID key is configured";
+                toast.success(notice, { duration: 8000 });
+                resolve({ status: true, data: response.id });
+                return;
+              }
+
               // Instead of just resolving with the ID, initiate polling for the video status
               // This is the internal video ID we should use, not the D-ID API's talk ID
               const internalVideoId = videoIdRef.current || "";
@@ -1776,13 +1783,13 @@ function CreateVideoWriteScriptPanel({ model }: { model: ReturnType<typeof useCr
                     <p className="text-amber-700 flex items-center gap-2">
                       <AlertTriangle size={16} className="shrink-0" />
                       <span>
-                        <strong>Warning:</strong> D-ID authentication is
-                        missing. Please add either a D-ID API key or Basic Auth
-                        in your{" "}
+                        No D-ID key is saved in your profile. A server key is
+                        tried first. Otherwise this page shows a bundled sample
+                        video. You can add a key in{" "}
                         <Link href="/profile" className="text-blue-600 underline">
                           profile settings
-                        </Link>{" "}
-                        to generate videos.
+                        </Link>
+                        .
                       </span>
                     </p>
                   </div>

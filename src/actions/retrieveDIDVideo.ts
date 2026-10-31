@@ -129,16 +129,6 @@ export async function retrieveDIDVideo(
   const finalApiKey = apiKey.trim();
   const finalBasicAuth = basicAuth.trim();
 
-  // Log which API key we're using (without revealing the actual value)
-
-  if (!finalApiKey && !finalBasicAuth) {
-    return {
-      status: "failed",
-      error:
-        "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings.",
-    };
-  }
-
   try {
     // First, get the did_id (the actual D-ID API talk ID) from our database
     // This is crucial because our videoId is not the same as D-ID's talk ID
@@ -166,6 +156,29 @@ export async function retrieveDIDVideo(
       return {
         status: "failed",
         error: "Unauthorized",
+      };
+    }
+
+    if (
+      videoData.demo_mode === true &&
+      typeof videoData.video_url === "string" &&
+      videoData.video_url
+    ) {
+      return {
+        status: "completed",
+        video_url: videoData.video_url,
+        thumbnail_url:
+          typeof videoData.thumbnail_url === "string"
+            ? videoData.thumbnail_url
+            : undefined,
+      };
+    }
+
+    if (!finalApiKey && !finalBasicAuth) {
+      return {
+        status: "failed",
+        error:
+          "D-ID authentication is missing. Please add either a D-ID API key or Basic Auth in your profile settings.",
       };
     }
 

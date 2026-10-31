@@ -64,6 +64,9 @@ export default function VideosPage() {
                                                             <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0 transition-colors duration-300 hover:via-gray-900/1"></div>
                                                             <div className="h-36"></div>
                                                             {
+                                                                video.demo_mode && video.thumbnail_url ?
+                                                                    <Image src={video.thumbnail_url} alt="Sample talking avatar" width={200} height={100} className="absolute inset-0 w-full h-full object-cover" />
+                                                                    :
                                                                 video.thumbnail_url ?
                                                                     <Image src={`/api/video-image-proxy/${video.id}.png`} alt="Audio play image" width={200} height={100} className="absolute inset-0 w-full h-full  object-cover" />
                                                                     :
@@ -74,7 +77,7 @@ export default function VideosPage() {
                                                                 <h1 className="font-bold text-xl">{video.title}</h1>
                                                                 {
                                                                     video.d_id_status =='done' ? 
-                                                                    <span className="bg-green-700 text-white px-2 py-1 rounded-full">Generated</span>
+                                                                    <span className="bg-green-700 text-white px-2 py-1 rounded-full">{video.demo_mode ? "Demo sample" : "Generated"}</span>
                                                                     : <></>
                                                                 }
                                                                 {
