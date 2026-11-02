@@ -103,3 +103,32 @@ export function isDidDemoSample(
     (value as { demo?: unknown }).demo === true
   );
 }
+
+export type NoKeyGeneratePlan =
+  | { demoMode: false }
+  | {
+      demoMode: true;
+      reason: "missing_key";
+      notice: string;
+      videoUrl: string;
+      imageUrl: string;
+    };
+
+/** Shared by the server action and tests. No key means the bundled sample. */
+export function noKeyGeneratePlan(
+  apiKey: string | null | undefined,
+  basicAuth: string | null | undefined,
+  envApiKey?: string | null
+): NoKeyGeneratePlan {
+  if (resolveDidCredentials(apiKey, basicAuth, envApiKey)) {
+    return { demoMode: false };
+  }
+  const sample = demoSample("missing_key");
+  return {
+    demoMode: true,
+    reason: "missing_key",
+    notice: sample.notice,
+    videoUrl: sample.videoUrl,
+    imageUrl: sample.imageUrl,
+  };
+}

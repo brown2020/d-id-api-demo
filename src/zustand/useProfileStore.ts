@@ -41,6 +41,7 @@ interface AuthState {
 
 interface ProfileState {
   profile: ProfileType;
+  profileLoaded: boolean;
   fetchProfile: () => void;
   updateProfile: (newProfile: Partial<ProfileType>) => Promise<void>;
   useCredits: (amount: number) => Promise<boolean>;
@@ -65,6 +66,7 @@ const mergeProfileWithDefaults = (
 
 const useProfileStore = create<ProfileState>((set, get) => ({
   profile: defaultProfile,
+  profileLoaded: false,
 
   fetchProfile: async () => {
     const { uid, authEmail, authDisplayName, authPhotoUrl, authEmailVerified } =
@@ -103,9 +105,10 @@ const useProfileStore = create<ProfileState>((set, get) => ({
         await setDoc(userRef, newProfile);
       }
 
-      set({ profile: newProfile });
+      set({ profile: newProfile, profileLoaded: true });
     } catch (error) {
       console.error("Error fetching or creating profile:", error);
+      set({ profileLoaded: true });
     }
   },
 

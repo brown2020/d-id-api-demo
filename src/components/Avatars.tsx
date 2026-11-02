@@ -11,7 +11,12 @@ import {
 } from "firebase/firestore";
 import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
 import { AVATAR_TYPE_PERSONAL, AVATAR_TYPE_TEMPLATE } from "@/libs/constants";
+import {
+  profileHasDidKey,
+  withBuiltinDemoAvatar,
+} from "@/libs/fallback-voices";
 import { useAuthStore } from "@/zustand/useAuthStore";
+import useProfileStore from "@/zustand/useProfileStore";
 import Model from "./Model";
 import AvatarForm from "./AvatarForm";
 import toast from 'react-hot-toast';
@@ -24,6 +29,7 @@ export default function Avatars() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(null);
   const uid = useAuthStore((state) => state.uid);
+  const profile = useProfileStore((state) => state.profile);
 
   const showNotification = (message: string) => {
     toast.success(message, {
@@ -107,6 +113,10 @@ export default function Avatars() {
   const filteredTemplateTalkingPhotos = showFavorites
     ? templateTalkingPhotos.filter((p) => p.favorite_of?.includes(uid))
     : templateTalkingPhotos;
+  const demoAvatars = withBuiltinDemoAvatar(
+    filteredTemplateTalkingPhotos,
+    profileHasDidKey(profile.did_api_key, profile.did_basic_auth)
+  );
 
 
   return (
@@ -153,7 +163,7 @@ export default function Avatars() {
         <div>
           <h3 className="mb-3 text-lg font-semibold text-gray-600">Demo Avatars</h3>
           <ul className="grid min-[450px]:grid-cols-2 grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {filteredTemplateTalkingPhotos.map((photo) => (
+            {demoAvatars.map((photo) => (
               <AvatarCard avatar={photo} key={photo.talking_photo_id} id={photo.talking_photo_id} />
             ))}
           </ul>

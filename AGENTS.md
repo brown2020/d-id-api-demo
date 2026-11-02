@@ -19,7 +19,7 @@ Demonstrate a full-stack D-ID integration pattern: avatar management, TTS via El
 | Framework | Next.js `^16.4.3`, React `^19.3.1`, TypeScript `^6.0.3` (strict) |
 | Styling | Tailwind CSS `^4.3.3`, Styled Components `^6.6.0`, Framer Motion `^14.7.1`, Lucide `^1.63.0` |
 | State | Zustand `^5.0.16` (`useAuthStore`, `useProfileStore`, `usePaymentsStore`) |
-| Auth | Firebase Auth (client `firebase` `^12.19.0`) + Firebase Admin `^14.5.0` session cookie (`__session`) |
+| Auth | Firebase Auth (client `firebase` `^13.1.0`) + Firebase Admin `^14.5.0` session cookie (`__session`) |
 | Database / storage | Firestore + Firebase Storage |
 | External APIs | D-ID, ElevenLabs (`@elevenlabs/elevenlabs-js` `^2.75.0`), Stripe `^23.0.1` |
 | Canvas editor | Fabric.js `^7.4.0` (`CreateVideo` component) |

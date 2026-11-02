@@ -8,8 +8,15 @@ import {
   SAMPLE_TALKING_AVATAR_VIDEO,
   classifyDidDemoFallback,
   demoSample,
+  noKeyGeneratePlan,
   resolveDidCredentials,
 } from "@/libs/did-demo";
+import {
+  builtinDemoAvatar,
+  canEnableGenerate,
+  fallbackVoices,
+  withBuiltinDemoAvatar,
+} from "@/libs/fallback-voices";
 
 describe("resolveDidCredentials", () => {
   it("keeps a profile key ahead of the server key", () => {
@@ -46,6 +53,36 @@ describe("classifyDidDemoFallback", () => {
     expect(classifyDidDemoFallback(400, "CelebrityDetectedError")).toBeNull();
     expect(classifyDidDemoFallback(500, "internal error")).toBeNull();
     expect(classifyDidDemoFallback(undefined, "network down")).toBeNull();
+  });
+});
+
+describe("no-key generate path", () => {
+  it("returns the bundled sample and the demo notice", () => {
+    const plan = noKeyGeneratePlan("", null, "");
+    expect(plan.demoMode).toBe(true);
+    if (!plan.demoMode) {
+      return;
+    }
+    expect(plan.notice).toBe(DEMO_MODE_NO_KEY_NOTICE);
+    expect(plan.videoUrl).toBe(SAMPLE_TALKING_AVATAR_VIDEO);
+    expect(plan.imageUrl).toBe(SAMPLE_TALKING_AVATAR_IMAGE);
+    expect(plan.reason).toBe("missing_key");
+  });
+
+  it("enables generate for the built-in avatar and its default voice", () => {
+    const avatars = withBuiltinDemoAvatar([], false);
+    expect(avatars).toHaveLength(1);
+    const avatar = avatars[0] ?? builtinDemoAvatar();
+    expect(avatar.preview_image_url).toBe(SAMPLE_TALKING_AVATAR_IMAGE);
+    const voices = fallbackVoices();
+    expect(voices.length).toBeGreaterThan(0);
+    const voice = voices.find((item) => item.voiceId === avatar.voiceId) ?? null;
+    expect(canEnableGenerate(avatar, voice)).toBe(true);
+    expect(withBuiltinDemoAvatar([], true)).toEqual([]);
+  });
+
+  it("keeps a live plan when a key is present", () => {
+    expect(noKeyGeneratePlan("user:secret", "", "").demoMode).toBe(false);
   });
 });
 

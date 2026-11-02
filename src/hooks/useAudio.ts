@@ -1,9 +1,14 @@
 import { findAudio } from "@/actions/findAudio";
 import { getAudioList } from "@/actions/getAudioList";
+import { fallbackVoices } from "@/libs/fallback-voices";
 import useProfileStore from "@/zustand/useProfileStore";
 import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+
+function bundledVoices(): ElevenLabs.Voice[] {
+  return fallbackVoices() as unknown as ElevenLabs.Voice[];
+}
 
 export const useAudio = () => {
   const profile = useProfileStore((state) => state.profile);
@@ -90,8 +95,7 @@ export const useAudio = () => {
   const loadAudioList = useCallback(async () => {
     // Check if API key exists
     if (!apiKeyRef.current) {
-      console.log("No ElevenLabs API key found, skipping voice load");
-      setVoiceList(emptyVoiceList.current);
+      setVoiceList(bundledVoices());
       return;
     }
 
@@ -114,25 +118,20 @@ export const useAudio = () => {
 
       if ("error" in audioList && audioList.error) {
         console.error("Error fetching audio list:", audioList.error);
-        // Only show toast error if this isn't the first load attempt
-        if (hasAttemptedLoadRef.current && hasApiKeyRef.current) {
-          toast.error(audioList.error);
-        }
-        // Use the empty ref to avoid triggering re-renders
-        setVoiceList(emptyVoiceList.current);
-      } else if (audioList.status && Array.isArray(audioList.voices)) {
-        console.log(`Successfully loaded ${audioList.voices.length} voices`);
-        // Only update state when we have actual voices
+        setVoiceList(bundledVoices());
+      } else if (
+        audioList.status &&
+        Array.isArray(audioList.voices) &&
+        audioList.voices.length > 0
+      ) {
         setVoiceList(audioList.voices);
       } else {
         console.warn("Unexpected response from getAudioList:", audioList);
-        // Use the empty ref to avoid triggering re-renders
-        setVoiceList(emptyVoiceList.current);
+        setVoiceList(bundledVoices());
       }
     } catch (error) {
       console.error("Error in loadAudioList:", error);
-      // Use the empty ref to avoid triggering re-renders
-      setVoiceList(emptyVoiceList.current);
+      setVoiceList(bundledVoices());
     } finally {
       loadingRef.current = false;
     }
@@ -153,13 +152,14 @@ export const useAudio = () => {
         loadAudioList();
       } else {
         hasApiKeyRef.current = false;
-        // Clear voice list if API key is removed
-        setVoiceList(emptyVoiceList.current);
+        hasAttemptedLoadRef.current = true;
+        setVoiceList(bundledVoices());
       }
     } else if (!hasAttemptedLoadRef.current && newApiKey) {
-      // Initial load with API key
-      console.log("Initial load with API key present");
       loadAudioList();
+    } else if (!hasAttemptedLoadRef.current && !newApiKey) {
+      hasAttemptedLoadRef.current = true;
+      setVoiceList(bundledVoices());
     }
   }, [profile.elevenlabs_api_key, loadAudioList]);
 

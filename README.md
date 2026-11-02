@@ -22,14 +22,14 @@ Product behavior is in [spec.md](./spec.md). Next steps and open issues are in [
 | Area | Package |
 |------|---------|
 | Framework | Next.js 16.4, React 19.3, TypeScript 6.0 |
-| UI | Tailwind CSS 4.3, styled-components 6.6, Framer Motion 14.7, Lucide 1.63 |
+| UI | Tailwind CSS 4.3, styled-components 6.6, Framer Motion 14.9, Lucide 1.66 |
 | Forms | react-hook-form 7.91, Yup 1.7 |
 | State | Zustand 5.0 |
 | Canvas | Fabric.js 7.4 |
 | Voice | `@elevenlabs/elevenlabs-js` 2.75 |
-| Client data | `firebase` 12.19 (Auth, Firestore, Storage) |
+| Client data | `firebase` 13.1 (Auth, Firestore, Storage) |
 | Server data | `firebase-admin` 14.5 |
-| Payments | `stripe` 23, `@stripe/stripe-js` 10, `@stripe/react-stripe-js` 7 |
+| Payments | `stripe` 23.1, `@stripe/stripe-js` 10, `@stripe/react-stripe-js` 7 |
 | HTTP | axios 1.21 |
 | Tests | Vitest 5, Vite 8 |
 | Lint | ESLint 10, `eslint-config-next` 16.4 |
@@ -38,7 +38,7 @@ Product behavior is in [spec.md](./spec.md). Next steps and open issues are in [
 
 `firebase-admin` 14 depends on `jwks-rsa` 4. This repo pins that package's `jose` dependency to 5.10.0 (see `overrides` and `resolutions` in `package.json`).
 
-The Firebase JS SDK 13 is not installed. It pulls `@firebase/ai`, which requires Node `>=24.12.0`. The client SDK remains on the latest 12.x release. CI runs on Node 24.
+The Firebase JS SDK is 13.1. It pulls `@firebase/ai`, which requires Node `>=24.12.0`. CI uses Node 24, which satisfies that engine. TypeScript stays on 6.0.3 because `eslint-config-next` 16.4 depends on `typescript-eslint` 8.72, which only allows TypeScript `<6.1.0`.
 
 ## Project structure
 

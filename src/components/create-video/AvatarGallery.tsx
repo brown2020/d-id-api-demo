@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import { avatarPreviewSrc } from "@/libs/fallback-voices";
 import { DIDTalkingPhoto } from "@/types/did";
 
 interface AvatarGalleryProps {
@@ -24,7 +25,7 @@ const AvatarGallery: React.FC<AvatarGalleryProps> = ({
             {avatar.preview_image_url &&
             avatar.preview_image_url.trim() !== "" ? (
               <Image
-                src={`/api/imageproxy/${avatar.talking_photo_id}.png`}
+                src={avatarPreviewSrc(avatar)}
                 alt={avatar.talking_photo_name}
                 width={512}
                 height={512}

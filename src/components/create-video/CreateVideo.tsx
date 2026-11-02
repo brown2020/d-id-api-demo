@@ -15,6 +15,13 @@ import {
   Frame,
   Movement,
 } from "@/types/did";
+import {
+  avatarPreviewSrc,
+  fallbackVoices,
+  isBuiltinDemoAvatar,
+  profileHasDidKey,
+  withBuiltinDemoAvatar,
+} from "@/libs/fallback-voices";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import {
   collection,
@@ -206,6 +213,7 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
   const router = useRouter();
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const profile = useProfileStore((state) => state.profile);
+  const profileLoaded = useProfileStore((state) => state.profileLoaded);
   // const routerSecond = useRouterSecond();
   const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<
     DIDTalkingPhoto[]
@@ -304,14 +312,28 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
     };
   } | null>(null);
 
+  const galleryAvatars = useMemo(
+    () =>
+      withBuiltinDemoAvatar(
+        personalTalkingPhotos,
+        profileHasDidKey(profile.did_api_key, profile.did_basic_auth)
+      ),
+    [personalTalkingPhotos, profile.did_api_key, profile.did_basic_auth]
+  );
+
   const handleChangeAvatar = useCallback(
     async (avatar: DIDTalkingPhoto) => {
       setProcessing(true);
       setSelectedAvatar(avatar);
       setReplaceAvatarModel(false);
+      const localVoice = fallbackVoices().find(
+        (voice) => voice.voiceId === avatar.voiceId
+      );
       try {
-        let _audio = null;
-        if (avatar.voiceId) {
+        let _audio: ElevenLabs.Voice | null = localVoice
+          ? (localVoice as ElevenLabs.Voice)
+          : null;
+        if (avatar.voiceId && profile.elevenlabs_api_key?.trim()) {
           const audio = await findVoice(avatar.voiceId);
           if (audio.status && audio.voice) {
             _audio = audio.voice;
@@ -322,7 +344,7 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
         setProcessing(false);
       }
     },
-    [findVoice]
+    [findVoice, profile.elevenlabs_api_key]
   );
 
   useEffect(() => {
@@ -376,6 +398,29 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
       });
     }
   }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar, router]);
+
+  useEffect(() => {
+    if (!profileLoaded || video_id || selectedAvatar) {
+      return;
+    }
+    if (profileHasDidKey(profile.did_api_key, profile.did_basic_auth)) {
+      return;
+    }
+    const demo = galleryAvatars.find((avatar) =>
+      isBuiltinDemoAvatar(avatar.talking_photo_id)
+    );
+    if (demo) {
+      void handleChangeAvatar(demo);
+    }
+  }, [
+    profileLoaded,
+    video_id,
+    selectedAvatar,
+    profile.did_api_key,
+    profile.did_basic_auth,
+    galleryAvatars,
+    handleChangeAvatar,
+  ]);
 
   const canvasMainImage = useCallback(() => {
     if (canvas) {
@@ -1396,7 +1441,7 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
     handleSetBackground,
     handleText,
     landscape,
-    personalTalkingPhotos,
+    personalTalkingPhotos: galleryAvatars,
     processing,
     profile,
     replaceAvatarModel,
@@ -1473,7 +1518,7 @@ function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof u
                           <div className="relative w-full h-96">
                             <Image
                               className="rounded-md cursor-pointer object-cover"
-                              src={`/api/imageproxy/${selectedAvatar.talking_photo_id}.png`}
+                              src={avatarPreviewSrc(selectedAvatar)}
                               alt="avatar"
                               layout="fill"
                             />
@@ -1795,7 +1840,9 @@ function CreateVideoWriteScriptPanel({ model }: { model: ReturnType<typeof useCr
                   </div>
                 )}
 
-                {!profile.elevenlabs_api_key && selectedAvatar?.voiceId && (
+                {profileHasDidKey(profile.did_api_key, profile.did_basic_auth) &&
+                !profile.elevenlabs_api_key &&
+                selectedAvatar?.voiceId && (
                   <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
                     <p className="text-amber-700 flex items-center gap-2">
                       <AlertTriangle size={16} className="shrink-0" />

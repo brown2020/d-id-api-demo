@@ -22,7 +22,12 @@ import {
   refundVideoGenerationCredits,
 } from "@/server/video-credits";
 import { materializeVideoThumbnail } from "@/server/materialize-thumbnail";
-import { demoSample, isDidDemoSample, resolveDidCredentials } from "@/libs/did-demo";
+import {
+  demoSample,
+  isDidDemoSample,
+  noKeyGeneratePlan,
+  resolveDidCredentials,
+} from "@/libs/did-demo";
 
 async function saveDemoSample(
   videoRef: DocumentReference,
@@ -107,6 +112,22 @@ export async function generateVideo(
       });
     }
 
+    const plan = noKeyGeneratePlan(
+      apiKey,
+      basicAuth,
+      process.env.DID_API_KEY
+    );
+    if (plan.demoMode) {
+      const sample = await saveDemoSample(videoRef, plan.reason);
+      return {
+        status: true,
+        id,
+        demoMode: true,
+        notice: sample.notice,
+        videoUrl: sample.videoUrl,
+        imageUrl: sample.imageUrl,
+      };
+    }
     const resolved = resolveDidCredentials(
       apiKey,
       basicAuth,

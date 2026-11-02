@@ -1,9 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { getFileUrl } from "@/actions/getFileUrl";
 import { db, storage } from "@/firebase/firebaseClient";
 import { DEFAULT_AUDIO, DOCUMENT_COLLECTION } from "@/libs/constants";
+import {
+  DEMO_AVATAR_CREATE_NOTICE,
+  DEMO_VOICES_NOTICE,
+  profileHasDidKey,
+} from "@/libs/fallback-voices";
 import { AvatarValues, DIDTalkingPhoto } from "@/types/did";
 import { resizeImage } from "@/utils/resizeImage";
 import { useAuthStore } from "@/zustand/useAuthStore";
@@ -53,15 +57,7 @@ export function useAvatarForm({
     try {
       // First step is same: upload image
       // But we also need D-ID API key for validation
-      const d_id_api_key = profile.did_api_key;
-
-      if (!d_id_api_key) {
-        setErrorMessage(
-          "D-ID API key is missing. Please add it in your profile settings."
-        );
-        setProcessing(false);
-        return;
-      }
+      const d_id_api_key = profile.did_api_key?.trim() || "";
 
       // Check if we have a preview image
       if (!data.preview_image_url) {
@@ -81,7 +77,11 @@ export function useAvatarForm({
       );
 
       if (!avatarResponse.status) {
-        setErrorMessage(avatarResponse.error);
+        setErrorMessage(
+          avatarResponse.error === "Unauthorized"
+            ? "Sign in again to save this avatar."
+            : "Could not save this avatar. Please try again."
+        );
         setProcessing(false);
         return;
       }
@@ -282,6 +282,17 @@ export function useAvatarForm({
                 <p className="text-red-500 text-sm">
                   <ErrorMessage errors={formState.errors} name="name" />
                 </p>
+                {!profileHasDidKey(
+                  profile.did_api_key,
+                  profile.did_basic_auth
+                ) && (
+                  <div
+                    role="status"
+                    className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+                  >
+                    {DEMO_AVATAR_CREATE_NOTICE}
+                  </div>
+                )}
                 {errorMessage && (
                   <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-sm text-sm text-red-600">
                     {errorMessage}
@@ -304,19 +315,11 @@ export function useAvatarForm({
                         <span>Loading voices...</span>
                       </div>
                     ) : !options.length ? (
-                      <div className="py-2 px-3 border border-amber-200 bg-amber-50 rounded-sm text-sm text-amber-700">
-                        <p>
-                          No voices found. Please ensure you have added your
-                          ElevenLabs API key in your profile.
-                        </p>
-                        <p className="mt-1">
-                          <Link
-                            href="/profile"
-                            className="text-blue-600 underline"
-                          >
-                            Go to Profile Settings
-                          </Link>
-                        </p>
+                      <div
+                        role="status"
+                        className="py-2 px-3 border border-amber-200 bg-amber-50 rounded-sm text-sm text-amber-950"
+                      >
+                        <p>{DEMO_VOICES_NOTICE}</p>
                       </div>
                     ) : (
                       <Select
@@ -404,6 +407,8 @@ export function useAvatarForm({
     voiceDetail,
     setValue,
     errorMessage,
+    profile.did_api_key,
+    profile.did_basic_auth,
   ]);
 
   return (

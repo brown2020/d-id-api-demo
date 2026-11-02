@@ -5,7 +5,7 @@ Punchlist for `dev` after the October 2026 security and maintenance passes. This
 ## Needs a human
 
 - Deploy Firestore rules and indexes. CI does not deploy them. From a machine with Firebase credentials: `firebase deploy --only firestore:rules,firestore:indexes,storage`. Files: `firestore.rules`, `firestore.indexes.json`, `storage.rules`. Storage rules did not change in the security pass; the Firestore rules and the three composite indexes did.
-- Move the Vercel runtime to Node `>=24.12.0` before upgrading the Firebase JS SDK from 12.19.0 to 13.x. Firebase 13 depends on `@firebase/ai@3`, whose engine is `node >=24.12.0`. `.github/workflows/ci.yml` already uses Node 24. Vercel project settings were not changed. `firebase-admin` is already 14.5.0.
+- Confirm the Vercel runtime is Node `>=24.12.0`. The Firebase JS SDK is 13.1 and depends on `@firebase/ai`, whose engine is `node >=24.12.0`. CI already uses Node 24. Vercel project settings were not changed in this pass. `firebase-admin` is 14.5.0.
 - Confirm D-ID's real webhook signature header. The handler accepts the per-video query token or an HMAC-SHA256 of the raw body. An unknown signature header does not override a valid token. A vendor-specific scheme was not added because this repo does not document D-ID's header format.
 - QA the credit debit, refund, image proxies, and webhook on a real D-ID account before promoting `dev` to `main`.
 
@@ -25,7 +25,7 @@ Punchlist for `dev` after the October 2026 security and maintenance passes. This
 - Diagnostic pages (`/diagnostic`, `/test-*`, `/api-diagnostics`) are still public. Their API routes 404 outside local development.
 - `getWebhookUrl` still accepts any public HTTPS URL. Callers allowlist the origin before using it.
 - Yarn prints incompatible-resolution warnings for `protobufjs@8.8.1` (requested `^7`) and `@grpc/grpc-js@1.14.6` (Firebase Firestore still requests `~1.9.0`). Both pins are intentional and `yarn audit` / `npm audit` report no vulnerabilities. Do not drop the `jwks-rsa` → `jose@5.10.0` pin while `firebase-admin` 14 and `jwks-rsa` 4 are installed.
-- TypeScript 7.0 is published. `typescript-eslint` 8.72 only allows TypeScript `<6.1.0`, so the app stays on TypeScript 6.0.3.
+- TypeScript 7.0.2 is published. `eslint-config-next` 16.4 still depends on `typescript-eslint` 8.72, which only allows TypeScript `<6.1.0`, so the app stays on TypeScript 6.0.3.
 - `FIREBASE_UNIVERSE_DOMAIN` and `IS_LOCAL` are in `.env.example` and are not read by application code.
 - No Stripe webhook is implemented. Credit grants happen when the success page calls `fulfillPayment`. A buyer who never returns does not get credits until that call runs.
 - `glob@10` under `google-gax` / `rimraf` prints an upstream deprecation during install. It is not a current `npm audit` finding.

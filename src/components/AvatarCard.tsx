@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import { DIDTalkingPhoto } from "@/types/did";
 import { AVATAR_TYPE_PERSONAL, DOCUMENT_COLLECTION } from "@/libs/constants";
+import { avatarPreviewSrc, isBuiltinDemoAvatar } from "@/libs/fallback-voices";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { Pencil } from "lucide-react";
@@ -30,6 +31,9 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   }, []);
 
   const toggleFavorite = async () => {
+    if (isBuiltinDemoAvatar(id)) {
+      return;
+    }
     toast.promise(
       new Promise(async (resolve, reject) => {
         const favorite_of = avatar?.favorite_of || [];
@@ -104,7 +108,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
     // For non-localhost environments, show the actual image
     return (
       <Image
-        src={`/api/imageproxy/${id}.png`}
+        src={avatarPreviewSrc(avatar)}
         alt={avatar.talking_photo_name}
         width={512}
         height={512}

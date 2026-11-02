@@ -18,6 +18,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { DemoModeNotice } from "@/components/DemoModeNotice";
+import {
+  builtinDemoAvatar,
+  isBuiltinDemoAvatar,
+  profileHasDidKey,
+} from "@/libs/fallback-voices";
 import { formatVideoGenerationError } from "@/libs/video-status";
 
 export function useGenerate() {
@@ -35,6 +40,19 @@ export function useGenerate() {
 
   useEffect(() => {
     const selectedId = profile.selectedTalkingPhoto;
+    const hasDidKey = profileHasDidKey(
+      profile.did_api_key,
+      profile.did_basic_auth
+    );
+    if (
+      !hasDidKey &&
+      (!selectedId || isBuiltinDemoAvatar(selectedId))
+    ) {
+      setItemDetails(builtinDemoAvatar());
+      setFetchError(null);
+      setLoading(false);
+      return;
+    }
     if (!selectedId) {
       setFetchError("No avatar selected. Please select an avatar first.");
       setLoading(false);
@@ -63,7 +81,11 @@ export function useGenerate() {
       }
     );
     return () => unsubscribe();
-  }, [profile.selectedTalkingPhoto]);
+  }, [
+    profile.did_api_key,
+    profile.did_basic_auth,
+    profile.selectedTalkingPhoto,
+  ]);
 
   const handleUseFallback = () => {
     setUseFallbackImage(true);
