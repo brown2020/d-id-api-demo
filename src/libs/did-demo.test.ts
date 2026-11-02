@@ -17,6 +17,7 @@ import {
   avatarPreviewSrc,
   canvasAvatarImageUrl,
   fallbackVoices,
+  formatCanvasImageError,
   isAvatarCardSelected,
   missingVideoIdBlocksGenerate,
   resolveGallerySelection,
@@ -117,10 +118,7 @@ describe("create-video demo path", () => {
 
   it("loads the bundled preview and still calls generate without a draft id", () => {
     const avatar = builtinDemoAvatar();
-    const imageUrl = canvasAvatarImageUrl(avatar, {
-      isLocalhost: false,
-      origin,
-    });
+    const imageUrl = canvasAvatarImageUrl(avatar, { origin });
     expect(imageUrl).toBe(`${origin}${SAMPLE_TALKING_AVATAR_IMAGE}`);
     expect(imageUrl).not.toContain("/api/imageproxy/");
     expect(missingVideoIdBlocksGenerate(null, false)).toBe(false);
@@ -136,7 +134,7 @@ describe("create-video demo path", () => {
         talking_photo_id: "tp_live",
         preview_image_url: "https://cdn.example/avatar.png",
       },
-      { isLocalhost: false, origin, hasDidKey: true }
+      { origin }
     );
     expect(imageUrl).toBe(`${origin}/api/imageproxy/tp_live.png`);
     expect(missingVideoIdBlocksGenerate(null, true)).toBe(true);
@@ -194,13 +192,41 @@ describe("avatar selection", () => {
       resolveGallerySelection(gallery, "", false, true)?.preview_image_url
     ).toBe(SAMPLE_TALKING_AVATAR_IMAGE);
     expect(resolveGallerySelection(gallery, "missing", true, true)).toBeNull();
-    expect(
-      canvasAvatarImageUrl(userAvatar, {
-        isLocalhost: false,
-        origin: "https://d-id-api-demo-git-dev-ignitechannel.vercel.app",
-        hasDidKey: false,
-      })
-    ).toBe(stored);
+    expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).toBe(stored);
+  });
+});
+
+describe("canvas image proxy", () => {
+  const origin = "https://d-id-api-demo-git-dev-ignitechannel.vercel.app";
+  const signed =
+    "https://storage.googleapis.com/didaiapp.firebasestorage.app/images/uid/new-user/qa-photo.png?GoogleAccessId=demo%40example.iam.gserviceaccount.com&Expires=1&Signature=abc";
+
+  it("draws a user avatar from the same-origin proxy with or without a D-ID key", () => {
+    const avatar = {
+      talking_photo_id: "new-user",
+      preview_image_url: signed,
+    };
+    const imageUrl = canvasAvatarImageUrl(avatar, { origin });
+    expect(imageUrl).toBe(`${origin}/api/imageproxy/new-user.png`);
+    expect(imageUrl).not.toContain("storage.googleapis.com");
+    expect(imageUrl).not.toContain("GoogleAccessId");
+    expect(canvasAvatarImageUrl(builtinDemoAvatar(), { origin })).toBe(
+      `${origin}${SAMPLE_TALKING_AVATAR_IMAGE}`
+    );
+  });
+
+  it("does not toast an empty object when the image request fails", () => {
+    expect(formatCanvasImageError({})).toBe("Could not load this avatar image.");
+    expect(formatCanvasImageError({ data: {} })).toBe(
+      "Could not load this avatar image."
+    );
+    expect(formatCanvasImageError({ data: "{}" })).toBe(
+      "Could not load this avatar image."
+    );
+    expect(formatCanvasImageError({ data: "Image not available" })).toBe(
+      "Image not available"
+    );
+    expect(formatCanvasImageError(new Error("network down"))).toBe("network down");
   });
 });
 

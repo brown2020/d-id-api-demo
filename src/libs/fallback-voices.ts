@@ -170,24 +170,49 @@ export function shouldDrawSelectedAvatar(input: {
 
 /**
  * Canvas image for the selected avatar.
- * The built-in demo uses its public preview. Other avatars keep the proxy,
- * with the localhost headshot only when that proxy cannot be reached.
+ * The built-in demo stays on the public file. Every other avatar is loaded
+ * from the same-origin image proxy so Fabric can use crossOrigin without
+ * reading a signed Storage URL. A D-ID key is not required.
  */
 export function canvasAvatarImageUrl(
   avatar: { talking_photo_id: string; preview_image_url?: string },
-  options: { isLocalhost: boolean; origin: string; hasDidKey?: boolean }
+  options: { origin: string }
 ): string {
-  const preview = avatarPreviewSrc(avatar, { hasDidKey: options.hasDidKey });
   const origin = options.origin.replace(/\/$/, "");
   if (
-    options.isLocalhost &&
-    options.hasDidKey &&
-    !isBuiltinDemoAvatar(avatar.talking_photo_id) &&
-    !preview.startsWith("/demo/")
+    isBuiltinDemoAvatar(avatar.talking_photo_id) ||
+    avatar.preview_image_url?.startsWith("/demo/")
   ) {
-    return `${origin}/assets/headshot_fallback.png`;
+    const preview = avatar.preview_image_url?.trim() || SAMPLE_TALKING_AVATAR_IMAGE;
+    return preview.startsWith("/") ? `${origin}${preview}` : preview;
   }
-  return preview.startsWith("/") ? `${origin}${preview}` : preview;
+  return `${origin}/api/imageproxy/${encodeURIComponent(avatar.talking_photo_id)}.png`;
+}
+
+/** Turn a Fabric image failure into text. Empty objects must not render as "{}". */
+export function formatCanvasImageError(err: unknown): string {
+  const readable = readCanvasErrorText(err);
+  if (!readable || readable === "{}") {
+    return "Could not load this avatar image.";
+  }
+  return readable;
+}
+
+function readCanvasErrorText(err: unknown): string {
+  if (typeof err === "string") {
+    return err.trim();
+  }
+  if (!err || typeof err !== "object") {
+    return "";
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message.trim();
+  }
+  const record = err as { data?: unknown; message?: unknown };
+  if (typeof record.message === "string" && record.message.trim() && record.message.trim() !== "{}") {
+    return record.message.trim();
+  }
+  return readCanvasErrorText(record.data);
 }
 
 /**

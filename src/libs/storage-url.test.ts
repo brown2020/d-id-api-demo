@@ -15,6 +15,10 @@ describe("storageObjectPathFromUrl", () => {
   it("reads a GCS signed URL and ignores the query string", () => {
     const raw = `https://storage.googleapis.com/${BUCKET}/images/uid/avatar/a.png?X-Goog-Algorithm=GOOG4`;
     expect(storageObjectPathFromUrl(raw, BUCKET)).toBe("images/uid/avatar/a.png");
+    const legacy = `https://storage.googleapis.com/didaiapp.firebasestorage.app/images/uid/new-user/qa-photo.png?GoogleAccessId=demo%40example.iam.gserviceaccount.com&Expires=1&Signature=abc`;
+    expect(
+      storageObjectPathFromUrl(legacy, "didaiapp.firebasestorage.app")
+    ).toBe("images/uid/new-user/qa-photo.png");
   });
 
   it("reads a Firebase download URL", () => {

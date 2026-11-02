@@ -18,6 +18,7 @@ import {
 import {
   avatarPreviewSrc,
   canvasAvatarImageUrl,
+  formatCanvasImageError,
   fallbackVoices,
   missingVideoIdBlocksGenerate,
   profileHasDidKey,
@@ -477,35 +478,11 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
     if (avatarChangeProcessed && loadFirstTime) return;
 
     if (canvas && selectedAvatar) {
-      // Check if we're on localhost
-      const isLocalhost =
-        typeof window !== "undefined" &&
-        (window.location.hostname === "localhost" ||
-          window.location.hostname === "127.0.0.1");
-
-      // Demo avatars use their public preview. Live avatars keep the proxy.
+      // Demo files are same-origin. User photos go through /api/imageproxy so
+      // the canvas never fetches a signed Storage URL.
       const imageURL = canvasAvatarImageUrl(selectedAvatar, {
-        isLocalhost,
         origin: window.location.origin,
-        hasDidKey: profileHasDidKey(profile.did_api_key, profile.did_basic_auth),
       });
-      const usesBundledPreview = imageURL.includes("/demo/");
-
-      // Show a warning toast when using localhost
-      if (isLocalhost && !usesBundledPreview) {
-        toast(
-          "Using fallback image for localhost. For production, use ngrok to expose your local server.",
-          {
-            duration: 5000,
-            icon: "⚠️",
-            style: {
-              backgroundColor: "#FFF4E5",
-              color: "#664D03",
-              border: "1px solid #FFE4B5",
-            },
-          }
-        );
-      }
 
       toast.promise(
         new Promise<{ status: boolean; data: string }>(
@@ -570,7 +547,11 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
               console.log("Error on fetching image", error);
 
               setFetchingImage(false);
-              reject({ status: false, data: error });
+              setAvatarChangeProcessed(true);
+              reject({
+                status: false,
+                data: formatCanvasImageError(error),
+              });
             }
           }
         ),
@@ -581,36 +562,9 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
           },
           error: (err) => {
             setProcessing(false);
+            const errorMsg = formatCanvasImageError(err);
 
-            // Ensure we have proper error data
-            if (
-              err === undefined ||
-              err === null ||
-              (typeof err === "object" && Object.keys(err).length === 0)
-            ) {
-              console.error("Video generation failed with empty error object");
-              return "Error: Video generation failed. Please check your API keys or test image accessibility at /test-image-access.";
-            }
-
-            console.error("Video generation error:", err);
-
-            // Parse error or provide a fallback message
-            let errorMsg = "An error occurred during video generation.";
-
-            // If we have error data in the object
-            if (err && typeof err === "object") {
-              if ("data" in err && err.data) {
-                errorMsg =
-                  typeof err.data === "string"
-                    ? err.data
-                    : JSON.stringify(err.data);
-              } else if ("message" in err && err.message) {
-                errorMsg = err.message;
-              }
-            }
-
-            // Add specialized error handling for known error types
-            if (errorMsg.includes("celebrity")) {
+            if (errorMsg.toLowerCase().includes("celebrity")) {
               return (
                 <div className="bg-red-600 text-white p-3 rounded-md shadow-sm">
                   <p className="font-semibold mb-1">Celebrity Detected:</p>
@@ -622,10 +576,6 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
                 </div>
               );
             }
-
-            // Add instructions for common issues
-            errorMsg +=
-              " Please check your API keys or test image accessibility at /test-image-access.";
 
             return `Error: ${errorMsg}`;
           },
@@ -640,8 +590,6 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
     canvasMainImage,
     loadFirstTime,
     avatarChangeProcessed,
-    profile.did_api_key,
-    profile.did_basic_auth,
   ]);
 
   const setCanvasDimensions = useCallback(
