@@ -14,9 +14,12 @@ import {
 import {
   builtinDemoAvatar,
   canEnableGenerate,
+  avatarPreviewSrc,
   canvasAvatarImageUrl,
   fallbackVoices,
+  isAvatarCardSelected,
   missingVideoIdBlocksGenerate,
+  resolveGallerySelection,
   shouldDrawSelectedAvatar,
   talkingPhotoSelection,
   withBuiltinDemoAvatar,
@@ -133,12 +136,71 @@ describe("create-video demo path", () => {
         talking_photo_id: "tp_live",
         preview_image_url: "https://cdn.example/avatar.png",
       },
-      { isLocalhost: false, origin }
+      { isLocalhost: false, origin, hasDidKey: true }
     );
     expect(imageUrl).toBe(`${origin}/api/imageproxy/tp_live.png`);
     expect(missingVideoIdBlocksGenerate(null, true)).toBe(true);
     expect(missingVideoIdBlocksGenerate("new-video-1", true)).toBe(false);
     expect(withBuiltinDemoAvatar([], true)).toEqual([]);
+  });
+});
+
+describe("avatar selection", () => {
+  const stored = "https://storage.googleapis.com/bucket/images/avatar.png";
+  const userAvatar = {
+    talking_photo_id: "new-user",
+    talking_photo_name: "Mine",
+    preview_image_url: stored,
+    voiceId: "voice",
+    type: "personal",
+    favorite_of: [],
+    owner: "uid",
+    presenter_id: "",
+  };
+
+  it("marks the clicked card and keeps that id", () => {
+    expect(isAvatarCardSelected("demo-sample-avatar", "demo-sample-avatar")).toBe(
+      true
+    );
+    expect(isAvatarCardSelected("demo-sample-avatar", "new-user")).toBe(false);
+    expect(isAvatarCardSelected("", "demo-sample-avatar")).toBe(false);
+    expect(talkingPhotoSelection("new-user")).toEqual({
+      selectedTalkingPhoto: "new-user",
+    });
+  });
+
+  it("shows the demo image, a stored preview, or the proxy only with a key", () => {
+    const demo = builtinDemoAvatar();
+    expect(avatarPreviewSrc(demo, { hasDidKey: false })).toBe(
+      SAMPLE_TALKING_AVATAR_IMAGE
+    );
+    expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).toBe(stored);
+    expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).not.toContain(
+      "/api/imageproxy/"
+    );
+    expect(avatarPreviewSrc(userAvatar, { hasDidKey: true })).toBe(
+      "/api/imageproxy/new-user.png"
+    );
+  });
+
+  it("uses the profile selection on generate and create, and still falls back to demo", () => {
+    const gallery = withBuiltinDemoAvatar([userAvatar], false);
+    const demoOnly = withBuiltinDemoAvatar([], false);
+    expect(resolveGallerySelection(gallery, "new-user", false, true)?.talking_photo_id).toBe(
+      "new-user"
+    );
+    expect(resolveGallerySelection(demoOnly, "new-user", false, false)).toBeNull();
+    expect(
+      resolveGallerySelection(gallery, "", false, true)?.preview_image_url
+    ).toBe(SAMPLE_TALKING_AVATAR_IMAGE);
+    expect(resolveGallerySelection(gallery, "missing", true, true)).toBeNull();
+    expect(
+      canvasAvatarImageUrl(userAvatar, {
+        isLocalhost: false,
+        origin: "https://d-id-api-demo-git-dev-ignitechannel.vercel.app",
+        hasDidKey: false,
+      })
+    ).toBe(stored);
   });
 });
 

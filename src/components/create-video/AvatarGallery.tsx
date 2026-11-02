@@ -7,25 +7,35 @@ interface AvatarGalleryProps {
   selectedAvatar: DIDTalkingPhoto | null;
   personalTalkingPhotos: DIDTalkingPhoto[];
   handleChangeAvatar: (avatar: DIDTalkingPhoto) => void;
+  hasDidKey?: boolean;
 }
 
 const AvatarGallery: React.FC<AvatarGalleryProps> = ({
+  selectedAvatar,
   personalTalkingPhotos,
   handleChangeAvatar,
+  hasDidKey = false,
 }) => {
   return (
     <ul className="w-full grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
-      {personalTalkingPhotos.map((avatar) => (
+      {personalTalkingPhotos.map((avatar) => {
+        const previewSrc = avatarPreviewSrc(avatar, { hasDidKey });
+        const selected = selectedAvatar?.talking_photo_id === avatar.talking_photo_id;
+        return (
         <li key={avatar.talking_photo_id} className="list-none">
           <button
             type="button"
+            aria-pressed={selected}
             onClick={() => handleChangeAvatar(avatar)}
-            className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-colors cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full text-left"
+            className={`group/avatar relative border-2 hover:drop-shadow-2xl transition-colors cursor-pointer ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-6 pb-6 pt-10 lg:pt-16 xl:pt-20 2xl:pt-32 mx-auto w-full text-left ${
+              selected
+                ? "border-blue-600 ring-4 ring-blue-500"
+                : "border-transparent hover:border-gray-300"
+            }`}
           >
-            {avatar.preview_image_url &&
-            avatar.preview_image_url.trim() !== "" ? (
+            {previewSrc ? (
               <Image
-                src={avatarPreviewSrc(avatar)}
+                src={previewSrc}
                 alt={avatar.talking_photo_name}
                 width={512}
                 height={512}
@@ -42,7 +52,8 @@ const AvatarGallery: React.FC<AvatarGalleryProps> = ({
             </h3>
           </button>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 };

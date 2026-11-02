@@ -93,17 +93,60 @@ export function withBuiltinDemoAvatar(
   return [builtinDemoAvatar(), ...avatars];
 }
 
-export function avatarPreviewSrc(avatar: {
-  talking_photo_id: string;
-  preview_image_url?: string;
-}): string {
+export function avatarPreviewSrc(
+  avatar: {
+    talking_photo_id: string;
+    preview_image_url?: string;
+  },
+  options?: { hasDidKey?: boolean }
+): string {
   if (
     isBuiltinDemoAvatar(avatar.talking_photo_id) ||
     avatar.preview_image_url?.startsWith("/demo/")
   ) {
     return avatar.preview_image_url || SAMPLE_TALKING_AVATAR_IMAGE;
   }
-  return `/api/imageproxy/${avatar.talking_photo_id}.png`;
+  const stored = avatar.preview_image_url?.trim() ?? "";
+  if (options?.hasDidKey) {
+    return `/api/imageproxy/${avatar.talking_photo_id}.png`;
+  }
+  return stored;
+}
+
+export function isAvatarCardSelected(
+  selectedId: string | null | undefined,
+  avatarId: string
+): boolean {
+  return Boolean(selectedId) && selectedId === avatarId;
+}
+
+/**
+ * Prefer the avatar stored on the profile. With no key and no match, use the
+ * built-in demo avatar. Wait for the photo list before dropping a real id.
+ */
+export function resolveGallerySelection(
+  avatars: DIDTalkingPhoto[],
+  selectedId: string | null | undefined,
+  hasDidKey: boolean,
+  photosLoaded: boolean
+): DIDTalkingPhoto | null {
+  const id = selectedId?.trim() ?? "";
+  if (id) {
+    const match = avatars.find((avatar) => avatar.talking_photo_id === id);
+    if (match) {
+      return match;
+    }
+    if (!photosLoaded) {
+      return null;
+    }
+  }
+  if (!hasDidKey) {
+    return (
+      avatars.find((avatar) => isBuiltinDemoAvatar(avatar.talking_photo_id)) ??
+      builtinDemoAvatar()
+    );
+  }
+  return null;
 }
 
 /** Same gate the create-video screen uses to enable Generate. */
@@ -132,17 +175,16 @@ export function shouldDrawSelectedAvatar(input: {
  */
 export function canvasAvatarImageUrl(
   avatar: { talking_photo_id: string; preview_image_url?: string },
-  options: { isLocalhost: boolean; origin: string }
+  options: { isLocalhost: boolean; origin: string; hasDidKey?: boolean }
 ): string {
-  const preview = avatarPreviewSrc(avatar);
+  const preview = avatarPreviewSrc(avatar, { hasDidKey: options.hasDidKey });
   const origin = options.origin.replace(/\/$/, "");
   if (
-    isBuiltinDemoAvatar(avatar.talking_photo_id) ||
-    preview.startsWith("/demo/")
+    options.isLocalhost &&
+    options.hasDidKey &&
+    !isBuiltinDemoAvatar(avatar.talking_photo_id) &&
+    !preview.startsWith("/demo/")
   ) {
-    return `${origin}${preview}`;
-  }
-  if (options.isLocalhost) {
     return `${origin}/assets/headshot_fallback.png`;
   }
   return preview.startsWith("/") ? `${origin}${preview}` : preview;

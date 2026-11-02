@@ -6,7 +6,10 @@ import { DIDTalkingPhoto } from "@/types/did";
 import { AVATAR_TYPE_PERSONAL, DOCUMENT_COLLECTION } from "@/libs/constants";
 import {
   avatarPreviewSrc,
+  builtinDemoAvatar,
+  isAvatarCardSelected,
   isBuiltinDemoAvatar,
+  profileHasDidKey,
   talkingPhotoSelection,
 } from "@/libs/fallback-voices";
 import { useAuthStore } from "@/zustand/useAuthStore";
@@ -29,7 +32,12 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   // const [isDirty, setIsDirty] = useState(false);
   // const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uid = useAuthStore((state) => state.uid);
+  const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
+  const selected = isAvatarCardSelected(profile.selectedTalkingPhoto, id);
+  const hasDidKey = profileHasDidKey(profile.did_api_key, profile.did_basic_auth);
+  const displayAvatar =
+    avatar ?? (isBuiltinDemoAvatar(id) ? builtinDemoAvatar() : undefined);
   const [isLocalhost, setIsLocalhost] = useState(false);
   useEffect(() => {
     const hostname = window.location.hostname;
@@ -75,7 +83,10 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
 
   // Safe image rendering that handles localhost case
   const renderAvatar = () => {
-    if (!avatar?.preview_image_url || avatar.preview_image_url.trim() === "") {
+    const previewSrc = displayAvatar
+      ? avatarPreviewSrc(displayAvatar, { hasDidKey })
+      : "";
+    if (!previewSrc) {
       return (
         <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
           <span className="text-gray-400">No image</span>
@@ -114,8 +125,8 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
     // For non-localhost environments, show the actual image
     return (
       <Image
-        src={avatarPreviewSrc(avatar)}
-        alt={avatar.talking_photo_name}
+        src={previewSrc}
+        alt={displayAvatar?.talking_photo_name || "Avatar"}
         width={512}
         height={512}
         className="absolute inset-0 h-full w-full object-cover"
@@ -125,7 +136,12 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
 
   return (
     <article
-      className="group/avatar relative cursor-pointer border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-colors hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full"
+      data-selected={selected ? "true" : "false"}
+      className={`group/avatar relative cursor-pointer border-2 hover:drop-shadow-2xl transition-colors hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full ${
+        selected
+          ? "border-blue-600 ring-4 ring-blue-500"
+          : "border-transparent hover:border-gray-300"
+      }`}
       onClick={() => {
         void updateProfile(talkingPhotoSelection(id));
       }}
@@ -133,8 +149,13 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
       {renderAvatar()}
 
       <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>
+      {selected ? (
+        <span className="absolute top-3 right-14 z-20 rounded-full bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
+          Selected
+        </span>
+      ) : null}
       <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">
-        {avatar?.talking_photo_name}
+        {displayAvatar?.talking_photo_name}
       </h3>
       <button type="button"
         aria-label="Toggle favorite"

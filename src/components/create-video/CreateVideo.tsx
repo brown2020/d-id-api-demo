@@ -19,10 +19,11 @@ import {
   avatarPreviewSrc,
   canvasAvatarImageUrl,
   fallbackVoices,
-  isBuiltinDemoAvatar,
   missingVideoIdBlocksGenerate,
   profileHasDidKey,
+  resolveGallerySelection,
   shouldDrawSelectedAvatar,
+  talkingPhotoSelection,
   withBuiltinDemoAvatar,
 } from "@/libs/fallback-voices";
 import { useAuthStore } from "@/zustand/useAuthStore";
@@ -219,6 +220,8 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
   const [personalTalkingPhotos, setPersonalTalkingPhotos] = useState<
     DIDTalkingPhoto[]
   >([]);
+  const [avatarsLoaded, setAvatarsLoaded] = useState(false);
+  const updateProfile = useProfileStore((state) => state.updateProfile);
   const [selectedAvatar, setSelectedAvatar] = useState<DIDTalkingPhoto | null>(
     null
   );
@@ -275,6 +278,7 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
           (doc) => doc.data() as DIDTalkingPhoto
         );
         setPersonalTalkingPhotos(talkingPhotosList);
+        setAvatarsLoaded(true);
       }
     );
 
@@ -400,25 +404,38 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
     }
   }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar, router]);
 
+  const hasDidKey = profileHasDidKey(profile.did_api_key, profile.did_basic_auth);
+
+  const selectGalleryAvatar = useCallback(
+    (avatar: DIDTalkingPhoto) => {
+      void handleChangeAvatar(avatar);
+      if (profile.selectedTalkingPhoto !== avatar.talking_photo_id) {
+        void updateProfile(talkingPhotoSelection(avatar.talking_photo_id));
+      }
+    },
+    [handleChangeAvatar, profile.selectedTalkingPhoto, updateProfile]
+  );
+
   useEffect(() => {
     if (!profileLoaded || video_id || selectedAvatar) {
       return;
     }
-    if (profileHasDidKey(profile.did_api_key, profile.did_basic_auth)) {
-      return;
-    }
-    const demo = galleryAvatars.find((avatar) =>
-      isBuiltinDemoAvatar(avatar.talking_photo_id)
+    const choice = resolveGallerySelection(
+      galleryAvatars,
+      profile.selectedTalkingPhoto,
+      hasDidKey,
+      avatarsLoaded
     );
-    if (demo) {
-      void handleChangeAvatar(demo);
+    if (choice) {
+      void handleChangeAvatar(choice);
     }
   }, [
     profileLoaded,
     video_id,
     selectedAvatar,
-    profile.did_api_key,
-    profile.did_basic_auth,
+    profile.selectedTalkingPhoto,
+    hasDidKey,
+    avatarsLoaded,
     galleryAvatars,
     handleChangeAvatar,
   ]);
@@ -470,6 +487,7 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
       const imageURL = canvasAvatarImageUrl(selectedAvatar, {
         isLocalhost,
         origin: window.location.origin,
+        hasDidKey: profileHasDidKey(profile.did_api_key, profile.did_basic_auth),
       });
       const usesBundledPreview = imageURL.includes("/demo/");
 
@@ -622,6 +640,8 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
     canvasMainImage,
     loadFirstTime,
     avatarChangeProcessed,
+    profile.did_api_key,
+    profile.did_basic_auth,
   ]);
 
   const setCanvasDimensions = useCallback(
@@ -1438,8 +1458,9 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
     canvasContainerRef,
     canvasRef,
     fetchingImage,
-    handleChangeAvatar,
+    handleChangeAvatar: selectGalleryAvatar,
     handleGenerateVideo,
+    hasDidKey,
     handleImageUpload,
     handleSetBackground,
     handleText,
@@ -1467,6 +1488,7 @@ function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof u
   canvasRef,
   fetchingImage,
   handleChangeAvatar,
+  hasDidKey,
   handleImageUpload,
   handleSetBackground,
   handleText,
@@ -1495,6 +1517,7 @@ function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof u
               selectedAvatar={selectedAvatar}
               personalTalkingPhotos={personalTalkingPhotos}
               handleChangeAvatar={handleChangeAvatar}
+              hasDidKey={hasDidKey}
             />
           </div>
           {selectedAvatar ? (
@@ -1506,6 +1529,7 @@ function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof u
                       selectedAvatar={selectedAvatar}
                       personalTalkingPhotos={personalTalkingPhotos}
                       handleChangeAvatar={handleChangeAvatar}
+                      hasDidKey={hasDidKey}
                     />
                   </div>
                 ) : (
@@ -1521,7 +1545,7 @@ function useCreateVideoSelectAvatarPanel({ model }: { model: ReturnType<typeof u
                           <div className="relative w-full h-96">
                             <Image
                               className="rounded-md cursor-pointer object-cover"
-                              src={avatarPreviewSrc(selectedAvatar)}
+                              src={avatarPreviewSrc(selectedAvatar, { hasDidKey })}
                               alt="avatar"
                               layout="fill"
                             />

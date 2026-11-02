@@ -287,7 +287,10 @@ export function useGenerate() {
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="mr-auto mb-4">
-          <AvatarCard id={profile.selectedTalkingPhoto} />
+          <AvatarCard
+            id={itemDetails?.talking_photo_id || profile.selectedTalkingPhoto}
+            avatar={itemDetails ?? undefined}
+          />
         </div>
 
         <div className="flex flex-col gap-4 w-full">
