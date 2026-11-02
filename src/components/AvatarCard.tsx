@@ -4,8 +4,13 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import { DIDTalkingPhoto } from "@/types/did";
 import { AVATAR_TYPE_PERSONAL, DOCUMENT_COLLECTION } from "@/libs/constants";
-import { avatarPreviewSrc, isBuiltinDemoAvatar } from "@/libs/fallback-voices";
+import {
+  avatarPreviewSrc,
+  isBuiltinDemoAvatar,
+  talkingPhotoSelection,
+} from "@/libs/fallback-voices";
 import { useAuthStore } from "@/zustand/useAuthStore";
+import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
 import { Pencil } from "lucide-react";
 
@@ -24,6 +29,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   // const [isDirty, setIsDirty] = useState(false);
   // const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uid = useAuthStore((state) => state.uid);
+  const updateProfile = useProfileStore((state) => state.updateProfile);
   const [isLocalhost, setIsLocalhost] = useState(false);
   useEffect(() => {
     const hostname = window.location.hostname;
@@ -118,7 +124,12 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
   };
 
   return (
-    <article className="group/avatar relative border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-colors hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full">
+    <article
+      className="group/avatar relative cursor-pointer border-transparent border-2 hover:border-gray-300 hover:drop-shadow-2xl transition-colors hover:-translate-y-2 ease-in-out duration-300 isolate flex flex-col justify-end overflow-hidden rounded-2xl px-8 pb-8 pt-40 lg:pt-40 xl:pt-44 2xl:pt-52 mx-auto w-full"
+      onClick={() => {
+        void updateProfile(talkingPhotoSelection(id));
+      }}
+    >
       {renderAvatar()}
 
       <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>
@@ -127,7 +138,10 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
       </h3>
       <button type="button"
         aria-label="Toggle favorite"
-        onClick={toggleFavorite}
+        onClick={(event) => {
+          event.stopPropagation();
+          void toggleFavorite();
+        }}
         className="transition duration-300 absolute top-3 left-3 p-2 rounded-full"
       >
         {avatar?.favorite_of?.includes(uid) ? (
@@ -174,7 +188,8 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
       {avatar?.type == AVATAR_TYPE_PERSONAL ? (
         <button type="button"
           aria-label="Edit avatar"
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation();
             if (edit) edit();
           }}
           className="transition duration-300 absolute top-3 right-3 bg-gray-300 text-gray-600 p-2 rounded-full border border-gray-400 shadow-sm"

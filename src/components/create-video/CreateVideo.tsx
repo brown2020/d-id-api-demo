@@ -17,9 +17,12 @@ import {
 } from "@/types/did";
 import {
   avatarPreviewSrc,
+  canvasAvatarImageUrl,
   fallbackVoices,
   isBuiltinDemoAvatar,
+  missingVideoIdBlocksGenerate,
   profileHasDidKey,
+  shouldDrawSelectedAvatar,
   withBuiltinDemoAvatar,
 } from "@/libs/fallback-voices";
 import { useAuthStore } from "@/zustand/useAuthStore";
@@ -60,8 +63,6 @@ import Image from "next/image";
 import {
   checkCanvasObjectImageDomain,
   cleanObject,
-  getApiBaseUrl,
-  imageProxyUrl,
 } from "@/libs/utils";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import SurprisedIcon from "@/assets/icons/suprised-emoji.svg";
@@ -465,16 +466,15 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
         (window.location.hostname === "localhost" ||
           window.location.hostname === "127.0.0.1");
 
-      // Use fallback image if on localhost, otherwise use the normal proxy URL
-      const imageURL = isLocalhost
-        ? `${window.location.origin}/assets/headshot_fallback.png`
-        : imageProxyUrl(
-            getApiBaseUrl(),
-            `${selectedAvatar.talking_photo_id}.png`
-          );
+      // Demo avatars use their public preview. Live avatars keep the proxy.
+      const imageURL = canvasAvatarImageUrl(selectedAvatar, {
+        isLocalhost,
+        origin: window.location.origin,
+      });
+      const usesBundledPreview = imageURL.includes("/demo/");
 
       // Show a warning toast when using localhost
-      if (isLocalhost) {
+      if (isLocalhost && !usesBundledPreview) {
         toast(
           "Using fallback image for localhost. For production, use ngrok to expose your local server.",
           {
@@ -985,10 +985,11 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
   // Then use loadCanvasForFirstTime in useEffect
   useEffect(() => {
     if (
-      uid &&
-      personalTalkingPhotos.length > 0 &&
-      canvas &&
-      canvasContainerRef.current
+      shouldDrawSelectedAvatar({
+        hasUser: Boolean(uid),
+        selectedAvatarId: selectedAvatar?.talking_photo_id,
+        canvasReady: Boolean(canvas && canvasContainerRef.current),
+      })
     ) {
       if (!loadFirstTime && videoCanvasDetail && video_id) {
         console.log("Load canvas for first time");
@@ -1033,7 +1034,9 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
       return;
     }
 
-    if (!videoIdRef.current) {
+    if (
+      missingVideoIdBlocksGenerate(videoIdRef.current, hasDidProfileKey)
+    ) {
       toast.error("Video ID is missing. Please try again.");
       return;
     }

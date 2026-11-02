@@ -14,7 +14,11 @@ import {
 import {
   builtinDemoAvatar,
   canEnableGenerate,
+  canvasAvatarImageUrl,
   fallbackVoices,
+  missingVideoIdBlocksGenerate,
+  shouldDrawSelectedAvatar,
+  talkingPhotoSelection,
   withBuiltinDemoAvatar,
 } from "@/libs/fallback-voices";
 
@@ -83,6 +87,58 @@ describe("no-key generate path", () => {
 
   it("keeps a live plan when a key is present", () => {
     expect(noKeyGeneratePlan("user:secret", "", "").demoMode).toBe(false);
+  });
+});
+
+describe("create-video demo path", () => {
+  const origin = "https://d-id-api-demo-git-dev-ignitechannel.vercel.app";
+
+  it("draws a selected gallery avatar even when there are no personal photos", () => {
+    const [demo] = withBuiltinDemoAvatar([], false);
+    expect(demo?.talking_photo_id).toBe("demo-sample-avatar");
+    expect(
+      shouldDrawSelectedAvatar({
+        hasUser: true,
+        selectedAvatarId: demo?.talking_photo_id,
+        canvasReady: true,
+      })
+    ).toBe(true);
+    expect(
+      shouldDrawSelectedAvatar({
+        hasUser: true,
+        selectedAvatarId: null,
+        canvasReady: true,
+      })
+    ).toBe(false);
+  });
+
+  it("loads the bundled preview and still calls generate without a draft id", () => {
+    const avatar = builtinDemoAvatar();
+    const imageUrl = canvasAvatarImageUrl(avatar, {
+      isLocalhost: false,
+      origin,
+    });
+    expect(imageUrl).toBe(`${origin}${SAMPLE_TALKING_AVATAR_IMAGE}`);
+    expect(imageUrl).not.toContain("/api/imageproxy/");
+    expect(missingVideoIdBlocksGenerate(null, false)).toBe(false);
+    expect(missingVideoIdBlocksGenerate("", false)).toBe(false);
+    expect(talkingPhotoSelection(avatar.talking_photo_id)).toEqual({
+      selectedTalkingPhoto: avatar.talking_photo_id,
+    });
+  });
+
+  it("keeps the proxy and the video-id guard when a D-ID key exists", () => {
+    const imageUrl = canvasAvatarImageUrl(
+      {
+        talking_photo_id: "tp_live",
+        preview_image_url: "https://cdn.example/avatar.png",
+      },
+      { isLocalhost: false, origin }
+    );
+    expect(imageUrl).toBe(`${origin}/api/imageproxy/tp_live.png`);
+    expect(missingVideoIdBlocksGenerate(null, true)).toBe(true);
+    expect(missingVideoIdBlocksGenerate("new-video-1", true)).toBe(false);
+    expect(withBuiltinDemoAvatar([], true)).toEqual([]);
   });
 });
 

@@ -115,3 +115,52 @@ export function canEnableGenerate(
     avatar && voice && avatar.voiceId && avatar.voiceId === voice.voiceId
   );
 }
+
+/** Draw whenever an avatar is selected, including a gallery-only demo avatar. */
+export function shouldDrawSelectedAvatar(input: {
+  hasUser: boolean;
+  selectedAvatarId: string | null | undefined;
+  canvasReady: boolean;
+}): boolean {
+  return Boolean(input.hasUser && input.selectedAvatarId && input.canvasReady);
+}
+
+/**
+ * Canvas image for the selected avatar.
+ * The built-in demo uses its public preview. Other avatars keep the proxy,
+ * with the localhost headshot only when that proxy cannot be reached.
+ */
+export function canvasAvatarImageUrl(
+  avatar: { talking_photo_id: string; preview_image_url?: string },
+  options: { isLocalhost: boolean; origin: string }
+): string {
+  const preview = avatarPreviewSrc(avatar);
+  const origin = options.origin.replace(/\/$/, "");
+  if (
+    isBuiltinDemoAvatar(avatar.talking_photo_id) ||
+    preview.startsWith("/demo/")
+  ) {
+    return `${origin}${preview}`;
+  }
+  if (options.isLocalhost) {
+    return `${origin}/assets/headshot_fallback.png`;
+  }
+  return preview.startsWith("/") ? `${origin}${preview}` : preview;
+}
+
+/**
+ * A missing draft id blocks a live D-ID submit.
+ * With no key, generateVideo still accepts a null id and returns the sample.
+ */
+export function missingVideoIdBlocksGenerate(
+  videoId: string | null | undefined,
+  hasDidKey: boolean
+): boolean {
+  return !videoId && hasDidKey;
+}
+
+export function talkingPhotoSelection(id: string): {
+  selectedTalkingPhoto: string;
+} {
+  return { selectedTalkingPhoto: id };
+}

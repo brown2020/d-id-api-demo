@@ -28,7 +28,7 @@ Protected prefixes: `/avatars`, `/generate`, `/payment-attempt`, `/payment-succe
 | Profile | Client can update allowlisted profile fields. `credits` is required and cannot be changed by the client. |
 | Avatars | Personal avatars are owner-scoped. Templates are readable. A personal avatar cannot be updated into a template. With no D-ID key, Demo Avatars includes a built-in avatar that uses `/demo/sample-talking-avatar.png` and a bundled voice. Create Avatar saves without a D-ID key and shows a demo notice. |
 | Simple generate | Validates the script, base URL, and credits, then calls D-ID. A missing key, or a D-ID auth, credit, or quota error, stores the bundled sample clip and image and marks the video as demo mode. |
-| Canvas composer | Multi-scene Fabric.js editor. Save and submit go through the same generation action. |
+| Canvas composer | Multi-scene Fabric.js editor. The selected gallery avatar, including the built-in demo avatar, is drawn from its preview URL and can submit with no draft id when no D-ID key is configured. A configured key still requires a draft and uses the image proxy. Clicking an avatar card stores `selectedTalkingPhoto`. Save and submit go through the same generation action. |
 | Library | Owner-scoped Firestore queries. Playback uses a Storage signed URL after the result is copied. |
 | Image proxies | `/api/imageproxy/[id]` and `/api/video-image-proxy/[id]` read owned bucket objects via the Admin SDK, sniff a raster type, and do not fetch arbitrary URLs. |
 | Voice | ElevenLabs list and TTS use the profile key. Server env keys are not a fallback. If that list cannot load, the UI uses the bundled voices in `audio-list.json`. |
