@@ -36,21 +36,27 @@ export function FirebaseAuthProvider({
   const isProtectedRoute = isProtectedPathname(pathname);
 
   useEffect(() => {
+    let ignore = false;
     // Safety check - only run in browser
     if (typeof window === "undefined") {
       return;
     }
 
     if (!isFirebaseConfigured) {
-      queueMicrotask(() => setLoading(false));
-      return;
+      queueMicrotask(() => {
+        if (!ignore) setLoading(false);
+      });
+      return () => {
+        ignore = true;
+      };
     }
 
     // Initialize the auth subscription
-    let unsubscribe: () => void;
+    let unsubscribe: (() => void) | undefined;
 
     try {
       unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        if (ignore) return;
         setUser(currentUser);
 
         if (currentUser) {
@@ -81,10 +87,13 @@ export function FirebaseAuthProvider({
       console.warn(
         `[auth] Auth state listener setup failed: ${formatFirebaseAuthErrorForLog(error)}`
       );
-      queueMicrotask(() => setLoading(false));
+      queueMicrotask(() => {
+        if (!ignore) setLoading(false);
+      });
     }
 
     return () => {
+      ignore = true;
       if (unsubscribe) {
         unsubscribe();
       }

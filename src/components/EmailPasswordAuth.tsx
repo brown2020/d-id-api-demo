@@ -18,6 +18,67 @@ import {
 
 type AuthMode = "signin" | "signup" | "forgot";
 
+function AuthModeLinks({
+  mode,
+  loading,
+  onMode,
+}: {
+  mode: AuthMode;
+  loading: boolean;
+  onMode: (mode: AuthMode) => void;
+}) {
+  return (
+    <div className="text-center text-sm space-y-2">
+      {mode === "signin" && (
+        <>
+          <button
+            type="button"
+            onClick={() => onMode("forgot")}
+            className="text-blue-600 hover:text-blue-700 font-medium"
+            disabled={loading}
+          >
+            Forgot password?
+          </button>
+          <div>
+            <span className="text-gray-600">Don&apos;t have an account? </span>
+            <button
+              type="button"
+              onClick={() => onMode("signup")}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+              disabled={loading}
+            >
+              Sign up
+            </button>
+          </div>
+        </>
+      )}
+      {mode === "signup" && (
+        <div>
+          <span className="text-gray-600">Already have an account? </span>
+          <button
+            type="button"
+            onClick={() => onMode("signin")}
+            className="text-blue-600 hover:text-blue-700 font-medium"
+            disabled={loading}
+          >
+            Sign in
+          </button>
+        </div>
+      )}
+      {mode === "forgot" && (
+        <button
+          type="button"
+          onClick={() => onMode("signin")}
+          className="text-blue-600 hover:text-blue-700 font-medium"
+          disabled={loading}
+        >
+          Back to sign in
+        </button>
+      )}
+    </div>
+  );
+}
+
 async function establishSession(idToken: string): Promise<void> {
   let response: Response;
   try {
@@ -269,6 +330,7 @@ export function EmailPasswordAuth() {
               />
               <button
                 type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 disabled={loading}
@@ -304,54 +366,7 @@ export function EmailPasswordAuth() {
           )}
         </button>
 
-        <div className="text-center text-sm space-y-2">
-          {mode === "signin" && (
-            <>
-              <button
-                type="button"
-                onClick={() => setMode("forgot")}
-                className="text-blue-600 hover:text-blue-700 font-medium"
-                disabled={loading}
-              >
-                Forgot password?
-              </button>
-              <div>
-                <span className="text-gray-600">Don&apos;t have an account? </span>
-                <button
-                  type="button"
-                  onClick={() => setMode("signup")}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                  disabled={loading}
-                >
-                  Sign up
-                </button>
-              </div>
-            </>
-          )}
-          {mode === "signup" && (
-            <div>
-              <span className="text-gray-600">Already have an account? </span>
-              <button
-                type="button"
-                onClick={() => setMode("signin")}
-                className="text-blue-600 hover:text-blue-700 font-medium"
-                disabled={loading}
-              >
-                Sign in
-              </button>
-            </div>
-          )}
-          {mode === "forgot" && (
-            <button
-              type="button"
-              onClick={() => setMode("signin")}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-              disabled={loading}
-            >
-              Back to sign in
-            </button>
-          )}
-        </div>
+        <AuthModeLinks mode={mode} loading={loading} onMode={setMode} />
       </form>
     </div>
   );

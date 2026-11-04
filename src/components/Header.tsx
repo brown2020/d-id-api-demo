@@ -67,21 +67,28 @@ export function useHeader() {
   }, []);
 
   useEffect(() => {
+    let ignore = false;
     if (!uid) {
       queueMicrotask(() => {
+        if (ignore) return;
         setNotifications([]);
         setProcessing(false);
       });
-      return;
+      return () => {
+        ignore = true;
+      };
     }
 
-    queueMicrotask(() => setProcessing(true));
+    queueMicrotask(() => {
+      if (!ignore) setProcessing(true);
+    });
     const notificationCollection = query(
       collection(db, NOTIFICATION_COLLECTION),
       where("user_id", "==", uid),
       where("status", "==", NOTIFICATION_STATUS.UNREAD)
     );
     const unsubscribe = onSnapshot(notificationCollection, (snapshot) => {
+      if (ignore) return;
       setProcessing(false);
       const notificationList = snapshot.docs.map((doc) => {
         return {
@@ -93,6 +100,7 @@ export function useHeader() {
     });
 
     return () => {
+      ignore = true;
       unsubscribe();
     };
   }, [uid]);

@@ -24,16 +24,17 @@ export default function PaymentCheckoutPage({ amount }: Props) {
     let cancelled = false;
     createPaymentIntent(convertToSubcurrency(amount))
       .then((secret) => {
-        if (!cancelled && secret) {
-          queueMicrotask(() => setClientSecret(secret));
-        }
+        if (!secret) return;
+        queueMicrotask(() => {
+          if (!cancelled) setClientSecret(secret);
+        });
       })
       .catch(() => {
-        if (!cancelled) {
-          queueMicrotask(() =>
-            setErrorMessage("Failed to initialize payment. Please try again.")
-          );
-        }
+        queueMicrotask(() => {
+          if (!cancelled) {
+            setErrorMessage("Failed to initialize payment. Please try again.");
+          }
+        });
       });
     return () => {
       cancelled = true;

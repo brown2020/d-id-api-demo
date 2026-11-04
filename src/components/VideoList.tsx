@@ -17,7 +17,10 @@ export default function VideosPage() {
 
     const uid = useAuthStore((state) => state.uid);
     useEffect(() => {
-        queueMicrotask(() => setFetching(true));
+        let ignore = false;
+        queueMicrotask(() => {
+            if (!ignore) setFetching(true);
+        });
         const videoCollection = query(
             collection(db, "generated-videos"),
             where('type', '==', AVATAR_TYPE_PERSONAL),
@@ -27,6 +30,7 @@ export default function VideosPage() {
         const unsubscribeVideoCollection = onSnapshot(
             videoCollection,
             (snapshot) => {
+                if (ignore) return;
                 const videoList = snapshot.docs.map(
                     (doc) => doc.data()
                 )
@@ -38,6 +42,7 @@ export default function VideosPage() {
         )
 
         return () => {
+            ignore = true;
             setFetching(false)
             unsubscribeVideoCollection();
         }

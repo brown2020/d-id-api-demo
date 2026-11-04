@@ -354,13 +354,17 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
   );
 
   useEffect(() => {
+    let ignore = false;
     // If video id is exist then fetch video details
     // Check personal talking photo should exist
     if (video_id && uid && personalTalkingPhotos.length > 0) {
       const docRef = doc(collection(db, VIDEO_COLLECTION), video_id);
-      queueMicrotask(() => setProcessing(true));
+      queueMicrotask(() => {
+        if (!ignore) setProcessing(true);
+      });
 
       getDoc(docRef).then((snapshot) => {
+        if (ignore) return;
         setProcessing(false);
 
         if (!snapshot.exists()) {
@@ -403,6 +407,9 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
         }
       });
     }
+    return () => {
+      ignore = true;
+    };
   }, [video_id, uid, personalTalkingPhotos, handleChangeAvatar, router]);
 
   const hasDidKey = profileHasDidKey(profile.did_api_key, profile.did_basic_auth);
@@ -983,7 +990,13 @@ export function useCreateVideo({ video_id }: { video_id: string | null }) {
 
   // Reset the processed flag when avatar changes
   useEffect(() => {
-    queueMicrotask(() => setAvatarChangeProcessed(false));
+    let ignore = false;
+    queueMicrotask(() => {
+      if (!ignore) setAvatarChangeProcessed(false);
+    });
+    return () => {
+      ignore = true;
+    };
   }, [selectedAvatar]);
 
   useEffect(() => {

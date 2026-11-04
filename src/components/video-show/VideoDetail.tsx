@@ -149,6 +149,108 @@ function VideoDetailView({
   );
 }
 
+type VideoDetailData = NonNullable<ReturnType<typeof useVideoDetail>["videoData"]>;
+
+function VideoProcessingState({
+  isPolling,
+  showProcessingState,
+}: {
+  isPolling: boolean;
+  showProcessingState: boolean;
+}) {
+  if (!showProcessingState) return null;
+  return (
+    <div
+      className="flex flex-col items-center justify-center gap-3 py-16"
+      role="status"
+      aria-live="polite"
+    >
+      <p className="text-xl font-semibold animate-pulse">
+        {isPolling ? "Checking video status..." : "Generating video..."}
+      </p>
+      <p className="text-sm text-gray-600 text-center max-w-md">
+        D-ID is processing your video. This page updates automatically
+        when the video is ready.
+      </p>
+      <Link href="/videos" className="text-blue-600 underline text-sm mt-2">
+        Back to video library
+      </Link>
+    </div>
+  );
+}
+
+function VideoErrorState({ videoData }: { videoData: VideoDetailData }) {
+  if (videoData.d_id_status !== "error") return null;
+  return (
+    <div
+      className="flex flex-col items-center justify-center gap-4 py-16"
+      role="alert"
+    >
+      <p className="text-xl font-semibold text-red-600">
+        {videoData.errorMessage || "Video generation failed."}
+      </p>
+      <div className="flex gap-4 text-sm">
+        <Link href="/videos" className="text-blue-600 underline">
+          Video library
+        </Link>
+        <Link
+          href={`/videos/${videoData.id}/edit`}
+          className="text-blue-600 underline"
+        >
+          Edit and retry
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function VideoPlayback({ videoData }: { videoData: VideoDetailData }) {
+  if (!(videoData.d_id_status === "done" && videoData.video_url)) return null;
+  return (
+    <div className="flex flex-col items-center justify-center py-4 gap-4">
+      {videoData.demo_mode ? (
+        <div className="w-full max-w-3xl">
+          <DemoModeNotice notice={videoData.demo_notice} />
+          {videoData.thumbnail_url ? (
+            <Image
+              src={videoData.thumbnail_url}
+              alt="Sample talking avatar"
+              width={320}
+              height={180}
+              className="mb-4 max-h-64 w-auto rounded-md"
+            />
+          ) : null}
+        </div>
+      ) : null}
+      <video
+        controls
+        src={videoData.video_url}
+        className="w-full max-h-[70vh] rounded-md bg-black"
+      >
+        Your browser does not support embedded video playback.
+      </video>
+    </div>
+  );
+}
+
+function VideoUnavailable({
+  showProcessingState,
+  videoData,
+}: {
+  showProcessingState: boolean;
+  videoData: VideoDetailData;
+}) {
+  const ready = videoData.d_id_status === "done" && videoData.video_url;
+  if (showProcessingState || videoData.d_id_status === "error" || ready) {
+    return null;
+  }
+  return (
+    <p className="text-gray-600" role="status">
+      Video is not available yet.
+    </p>
+  );
+}
+
 function VideoDetailReady({
   isPolling,
   showProcessingState,
@@ -156,95 +258,25 @@ function VideoDetailReady({
 }: {
   isPolling: boolean;
   showProcessingState: boolean;
-  videoData: NonNullable<ReturnType<typeof useVideoDetail>["videoData"]>;
+  videoData: VideoDetailData;
 }) {
   return (
     <div className="p-4 bg-white min-h-[60vh]">
-
-        <div className="flex flex-col gap-4 h-full">
-          <h1 className="text-2xl font-bold">
-            {videoData.title ?? "Untitled Video"}
-          </h1>
-
-          {showProcessingState ? (
-            <div
-              className="flex flex-col items-center justify-center gap-3 py-16"
-              role="status"
-              aria-live="polite"
-            >
-              <p className="text-xl font-semibold animate-pulse">
-                {isPolling ? "Checking video status..." : "Generating video..."}
-              </p>
-              <p className="text-sm text-gray-600 text-center max-w-md">
-                D-ID is processing your video. This page updates automatically
-                when the video is ready.
-              </p>
-              <Link
-                href="/videos"
-                className="text-blue-600 underline text-sm mt-2"
-              >
-                Back to video library
-              </Link>
-            </div>
-          ) : null}
-
-          {videoData.d_id_status === "error" ? (
-            <div
-              className="flex flex-col items-center justify-center gap-4 py-16"
-              role="alert"
-            >
-              <p className="text-xl font-semibold text-red-600">
-                {videoData.errorMessage || "Video generation failed."}
-              </p>
-              <div className="flex gap-4 text-sm">
-                <Link href="/videos" className="text-blue-600 underline">
-                  Video library
-                </Link>
-                <Link
-                  href={`/videos/${videoData.id}/edit`}
-                  className="text-blue-600 underline"
-                >
-                  Edit and retry
-                </Link>
-              </div>
-            </div>
-          ) : null}
-
-          {videoData.d_id_status === "done" && videoData.video_url ? (
-            <div className="flex flex-col items-center justify-center py-4 gap-4">
-              {videoData.demo_mode ? (
-                <div className="w-full max-w-3xl">
-                  <DemoModeNotice notice={videoData.demo_notice} />
-                  {videoData.thumbnail_url ? (
-                    <Image
-                      src={videoData.thumbnail_url}
-                      alt="Sample talking avatar"
-                      width={320}
-                      height={180}
-                      className="mb-4 max-h-64 w-auto rounded-md"
-                    />
-                  ) : null}
-                </div>
-              ) : null}
-              <video
-                controls
-                src={videoData.video_url}
-                className="w-full max-h-[70vh] rounded-md bg-black"
-              >
-                Your browser does not support embedded video playback.
-              </video>
-            </div>
-          ) : null}
-
-          {!showProcessingState &&
-          videoData.d_id_status !== "error" &&
-          !(videoData.d_id_status === "done" && videoData.video_url) ? (
-            <p className="text-gray-600" role="status">
-              Video is not available yet.
-            </p>
-          ) : null}
-        </div>
-      
+      <div className="flex flex-col gap-4 h-full">
+        <h1 className="text-2xl font-bold">
+          {videoData.title ?? "Untitled Video"}
+        </h1>
+        <VideoProcessingState
+          isPolling={isPolling}
+          showProcessingState={showProcessingState}
+        />
+        <VideoErrorState videoData={videoData} />
+        <VideoPlayback videoData={videoData} />
+        <VideoUnavailable
+          showProcessingState={showProcessingState}
+          videoData={videoData}
+        />
+      </div>
     </div>
   );
 }

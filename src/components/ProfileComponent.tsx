@@ -14,11 +14,16 @@ export default function ProfileComponent() {
   );
 
   useEffect(() => {
+    let ignore = false;
     queueMicrotask(() => {
+      if (ignore) return;
       setDidApiKey(profile.did_api_key);
       setDidBasicAuth(profile.did_basic_auth);
       setElevenlabsApiKey(profile.elevenlabs_api_key);
     });
+    return () => {
+      ignore = true;
+    };
   }, [profile.did_api_key, profile.did_basic_auth, profile.elevenlabs_api_key]);
 
   const handleApiKeyChange = async () => {

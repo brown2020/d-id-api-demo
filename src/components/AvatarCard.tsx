@@ -142,19 +142,24 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
           ? "border-blue-600 ring-4 ring-blue-500"
           : "border-transparent hover:border-gray-300"
       }`}
-      onClick={() => {
-        void updateProfile(talkingPhotoSelection(id));
-      }}
     >
       {renderAvatar()}
 
-      <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0"></div>
+      <button
+        type="button"
+        aria-label={displayAvatar?.talking_photo_name || "Select avatar"}
+        onClick={() => {
+          void updateProfile(talkingPhotoSelection(id));
+        }}
+        className="absolute inset-0 z-10"
+      />
       {selected ? (
-        <span className="absolute top-3 right-14 z-20 rounded-full bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
+        <span className="pointer-events-none absolute top-3 right-14 z-20 rounded-full bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
           Selected
         </span>
       ) : null}
-      <h3 className="z-10 mt-3 text-xl font-bold text-white transition duration-300">
+      <h3 className="pointer-events-none z-20 mt-3 text-xl font-bold text-white transition duration-300">
         {displayAvatar?.talking_photo_name}
       </h3>
       <button type="button"
@@ -163,7 +168,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
           event.stopPropagation();
           void toggleFavorite();
         }}
-        className="transition duration-300 absolute top-3 left-3 p-2 rounded-full"
+        className="transition duration-300 absolute top-3 left-3 z-30 p-2 rounded-full"
       >
         {avatar?.favorite_of?.includes(uid) ? (
           <svg
@@ -213,7 +218,7 @@ export default function AvatarCard({ id, avatar, edit }: AvatarCardProps) {
             event.stopPropagation();
             if (edit) edit();
           }}
-          className="transition duration-300 absolute top-3 right-3 bg-gray-300 text-gray-600 p-2 rounded-full border border-gray-400 shadow-sm"
+          className="transition duration-300 absolute top-3 right-3 z-30 bg-gray-300 text-gray-600 p-2 rounded-full border border-gray-400 shadow-sm"
         >
           <Pencil size={20} />
         </button>
