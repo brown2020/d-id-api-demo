@@ -27,23 +27,21 @@ import {
 } from "@/libs/fallback-voices";
 
 describe("resolveDidCredentials", () => {
-  it("keeps a profile key ahead of the server key", () => {
-    expect(resolveDidCredentials("user:secret", "", "env:secret")).toEqual({
+  it("keeps a profile key and ignores a server key", () => {
+    expect(resolveDidCredentials("user:secret", "")).toEqual({
       apiKey: "user:secret",
       basicAuth: "",
     });
   });
 
-  it("uses DID_API_KEY when the profile has no D-ID credentials", () => {
-    expect(resolveDidCredentials("  ", null, "env:secret")).toEqual({
-      apiKey: "env:secret",
-      basicAuth: "",
-    });
+  it("stays in demo mode when the profile key is blank", () => {
+    expect(resolveDidCredentials("  ", null)).toBeNull();
+    expect(noKeyGeneratePlan("", null).demoMode).toBe(true);
   });
 
   it("returns null when every key is missing", () => {
-    expect(resolveDidCredentials("", "  ", "")).toBeNull();
-    expect(resolveDidCredentials(undefined, undefined, undefined)).toBeNull();
+    expect(resolveDidCredentials("", "  ")).toBeNull();
+    expect(resolveDidCredentials(undefined, undefined)).toBeNull();
   });
 });
 
@@ -66,7 +64,7 @@ describe("classifyDidDemoFallback", () => {
 
 describe("no-key generate path", () => {
   it("returns the bundled sample and the demo notice", () => {
-    const plan = noKeyGeneratePlan("", null, "");
+    const plan = noKeyGeneratePlan("", null);
     expect(plan.demoMode).toBe(true);
     if (!plan.demoMode) {
       return;
@@ -90,7 +88,7 @@ describe("no-key generate path", () => {
   });
 
   it("keeps a live plan when a key is present", () => {
-    expect(noKeyGeneratePlan("user:secret", "", "").demoMode).toBe(false);
+    expect(noKeyGeneratePlan("user:secret", "").demoMode).toBe(false);
   });
 });
 
@@ -167,14 +165,16 @@ describe("avatar selection", () => {
     });
   });
 
-  it("shows the demo image, a stored preview, or the proxy only with a key", () => {
+  it("shows the demo image locally and user avatars through the proxy", () => {
     const demo = builtinDemoAvatar();
     expect(avatarPreviewSrc(demo, { hasDidKey: false })).toBe(
       SAMPLE_TALKING_AVATAR_IMAGE
     );
-    expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).toBe(stored);
+    expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).toBe(
+      "/api/imageproxy/new-user.png"
+    );
     expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).not.toContain(
-      "/api/imageproxy/"
+      "storage.googleapis.com"
     );
     expect(avatarPreviewSrc(userAvatar, { hasDidKey: true })).toBe(
       "/api/imageproxy/new-user.png"
@@ -192,7 +192,9 @@ describe("avatar selection", () => {
       resolveGallerySelection(gallery, "", false, true)?.preview_image_url
     ).toBe(SAMPLE_TALKING_AVATAR_IMAGE);
     expect(resolveGallerySelection(gallery, "missing", true, true)).toBeNull();
-    expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).toBe(stored);
+    expect(avatarPreviewSrc(userAvatar, { hasDidKey: false })).toBe(
+      "/api/imageproxy/new-user.png"
+    );
   });
 });
 

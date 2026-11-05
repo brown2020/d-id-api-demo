@@ -100,17 +100,17 @@ export function avatarPreviewSrc(
   },
   options?: { hasDidKey?: boolean }
 ): string {
+  void options;
   if (
     isBuiltinDemoAvatar(avatar.talking_photo_id) ||
     avatar.preview_image_url?.startsWith("/demo/")
   ) {
     return avatar.preview_image_url || SAMPLE_TALKING_AVATAR_IMAGE;
   }
-  const stored = avatar.preview_image_url?.trim() ?? "";
-  if (options?.hasDidKey) {
-    return `/api/imageproxy/${avatar.talking_photo_id}.png`;
+  if (!avatar.talking_photo_id) {
+    return avatar.preview_image_url?.trim() ?? "";
   }
-  return stored;
+  return `/api/imageproxy/${encodeURIComponent(avatar.talking_photo_id)}.png`;
 }
 
 export function isAvatarCardSelected(

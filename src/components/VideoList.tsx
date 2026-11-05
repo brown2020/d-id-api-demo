@@ -69,7 +69,7 @@ export default function VideosPage() {
                                                             <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/0 transition-colors duration-300 hover:via-gray-900/1"></div>
                                                             <div className="h-36"></div>
                                                             {
-                                                                video.demo_mode && video.thumbnail_url ?
+                                                                video.demo_mode && typeof video.thumbnail_url === "string" && video.thumbnail_url.startsWith("/") && !video.thumbnail_url.startsWith("//") ?
                                                                     <Image src={video.thumbnail_url} alt="Sample talking avatar" width={200} height={100} className="absolute inset-0 w-full h-full object-cover" />
                                                                     :
                                                                 video.thumbnail_url ?

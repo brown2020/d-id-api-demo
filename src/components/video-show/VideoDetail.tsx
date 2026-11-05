@@ -211,7 +211,8 @@ function VideoPlayback({ videoData }: { videoData: VideoDetailData }) {
       {videoData.demo_mode ? (
         <div className="w-full max-w-3xl">
           <DemoModeNotice notice={videoData.demo_notice} />
-          {videoData.thumbnail_url ? (
+          {videoData.thumbnail_url?.startsWith("/") &&
+          !videoData.thumbnail_url.startsWith("//") ? (
             <Image
               src={videoData.thumbnail_url}
               alt="Sample talking avatar"

@@ -44,7 +44,7 @@ Protected prefixes: `/avatars`, `/generate`, `/payment-attempt`, `/payment-succe
 
 Browser (Firebase client + Zustand) sends an ID token to `POST /api/auth`. `src/proxy.ts` redirects protected pages when the cookie is missing. Pages are mostly server components that render client UI. Privileged work is in server actions (`protect` / `getCurrentUser`) and route handlers (`requireApiSession`).
 
-Generation order: allowlist the app base URL, create the video document, then resolve credentials. The profile D-ID key or Basic Auth is used when present. `DID_API_KEY` is used only when the profile has neither. If no key is available, the document is marked done with the bundled sample at `/demo/sample-talking-avatar.mp4` and `/demo/sample-talking-avatar.png` and `demo_notice` is `Demo mode: showing a sample video because no D-ID key is configured`. Otherwise the app copies the thumbnail into Storage, saves `secret_token`, debits 1 credit, and calls D-ID. Auth (401/403), credit (402 or a credit phrase), and quota (429 or a quota phrase) responses refund the credit and store that same sample with a demo notice. Other D-ID failures stay errors. The webhook or the poller downloads a real result into Storage.
+Generation order: allowlist the app base URL, create the video document, then resolve credentials. Only the profile D-ID key or Basic Auth starts a live call. `DID_API_KEY` is diagnostic and does not generate video. If the profile has no D-ID key, the document is marked done with the bundled sample at `/demo/sample-talking-avatar.mp4` and `/demo/sample-talking-avatar.png`, `demo_notice` is `Demo mode: showing a sample video because no D-ID key is configured`, and no credit is debited. Otherwise the app copies an allowed thumbnail into Storage, saves `secret_token`, debits 1 credit, and calls D-ID. Auth (401/403), credit (402 or a credit phrase), and quota (429 or a quota phrase) responses refund the credit and store that same sample with a demo notice. Other D-ID failures stay errors. The webhook or the poller downloads a real result into Storage. Gallery thumbnails for stored avatars use `/api/imageproxy/{id}.png` so signed `storage.googleapis.com` URLs are not sent through `/_next/image`.
 
 Public base URL comes from the request host, `NEXT_PUBLIC_API_BASE_URL`, or `https://didapidemo.vercel.app`. Generation image URLs must be one of those origins or the exact fallback headshot. `getWebhookUrl` returns null on localhost.
 
@@ -52,7 +52,7 @@ Public base URL comes from the request host, `NEXT_PUBLIC_API_BASE_URL`, or `htt
 
 | Service | Use |
 |---------|-----|
-| D-ID | `POST /talks` and `GET /talks/{id}` with the signed-in user's key, or `DID_API_KEY` when the profile has no D-ID credentials |
+| D-ID | `POST /talks` and `GET /talks/{id}` with the signed-in user's key. A profile with no D-ID key plays the bundled sample |
 | ElevenLabs | Voice list and TTS through the profile key |
 | Firebase Auth | Google and email/password |
 | Firestore | Users, profiles, avatars, videos, notifications, webhook history |
@@ -75,7 +75,7 @@ The app does not call an LLM provider. D-ID and ElevenLabs model or voice ids ar
 
 - D-ID must fetch images over the public internet.
 - Server Actions body limit is 3MB.
-- When the profile has no D-ID key or Basic Auth, generation may call D-ID with `DID_API_KEY`. It does not fall back to `D_ID_BASIC_AUTH` or `ELEVENLABS_API_KEY`. A missing key or a D-ID auth, credit, or quota error returns the bundled sample instead of failing the request.
+- When the profile has no D-ID key or Basic Auth, generation stores the bundled sample and does not debit a credit. It does not fall back to `DID_API_KEY`, `D_ID_BASIC_AUTH`, or `ELEVENLABS_API_KEY`. A D-ID auth, credit, or quota error also returns the bundled sample.
 - Missing or non-numeric credit balance is treated as zero.
 - License is AGPL-3.0-only.
 - Package manager is Yarn 1. There is no `package-lock.json`.

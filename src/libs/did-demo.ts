@@ -52,24 +52,24 @@ export function demoSample(reason: DidDemoReason): DidDemoSample {
 }
 
 /**
- * Profile credentials win. `DID_API_KEY` is used only when the profile has
- * neither an API key nor Basic Auth, so a server key can still call D-ID.
+ * Live D-ID calls use the signed-in profile only.
+ * A server `DID_API_KEY` must not skip demo mode when the profile has no key.
  */
 export function resolveDidCredentials(
   apiKey: string | null | undefined,
-  basicAuth: string | null | undefined,
-  envApiKey?: string | null
+  basicAuth: string | null | undefined
 ): DidCredentials | null {
   const key = apiKey?.trim() ?? "";
   const basic = basicAuth?.trim() ?? "";
   if (key || basic) {
     return { apiKey: key, basicAuth: basic };
   }
-  const envKey = envApiKey?.trim() ?? "";
-  if (envKey) {
-    return { apiKey: envKey, basicAuth: "" };
-  }
   return null;
+}
+
+export function isBundledDemoThumbnail(url: string): boolean {
+  const path = url.split("?")[0] ?? "";
+  return path === SAMPLE_TALKING_AVATAR_IMAGE;
 }
 
 /**
@@ -117,10 +117,9 @@ export type NoKeyGeneratePlan =
 /** Shared by the server action and tests. No key means the bundled sample. */
 export function noKeyGeneratePlan(
   apiKey: string | null | undefined,
-  basicAuth: string | null | undefined,
-  envApiKey?: string | null
+  basicAuth: string | null | undefined
 ): NoKeyGeneratePlan {
-  if (resolveDidCredentials(apiKey, basicAuth, envApiKey)) {
+  if (resolveDidCredentials(apiKey, basicAuth)) {
     return { demoMode: false };
   }
   const sample = demoSample("missing_key");

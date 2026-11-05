@@ -429,6 +429,10 @@ export function useAvatarForm({
                     alt="Avatar Image"
                     width={512}
                     height={512}
+                    unoptimized={
+                      previewImageUrl.startsWith("https://") ||
+                      previewImageUrl.startsWith("http://")
+                    }
                     className="absolute inset-0 h-full w-full object-cover"
                   />
                 ) : null}

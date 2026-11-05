@@ -101,7 +101,7 @@ Open [http://localhost:3000](http://localhost:3000). Fill `.env.local` from the 
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Label stored on the PaymentIntent |
 | `NEXT_PUBLIC_API_BASE_URL` | Public HTTPS origin for webhooks and image URLs. Browser calls use the page origin when it is allowed. |
-| `DID_API_KEY` | Optional. Used for a live D-ID call only when the signed-in profile has no D-ID key or Basic Auth. Auth, credit, and quota failures still show the bundled sample. |
+| `DID_API_KEY` | Optional. Diagnostics only. A profile with no D-ID key plays the bundled sample and does not call D-ID or spend credits. |
 | `D_ID_BASIC_AUTH` | Optional. Local diagnostics only. Not a generation fallback. |
 | `ELEVENLABS_API_KEY` | Optional. Local diagnostics only. Voice calls use the profile key. |
 | `IS_LOCAL` | Optional flag present in `.env.example`. Local vs production gating uses `NODE_ENV` and `VERCEL_ENV`. |

@@ -56,11 +56,7 @@ export async function generateDIDVideo(
 > {
   await requireAuth();
 
-  const resolved = resolveDidCredentials(
-    apiKey,
-    basicAuth,
-    process.env.DID_API_KEY
-  );
+  const resolved = resolveDidCredentials(apiKey, basicAuth);
   if (!resolved) {
     return demoSample("missing_key");
   }

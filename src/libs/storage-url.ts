@@ -29,14 +29,49 @@ function sanitizeObjectPath(path: string): string | null {
   return path;
 }
 
+const APP_STORAGE_BUCKET = "didaiapp.firebasestorage.app";
+
+function addBucketName(names: Set<string>, value: string) {
+  const name = value.trim().replace(/^gs:\/\//, "").replace(/\/$/, "");
+  if (name) {
+    names.add(name);
+  }
+}
+
+/** Configured bucket, its Firebase alias, and the app bucket used in stored URLs. */
+export function storageBucketNames(bucket: string): string[] {
+  const names = new Set<string>();
+  addBucketName(names, bucket);
+  addBucketName(names, APP_STORAGE_BUCKET);
+  for (const name of [...names]) {
+    if (name.endsWith(".appspot.com")) {
+      addBucketName(names, `${name.slice(0, -".appspot.com".length)}.firebasestorage.app`);
+    } else if (name.endsWith(".firebasestorage.app")) {
+      addBucketName(names, `${name.slice(0, -".firebasestorage.app".length)}.appspot.com`);
+    }
+  }
+  return [...names];
+}
+
 /**
  * Returns the object path when `raw` is an HTTPS URL for `bucket`.
  * Query credentials are ignored so expired signed URLs still identify the object.
+ * The didaiapp Storage bucket is accepted even when the configured name differs.
  */
 export function storageObjectPathFromUrl(
   raw: string,
   bucket: string
 ): string | null {
+  for (const name of storageBucketNames(bucket)) {
+    const path = storageObjectPathInBucket(raw, name);
+    if (path) {
+      return path;
+    }
+  }
+  return null;
+}
+
+function storageObjectPathInBucket(raw: string, bucket: string): string | null {
   if (!bucket) {
     return null;
   }
@@ -53,6 +88,10 @@ export function storageObjectPathFromUrl(
   }
 
   const host = url.hostname.toLowerCase();
+
+  if (host === bucket && host.endsWith(".firebasestorage.app")) {
+    return sanitizeObjectPath(decodeURIComponent(url.pathname.replace(/^\//, "")));
+  }
 
   if (host === "storage.googleapis.com") {
     const prefix = `/${bucket}/`;

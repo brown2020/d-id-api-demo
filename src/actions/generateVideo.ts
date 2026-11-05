@@ -112,11 +112,7 @@ export async function generateVideo(
       });
     }
 
-    const plan = noKeyGeneratePlan(
-      apiKey,
-      basicAuth,
-      process.env.DID_API_KEY
-    );
+    const plan = noKeyGeneratePlan(apiKey, basicAuth);
     if (plan.demoMode) {
       const sample = await saveDemoSample(videoRef, plan.reason);
       return {
@@ -128,11 +124,7 @@ export async function generateVideo(
         imageUrl: sample.imageUrl,
       };
     }
-    const resolved = resolveDidCredentials(
-      apiKey,
-      basicAuth,
-      process.env.DID_API_KEY
-    );
+    const resolved = resolveDidCredentials(apiKey, basicAuth);
     if (!resolved) {
       const sample = await saveDemoSample(videoRef, "missing_key");
       return {

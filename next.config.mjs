@@ -11,6 +11,16 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "storage.googleapis.com",
+        pathname: "/didaiapp.firebasestorage.app/**",
+      },
+      {
+        protocol: "https",
+        hostname: "didaiapp.firebasestorage.app",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "firebasestorage.googleapis.com",
         port: "",
         pathname: "/**",

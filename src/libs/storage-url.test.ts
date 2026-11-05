@@ -19,6 +19,18 @@ describe("storageObjectPathFromUrl", () => {
     expect(
       storageObjectPathFromUrl(legacy, "didaiapp.firebasestorage.app")
     ).toBe("images/uid/new-user/qa-photo.png");
+    expect(storageObjectPathFromUrl(legacy, "")).toBe(
+      "images/uid/new-user/qa-photo.png"
+    );
+    expect(storageObjectPathFromUrl(legacy, "didaiapp.appspot.com")).toBe(
+      "images/uid/new-user/qa-photo.png"
+    );
+    expect(
+      storageObjectPathFromUrl(
+        "https://didaiapp.firebasestorage.app/images/uid/new-user/qa-photo.png",
+        ""
+      )
+    ).toBe("images/uid/new-user/qa-photo.png");
   });
 
   it("reads a Firebase download URL", () => {

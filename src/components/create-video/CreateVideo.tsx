@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DemoModeNotice } from "@/components/DemoModeNotice";
 import { db } from "@/firebase/firebaseClient";
 import {
   AVATAR_TYPE_TEMPLATE,
@@ -1811,21 +1812,8 @@ function CreateVideoWriteScriptPanel({ model }: { model: ReturnType<typeof useCr
                 </p>
 
                 {/* API Key Warnings */}
-                {!profile.did_api_key && !profile.did_basic_auth && (
-                  <div className="mb-4 p-3 border border-amber-200 bg-amber-50 rounded-md">
-                    <p className="text-amber-700 flex items-center gap-2">
-                      <AlertTriangle size={16} className="shrink-0" />
-                      <span>
-                        No D-ID key is saved in your profile. A server key is
-                        tried first. Otherwise this page shows a bundled sample
-                        video. You can add a key in{" "}
-                        <Link href="/profile" className="text-blue-600 underline">
-                          profile settings
-                        </Link>
-                        .
-                      </span>
-                    </p>
-                  </div>
+                {!profileHasDidKey(profile.did_api_key, profile.did_basic_auth) && (
+                  <DemoModeNotice />
                 )}
 
                 {profileHasDidKey(profile.did_api_key, profile.did_basic_auth) &&

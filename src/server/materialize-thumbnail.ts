@@ -1,6 +1,7 @@
 import { getFileUrl } from "@/actions/getFileUrl";
 import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
 import { DOCUMENT_COLLECTION } from "@/libs/constants";
+import { isBundledDemoThumbnail } from "@/libs/did-demo";
 import {
   FALLBACK_HEADSHOT_URL,
   isCallerImagePath,
@@ -29,6 +30,10 @@ export async function materializeVideoThumbnail(options: {
 
   if (isExactFallbackImageUrl(thumbnailUrl)) {
     return { ok: true, storedUrl: FALLBACK_HEADSHOT_URL };
+  }
+
+  if (isBundledDemoThumbnail(thumbnailUrl)) {
+    return { ok: true, storedUrl: thumbnailUrl.split("?")[0] ?? thumbnailUrl };
   }
 
   if (thumbnailUrl.startsWith("data:")) {

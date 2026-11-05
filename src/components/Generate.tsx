@@ -36,7 +36,12 @@ async function submitGenerate(input: {
   setVideoUrl: (value: string | null) => void;
   router: { push: (href: string) => void };
 }) {
-  if (!input.profile.selectedTalkingPhoto) {
+  const selectedId =
+    input.profile.selectedTalkingPhoto ||
+    (input.itemDetails && isBuiltinDemoAvatar(input.itemDetails.talking_photo_id)
+      ? input.itemDetails.talking_photo_id
+      : "");
+  if (!selectedId) {
     input.setError("No avatar selected. Choose one on the Avatars page.");
     return;
   }
@@ -104,7 +109,7 @@ async function submitGenerate(input: {
       const statusResponse = await retrieveDIDVideo(
         input.profile.did_api_key || "",
         result.id,
-        input.profile.selectedTalkingPhoto || "noTalkingPhotoId",
+        selectedId,
         undefined,
         input.profile.did_basic_auth || ""
       );
@@ -308,6 +313,9 @@ function GenerateScreen({
   return (
     <div className="flex flex-col">
       <h2 className="text-2xl font-bold mb-4">Generate</h2>
+      {profileHasDidKey(profile.did_api_key, profile.did_basic_auth) ? null : (
+        <DemoModeNotice />
+      )}
 
       <LocalhostWarning onUseFallback={handleUseFallback} />
       <FallbackImageNotice show={useFallbackImage} />
@@ -363,7 +371,11 @@ function GenerateScreen({
               "Generate Video"
             )}
           </button>
-          <p className="text-sm text-gray-600">Uses 1 credit.</p>
+          {profileHasDidKey(profile.did_api_key, profile.did_basic_auth) ? (
+            <p className="text-sm text-gray-600">Uses 1 credit.</p>
+          ) : (
+            <p className="text-sm text-gray-600">Demo mode does not use credits.</p>
+          )}
           <GenerateError error={error} />
         </div>
       </div>
