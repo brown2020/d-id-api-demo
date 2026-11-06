@@ -19,6 +19,9 @@ export default function AgentManager() {
   const [generatingKey, setGeneratingKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
+  const [showDemoEmbed, setShowDemoEmbed] = useState(false);
+  
+  const hasApiKey = !!(didApiKey || didBasicAuth);
 
   useEffect(() => {
     loadAgents();
@@ -36,6 +39,28 @@ export default function AgentManager() {
   const handleCreateAgent = async () => {
     if (!agentName.trim()) return;
 
+    if (!hasApiKey) {
+      const demoAgent: Agent = {
+        id: "demo_agent_" + Date.now(),
+        preview_name: agentName + " (Demo)",
+        presenter: {
+          type: "clip",
+          presenter_id: "v2_public_Amber@0zSz8kflCN",
+          voice: {
+            type: "microsoft",
+            voice_id: "en-US-JennyMultilingualV2Neural"
+          }
+        },
+        created_at: new Date().toISOString()
+      };
+      setAgents([demoAgent, ...agents]);
+      setAgentName("");
+      setShowCreateForm(false);
+      setSelectedAgent(demoAgent);
+      setShowDemoEmbed(true);
+      return;
+    }
+
     setCreating(true);
     const result = await createAgent(
       agentName,
@@ -51,6 +76,7 @@ export default function AgentManager() {
       setAgentName("");
       setShowCreateForm(false);
       setSelectedAgent(result.agent);
+      setShowDemoEmbed(false);
     }
     setCreating(false);
   };
@@ -84,7 +110,20 @@ export default function AgentManager() {
   };
 
   const getEmbedCode = () => {
-    if (!selectedAgent || !clientKey) return "";
+    if (!selectedAgent) return "";
+    
+    if (showDemoEmbed) {
+      return `<script
+  type="module"
+  src="https://agent.d-id.com/v2/index.js"
+  data-mode="fabio"
+  data-client-key="YOUR_CLIENT_KEY_HERE"
+  data-agent-id="${selectedAgent.id}"
+  data-name="did-agent"
+></script>`;
+    }
+
+    if (!clientKey) return "";
 
     return `<script
   type="module"
@@ -104,25 +143,6 @@ export default function AgentManager() {
     );
   }
 
-  if (!didApiKey && !didBasicAuth) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <Bot className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">D-ID API Key Required</h2>
-          <p className="text-gray-600 mb-4">
-            Please add your D-ID API key in your Profile to create and manage agents.
-          </p>
-          <a
-            href="/profile"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Go to Profile
-          </a>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -134,6 +154,15 @@ export default function AgentManager() {
         <p className="text-gray-600">
           Create conversational AI agents with live avatars for real-time interactions
         </p>
+        {!hasApiKey && (
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Demo Mode:</strong> You can explore the interface and see sample embed code. 
+              Add your D-ID API key in{" "}
+              <a href="/profile" className="underline hover:text-blue-900">Profile</a> to create real agents with working client keys.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -251,10 +280,55 @@ export default function AgentManager() {
                   Generate a client key to embed this agent on your website
                 </p>
 
-                {!clientKey ? (
+                {showDemoEmbed ? (
+                  <div className="space-y-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-sm text-yellow-800 mb-2">
+                        <strong>Demo Agent:</strong> This is a sample agent created without a D-ID API key.
+                      </p>
+                      <p className="text-xs text-yellow-700">
+                        To create a real agent with a working client key, add your D-ID API key in Profile.
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-medium text-gray-700">Sample Embed Code</label>
+                        <button
+                          onClick={() => copyToClipboard(getEmbedCode(), "embed")}
+                          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        >
+                          {copiedEmbed ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" />
+                              Copy
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                        <pre className="text-xs overflow-x-auto">
+                          <code>{getEmbedCode()}</code>
+                        </pre>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        Replace <code className="bg-white px-1 rounded">YOUR_CLIENT_KEY_HERE</code> with 
+                        a real client key from a D-ID agent to make this embed work.
+                      </p>
+                    </div>
+                  </div>
+                ) : !clientKey ? (
                   <button
                     onClick={handleGenerateClientKey}
-                    disabled={generatingKey}
+                    disabled={generatingKey || !hasApiKey}
                     className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {generatingKey ? (
@@ -262,6 +336,8 @@ export default function AgentManager() {
                         <Loader2 className="w-5 h-5 animate-spin" />
                         Generating...
                       </>
+                    ) : !hasApiKey ? (
+                      "API Key Required for Real Client Key"
                     ) : (
                       "Generate Client Key"
                     )}

@@ -24,6 +24,37 @@ export default function ExpressiveGenerator() {
 
   const loadAvatars = useCallback(async () => {
     setLoading(true);
+    
+    if (!didApiKey && !didBasicAuth) {
+      const demoAvatar: ExpressiveAvatar = {
+        id: "demo_avatar",
+        name: "Demo Avatar (Sample)",
+        thumbnail_url: "/demo/sample-talking-avatar.png",
+        provider_details: {
+          provider: "demo"
+        },
+        sentiments: [
+          {
+            id: "demo_sentiment_professional",
+            name: "Professional",
+            thumbnail_url: "/demo/sample-talking-avatar.png",
+            voice: { type: "demo" }
+          },
+          {
+            id: "demo_sentiment_friendly",
+            name: "Friendly",
+            thumbnail_url: "/demo/sample-talking-avatar.png",
+            voice: { type: "demo" }
+          }
+        ]
+      };
+      setAvatars([demoAvatar]);
+      setSelectedAvatar(demoAvatar);
+      setSelectedSentiment(demoAvatar.sentiments[0]);
+      setLoading(false);
+      return;
+    }
+    
     const result = await listExpressiveAvatars(didApiKey, didBasicAuth);
     if (result.status && result.avatars) {
       setAvatars(result.avatars);
@@ -33,6 +64,26 @@ export default function ExpressiveGenerator() {
           setSelectedSentiment(result.avatars[0].sentiments[0]);
         }
       }
+    } else {
+      const demoAvatar: ExpressiveAvatar = {
+        id: "demo_avatar",
+        name: "Demo Avatar (API Error)",
+        thumbnail_url: "/demo/sample-talking-avatar.png",
+        provider_details: {
+          provider: "demo"
+        },
+        sentiments: [
+          {
+            id: "demo_sentiment_professional",
+            name: "Professional",
+            thumbnail_url: "/demo/sample-talking-avatar.png",
+            voice: { type: "demo" }
+          }
+        ]
+      };
+      setAvatars([demoAvatar]);
+      setSelectedAvatar(demoAvatar);
+      setSelectedSentiment(demoAvatar.sentiments[0]);
     }
     setLoading(false);
   }, [didApiKey, didBasicAuth]);
@@ -132,40 +183,12 @@ export default function ExpressiveGenerator() {
     poll();
   };
 
+  const hasApiKey = !!(didApiKey || didBasicAuth);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  if (!didApiKey && !didBasicAuth) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <Sparkles className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">D-ID API Key Required</h2>
-          <p className="text-gray-600 mb-4">
-            Please add your D-ID API key in your Profile to create expressive videos.
-          </p>
-          <a
-            href="/profile"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Go to Profile
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  if (avatars.length === 0) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-600">No expressive avatars available. Please check your API key.</p>
-        </div>
       </div>
     );
   }
@@ -180,6 +203,14 @@ export default function ExpressiveGenerator() {
         <p className="text-gray-600">
           Create videos with emotional avatars that express different sentiments
         </p>
+        {!hasApiKey && (
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Demo Mode:</strong> You&apos;re viewing a sample avatar. Add your D-ID API key in{" "}
+              <a href="/profile" className="underline hover:text-blue-900">Profile</a> to access all avatars and create real videos.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
