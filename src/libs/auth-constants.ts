@@ -3,6 +3,8 @@ export const SESSION_COOKIE_NAME = "__session" as const;
 // Keep in sync with `src/proxy.ts` and client redirects in `FirebaseAuthProvider`.
 export const PROTECTED_PATH_PREFIXES = [
   "/avatars",
+  "/expressive",
+  "/agents",
   "/generate",
   "/payment-attempt",
   "/payment-success",

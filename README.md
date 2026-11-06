@@ -1,6 +1,6 @@
 # D-ID API Demo
 
-Next.js demo of a D-ID talking-head workflow: sign in, manage avatars, generate videos, synthesize voice with ElevenLabs, store assets in Firebase, and buy credits with Stripe.
+Next.js 16 demo showcasing D-ID's modern API capabilities: V4 Expressive Avatars with emotional sentiments, Realtime Conversational Agents, and legacy talking-photo workflows. Features Firebase auth/storage, ElevenLabs voice synthesis, and Stripe credit payments.
 
 Demo: [https://d-id-api-demo.vercel.app](https://d-id-api-demo.vercel.app)
 
@@ -8,14 +8,35 @@ Product behavior is in [spec.md](./spec.md). Next steps and open issues are in [
 
 ## Features
 
-- Google and email/password sign-in. Server actions use an httpOnly `__session` cookie.
-- Profile stores each user's D-ID key, ElevenLabs key, and credit balance.
-- Avatar library for personal talking photos and shared templates (`/avatars`).
-- Simple generation (`/generate`) and a Fabric.js multi-scene composer (`/videos/create`, `/videos/[id]/edit`).
-- Video library and playback (`/videos`, `/videos/[id]/show`) with polling and an optional D-ID webhook.
-- Image proxies so D-ID can fetch Firebase-backed images without an open URL relay.
-- Stripe checkout for one credit pack. Credits are granted and spent on the server.
-- Local-only diagnostics for keys, image access, and ngrok (`/diagnostic`, `/api-diagnostics`, `/ngrok-setup`).
+### V4 Expressive Avatars (Primary)
+- **Create emotional videos** with D-ID's V4 expressive avatars (`/expressive`)
+- Select from multiple avatars and sentiments (Professional, Empathetic, Excited, Friendly, etc.)
+- Real-time polling for video generation status
+- Automatic demo mode when no API key is configured
+- Full integration with D-ID's `/expressives` API endpoint
+- Documentation: [V4 Expressive Avatar Quickstart](https://docs.d-id.com/docs/v4-expressive-avatar-quickstart)
+
+### Realtime Agents (Primary)
+- **Create conversational AI agents** with live video avatars (`/agents`)
+- Generate client keys for embedding agents on websites
+- One-click embed code generation for quick integration
+- Agent management dashboard with full configuration
+- Support for custom presenters and voice configurations
+- Documentation: [D-ID Realtime Overview](https://docs.d-id.com/docs/realtime-overview) | [Embed Quickstart](https://docs.d-id.com/docs/embed-quickstart)
+
+### Core Infrastructure
+- Google and email/password sign-in with Firebase Auth
+- Profile stores each user's D-ID key, ElevenLabs key, and credit balance
+- Server actions use an httpOnly `__session` cookie for security
+- Stripe checkout for credit packs (server-side credit management)
+- Image proxies so D-ID can fetch Firebase-backed images
+- Video library and playback with real-time status updates
+
+### Legacy Features
+- Avatar library for personal talking photos and templates (`/avatars`)
+- V2 simple generation (`/generate`)
+- Fabric.js multi-scene composer (`/videos/create`, `/videos/[id]/edit`)
+- Local-only diagnostics for keys, image access, and ngrok
 
 ## Tech stack
 

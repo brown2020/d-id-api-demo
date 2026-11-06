@@ -117,6 +117,76 @@ export type VideoDetail = {
   demo_notice?: string;
 };
 
+export type ExpressiveAvatar = {
+  id: string;
+  name: string;
+  thumbnail_url: string;
+  provider_details: {
+    provider: string;
+    voice_id?: string;
+  };
+  sentiments: ExpressiveSentiment[];
+};
+
+export type ExpressiveSentiment = {
+  id: string;
+  name: string;
+  thumbnail_url: string;
+  voice: {
+    type: string;
+    voice_id?: string;
+  };
+};
+
+export type ExpressiveVideoStatus = "created" | "processing" | "done" | "error";
+
+export type ExpressiveVideoDetail = {
+  id: string;
+  object: string;
+  status: ExpressiveVideoStatus;
+  avatar_id: string;
+  sentiment_id: string;
+  result_url?: string;
+  duration?: number;
+  created_at: string;
+  owner?: string;
+  thumbnail_url?: string;
+  errorMessage?: string;
+  script_text?: string;
+  demo_mode?: boolean;
+  demo_notice?: string;
+};
+
+export type Agent = {
+  id: string;
+  preview_name?: string;
+  presenter: {
+    type: string;
+    presenter_id: string;
+    voice: {
+      type: string;
+      voice_id: string;
+    };
+  };
+  llm?: {
+    type: string;
+    model?: string;
+    api_key?: string;
+  };
+  knowledge?: {
+    provider: string;
+    text: string;
+  };
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type AgentClientKey = {
+  client_key: string;
+  created_at: string;
+  allowed_domains: string[];
+};
+
 export type NotificationType = "video_generated";
 export type NotificationStatus = "unread" | "read";
 

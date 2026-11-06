@@ -233,6 +233,18 @@ function HeaderUserBar({
                 )}
               </div>
               <Link
+                href="/expressive"
+                className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
+              >
+                Expressive
+              </Link>
+              <Link
+                href="/agents"
+                className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
+              >
+                Agents
+              </Link>
+              <Link
                 href="/videos/create"
                 className="hover:text-blue-500 px-4 py-2 rounded-lg transition"
               >
@@ -304,6 +316,20 @@ function HeaderUserBar({
               } overflow-hidden transition-colors duration-300 w-full left-0`}
             >
               <div className="flex flex-col p-2">
+                <Link
+                  onClick={() => setIsMenuOpen(false)}
+                  href="/expressive"
+                  className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                >
+                  Expressive
+                </Link>
+                <Link
+                  onClick={() => setIsMenuOpen(false)}
+                  href="/agents"
+                  className="px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition"
+                >
+                  Agents
+                </Link>
                 <Link
                   onClick={() => setIsMenuOpen(false)}
                   href="/videos/create"
