@@ -38,7 +38,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <Link href="/expressive" onClick={handleClick}>
-              <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer h-full">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-[box-shadow,transform] duration-300 transform hover:scale-105 cursor-pointer h-full">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-white/20 p-3 rounded-lg">
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,7 +59,7 @@ export default function Home() {
             </Link>
 
             <Link href="/agents" onClick={handleClick}>
-              <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer h-full">
+              <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transition-[box-shadow,transform] duration-300 transform hover:scale-105 cursor-pointer h-full">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-white/20 p-3 rounded-lg">
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
